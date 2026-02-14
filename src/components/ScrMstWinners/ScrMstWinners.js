@@ -38,7 +38,7 @@ const ScrMstWinners = () => {
            </div>
          </div>*/
 
-         <div className={`col-6 col-sm-4 col-lg-3`}>
+         /*<div className={`col-6 col-sm-4 col-lg-3`}>
            <div className={`card ${styles.Card}`}>
              <Image src={b_winner}
                     alt={'Russ Thatcher'}
@@ -53,7 +53,7 @@ const ScrMstWinners = () => {
                </p>
              </div>
            </div>
-         </div>
+         </div>*/
 
          <div className={`col-6 col-sm-4 col-lg-3`}>
            <div className={`card ${styles.Card}`}>
@@ -95,6 +95,7 @@ const ScrMstWinners = () => {
 }
 
 export default ScrMstWinners;
+
 
 
 
