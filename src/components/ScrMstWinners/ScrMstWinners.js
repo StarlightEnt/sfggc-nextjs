@@ -21,24 +21,24 @@ const ScrMstWinners = () => {
       </div>
 
        <div className={`row justify-content-center`}>
-         /*<div className={`col-6 col-sm-4 col-lg-3`}>
-           <div className={`card ${styles.Card}`}>
-             <Image src={a_winner}
-                    alt={'Daniel Chin'}
-                    className={`img-fluid card-img-top ${styles.Image}`}
-             />
-             <div className={`card-body`}>
-               <p className={`${styles.Name}`}>
-                   Daniel Chin
-               </p>
-               <p className={styles.Role}>
-                 Division A Winner
-               </p>
-             </div>
-           </div>
-         </div>*/
+        // <div className={`col-6 col-sm-4 col-lg-3`}>
+        //    <div className={`card ${styles.Card}`}>
+        //      <Image src={a_winner}
+        //             alt={'Daniel Chin'}
+        //             className={`img-fluid card-img-top ${styles.Image}`}
+        //      />
+        //      <div className={`card-body`}>
+        //        <p className={`${styles.Name}`}>
+        //            Daniel Chin
+        //        </p>
+        //        <p className={styles.Role}>
+        //          Division A Winner
+        //        </p>
+        //      </div>
+        //    </div>
+        //  </div>
 
-         /*<div className={`col-6 col-sm-4 col-lg-3`}>
+        <div className={`col-6 col-sm-4 col-lg-3`}>
            <div className={`card ${styles.Card}`}>
              <Image src={b_winner}
                     alt={'Russ Thatcher'}
@@ -53,7 +53,7 @@ const ScrMstWinners = () => {
                </p>
              </div>
            </div>
-         </div>*/
+         </div>
 
          <div className={`col-6 col-sm-4 col-lg-3`}>
            <div className={`card ${styles.Card}`}>
@@ -95,6 +95,7 @@ const ScrMstWinners = () => {
 }
 
 export default ScrMstWinners;
+
 
 
 
