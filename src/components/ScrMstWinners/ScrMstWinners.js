@@ -2,10 +2,10 @@ import Image from "next/image";
 
 import styles from './ScrMstWinners.module.scss';
 
-import a_winner from '../../images/scrmst-winners/SMA_TJ_Pettit.jpeg';
-import b_winner from '../../images/scrmst-winners/SMB_Gary_McNamara.jpeg';
-import c_winner from '../../images/scrmst-winners/SMC_Kells_Parker.jpeg';
-import d_winner from '../../images/scrmst-winners/SMD_Carlos_Castellanos.jpeg';
+import a_winner from '../../images/scrmst-winners/SMA_TJ_Pettit.jpg';
+import b_winner from '../../images/scrmst-winners/SMB_Gary_McNamara.jpg';
+import c_winner from '../../images/scrmst-winners/SMC_Kells_Parker.jpg';
+import d_winner from '../../images/scrmst-winners/SMD_Carlos_Castellanos.jpg';
 
 const ScrMstWinners = () => {
   return (
@@ -95,5 +95,6 @@ const ScrMstWinners = () => {
 }
 
 export default ScrMstWinners;
+
 
 
