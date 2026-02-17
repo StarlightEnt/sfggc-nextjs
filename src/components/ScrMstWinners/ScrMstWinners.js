@@ -2,10 +2,10 @@ import Image from "next/image";
 
 import styles from './ScrMstWinners.module.scss';
 
-import a_winner from '../../images/scrmst-winners/a_winner.jpg';
-import b_winner from '../../images/scrmst-winners/b_winner.jpg';
-import c_winner from '../../images/scrmst-winners/c_winner.jpg';
-import d_winner from '../../images/scrmst-winners/d_winner.jpg';
+import a_winner from '../../images/scrmst-winners/SMA_TJ_Pettit.jpeg';
+import b_winner from '../../images/scrmst-winners/SMB_Gary_McNamara.jpeg';
+import c_winner from '../../images/scrmst-winners/SMC_Kells_Parker.jpeg';
+import d_winner from '../../images/scrmst-winners/SMD_Carlos_Castellanos.jpeg';
 
 const ScrMstWinners = () => {
   return (
@@ -16,7 +16,7 @@ const ScrMstWinners = () => {
 
       <div className={`${styles.Intro}`}>
         <p className={``}>
-          Gallery of Winners 2025
+          Gallery of Winners 2026
         </p>
       </div>
 
@@ -24,30 +24,29 @@ const ScrMstWinners = () => {
         <div className={`col-6 col-sm-4 col-lg-3`}>
           <div className={`card ${styles.Card}`}>
             <Image src={a_winner}
-                   alt={'Daniel Chin'}
+                   alt={'TJ Pettit'}
                    className={`img-fluid card-img-top ${styles.Image}`}
             />
             <div className={`card-body`}>
               <p className={`${styles.Name}`}>
-                  Daniel Chin
+                  TJ Pettit
               </p>
               <p className={styles.Role}>
                 Division A Winner
               </p>
             </div>
           </div>
-
         </div>
 
         <div className={`col-6 col-sm-4 col-lg-3`}>
           <div className={`card ${styles.Card}`}>
             <Image src={b_winner}
-                   alt={'Russ Thatcher'}
+                   alt={'Gary McNamara'}
                    className={`img-fluid card-img-top ${styles.Image}`}
             />
             <div className={`card-body`}>
               <p className={`${styles.Name}`}>
-                  Russ Thatcher
+                  Gary McNamara
                </p>
               <p className={styles.Role}>
                 Division B Winner
@@ -59,12 +58,12 @@ const ScrMstWinners = () => {
         <div className={`col-6 col-sm-4 col-lg-3`}>
           <div className={`card ${styles.Card}`}>
             <Image src={c_winner}
-                   alt={'Robert Michaels'}
+                   alt={'Kells Parker'}
                    className={`img-fluid card-img-top ${styles.Image}`}
             />
             <div className={`card-body`}>
               <p className={`${styles.Name}`}>
-                  Robert Michaels
+                  Kells Parker
               </p>
               <p className={styles.Role}>
                 Division C Winner
@@ -76,12 +75,12 @@ const ScrMstWinners = () => {
         <div className={`col-6 col-sm-4 col-lg-3`}>
           <div className={`card ${styles.Card}`}>
             <Image src={d_winner}
-                   alt={'Jason Eller'}
+                   alt={'Carlos Castellanos'}
                    className={`img-fluid card-img-top ${styles.Image}`}
             />
             <div className={`card-body`}>
               <p className={`${styles.Name}`}>
-                  Jason Eller
+                  Carlos Castellanos
               </p>
               <p className={styles.Role}>
                 Division D Winner
@@ -96,4 +95,5 @@ const ScrMstWinners = () => {
 }
 
 export default ScrMstWinners;
+
 
