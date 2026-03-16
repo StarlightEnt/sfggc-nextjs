@@ -121,10 +121,10 @@ test(
       "build_static must call backup_next_config before modifying config"
     );
 
-    // Sets trap for exit
+    // Sets trap for exit (cleanup_build wraps restore_next_config + restore_images_after_build)
     assert.ok(
-      content.includes("trap restore_next_config EXIT"),
-      "build_static must set trap to restore config on exit"
+      content.includes("trap cleanup_build EXIT"),
+      "build_static must set trap to restore config and images on exit"
     );
 
     // Calls configure
@@ -165,10 +165,10 @@ test(
       "build_static must have else branch for build failure"
     );
 
-    // Restores on error
+    // Restores on error (cleanup_build wraps restore_next_config + restore_images_after_build)
     const lines = content.split("\n");
     let inErrorHandler = false;
-    let hasRestoreInError = false;
+    let hasCleanupInError = false;
     let hasExitInError = false;
 
     for (let i = 0; i < lines.length; i++) {
@@ -176,8 +176,8 @@ test(
         inErrorHandler = true;
       }
       if (inErrorHandler) {
-        if (lines[i].includes("restore_next_config")) {
-          hasRestoreInError = true;
+        if (lines[i].includes("cleanup_build")) {
+          hasCleanupInError = true;
         }
         if (lines[i].includes("exit 1")) {
           hasExitInError = true;
@@ -187,8 +187,8 @@ test(
     }
 
     assert.ok(
-      hasRestoreInError,
-      "build_static must call restore_next_config on build failure"
+      hasCleanupInError,
+      "build_static must call cleanup_build on build failure"
     );
 
     assert.ok(

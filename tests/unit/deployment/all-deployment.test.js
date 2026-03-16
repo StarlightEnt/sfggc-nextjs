@@ -178,13 +178,19 @@ test(
       "build_static must restore config before exit"
     );
 
-    // Trap ensures restoration on error
+    // Trap ensures restoration on error (cleanup_build wraps restore_next_config + restore_images_after_build)
     assert.ok(
-      buildContent.includes("trap restore_next_config EXIT"),
-      "build_static must set trap for config restoration"
+      buildContent.includes("trap cleanup_build EXIT"),
+      "build_static must set trap for cleanup (config + images restoration)"
     );
 
-    // Manual restore before normal exit
+    // cleanup_build calls restore_next_config
+    assert.ok(
+      buildContent.includes("restore_next_config"),
+      "cleanup_build must call restore_next_config"
+    );
+
+    // Manual cleanup before normal exit
     const buildStaticMatch = buildContent.match(
       /build_static\(\) \{[\s\S]*?^}/m
     );
@@ -193,22 +199,22 @@ test(
     const funcBody = buildStaticMatch[0];
     const lines = funcBody.split("\n");
 
-    let hasManualRestore = false;
+    let hasManualCleanup = false;
     let hasTrapRemoval = false;
 
     lines.forEach((line) => {
-      if (line.trim() === "restore_next_config") hasManualRestore = true;
+      if (line.trim() === "cleanup_build") hasManualCleanup = true;
       if (line.includes("trap - EXIT")) hasTrapRemoval = true;
     });
 
     assert.ok(
-      hasManualRestore,
-      "build_static must manually restore config before normal exit"
+      hasManualCleanup,
+      "build_static must manually call cleanup_build before normal exit"
     );
 
     assert.ok(
       hasTrapRemoval,
-      "build_static must remove trap after manual restore"
+      "build_static must remove trap after manual cleanup"
     );
   }
 );

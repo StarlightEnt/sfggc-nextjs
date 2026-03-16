@@ -37,10 +37,10 @@ test(
       "build_static must have error handling for build failure"
     );
 
-    // Restores config on error
+    // Restores config and images on error (cleanup_build wraps both)
     const lines = funcBody.split("\n");
     let inErrorBranch = false;
-    let hasRestoreInError = false;
+    let hasCleanupInError = false;
     let hasExitInError = false;
 
     for (let i = 0; i < lines.length; i++) {
@@ -48,8 +48,8 @@ test(
         inErrorBranch = true;
       }
       if (inErrorBranch) {
-        if (lines[i].includes("restore_next_config")) {
-          hasRestoreInError = true;
+        if (lines[i].includes("cleanup_build")) {
+          hasCleanupInError = true;
         }
         if (lines[i].includes("exit 1")) {
           hasExitInError = true;
@@ -59,8 +59,8 @@ test(
     }
 
     assert.ok(
-      hasRestoreInError,
-      "build_static must restore config on build failure"
+      hasCleanupInError,
+      "build_static must call cleanup_build on build failure"
     );
 
     assert.ok(
@@ -83,10 +83,10 @@ test(
 
     const funcBody = buildStaticMatch[0];
 
-    // Sets trap for EXIT
+    // Sets trap for EXIT (cleanup_build wraps restore_next_config + restore_images_after_build)
     assert.ok(
-      funcBody.includes("trap restore_next_config EXIT"),
-      "build_static must set trap to restore config on ANY exit"
+      funcBody.includes("trap cleanup_build EXIT"),
+      "build_static must set trap to cleanup (config + images) on ANY exit"
     );
 
     // Trap is set early (before configure)
@@ -95,7 +95,7 @@ test(
     let configureIndex = -1;
 
     lines.forEach((line, idx) => {
-      if (line.includes("trap restore_next_config EXIT")) trapIndex = idx;
+      if (line.includes("trap cleanup_build EXIT")) trapIndex = idx;
       if (line.includes("configure_static_build")) configureIndex = idx;
     });
 
