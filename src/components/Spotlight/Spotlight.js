@@ -2,12 +2,12 @@ import styles from './Spotlight.module.scss';
 import Link from "next/link";
 
 const Spotlight = () => {
-  // const prelimText = (
-  //   <p>
-  //     A San Francisco institution for decades, the Golden Gate Classic brings together bowlers from across the country,
-  //     embodying the spirit of Unity, Fellowship, and Inclusion that define IGBO.
-  //   </p>
-  // );
+   const prelimText = (
+     <p>
+       A San Francisco institution for decades, the Golden Gate Classic brings together bowlers from across the country,
+       embodying the spirit of Unity, Fellowship, and Inclusion that define IGBO.
+     </p>
+   );
 
   // const registrationOpeningDate = (
   //    <p>
@@ -71,7 +71,7 @@ const Spotlight = () => {
   return (
     <section className={`${styles.Spotlight}`}>
       <div className={``}>
-        {/*{prelimText}*/}
+        {prelimText}
         {/*registrationOpeningDate*/}
         {/*registrationOpen*/}
         {/*<RegisterCTA/>*/}
