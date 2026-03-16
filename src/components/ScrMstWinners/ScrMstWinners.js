@@ -49,4 +49,3 @@ const ScrMstWinners = () => {
 }
 
 export default ScrMstWinners;
-

@@ -8,9 +8,12 @@ const { execSync } = require("child_process");
 const PROJECT_ROOT = process.cwd();
 const SCRIPT_PATH = path.join(PROJECT_ROOT, "deploy_scripts/lib/optimize-images.sh");
 const OUTPUT_LIB = path.join(PROJECT_ROOT, "deploy_scripts/lib/output.sh");
+const BUILD_SCRIPT = path.join(PROJECT_ROOT, "deploy_scripts/lib/build.sh");
+const DEPLOY_SCRIPT = path.join(PROJECT_ROOT, "deploy_scripts/deploy.sh");
 
 // Temp directory for test images
 const TEST_IMG_DIR = path.join(PROJECT_ROOT, "tests/.tmp-optimize-images");
+const TEST_BUILD_DIR = path.join(PROJECT_ROOT, "tests/.tmp-images-build");
 
 const MAX_WIDTH = 800;
 
@@ -102,8 +105,6 @@ function getImageWidth(filepath) {
 
 /**
  * Helper: run the optimize_images function from the shell script.
- * Sources output.sh for logging functions, then runs optimize_images
- * with IMAGE_DIR overridden to use the test directory.
  */
 function runOptimizeImages(options = {}) {
   const { dryRun = false, imageDir = TEST_IMG_DIR } = options;
@@ -124,17 +125,40 @@ function runOptimizeImages(options = {}) {
   });
 }
 
+/**
+ * Helper: run prepare_build_images from the shell script.
+ */
+function runPrepareBuildImages(options = {}) {
+  const { dryRun = false, sourceDir = TEST_IMG_DIR, buildDir = TEST_BUILD_DIR } = options;
+
+  const env = dryRun ? 'DRY_RUN=true' : 'DRY_RUN=false';
+
+  const cmd = `
+    ${env} VERBOSE=false DEBUG=false
+    source "${OUTPUT_LIB}"
+    source "${SCRIPT_PATH}"
+    BUILD_IMAGES_DIR="${buildDir}"
+    prepare_build_images "${sourceDir}"
+  `;
+
+  return execSync(`bash -c '${cmd.replace(/'/g, "'\\''")}'`, {
+    encoding: "utf-8",
+    cwd: PROJECT_ROOT,
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+}
+
 describe("Deploy image optimization", () => {
   beforeEach(() => {
-    if (fs.existsSync(TEST_IMG_DIR)) {
-      fs.rmSync(TEST_IMG_DIR, { recursive: true });
+    for (const dir of [TEST_IMG_DIR, TEST_BUILD_DIR]) {
+      if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true });
     }
     fs.mkdirSync(TEST_IMG_DIR, { recursive: true });
   });
 
   afterEach(() => {
-    if (fs.existsSync(TEST_IMG_DIR)) {
-      fs.rmSync(TEST_IMG_DIR, { recursive: true });
+    for (const dir of [TEST_IMG_DIR, TEST_BUILD_DIR]) {
+      if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true });
     }
   });
 
@@ -236,10 +260,81 @@ describe("Deploy image optimization", () => {
   });
 });
 
-describe("Deploy pipeline integration", () => {
-  const DEPLOY_SCRIPT = path.join(PROJECT_ROOT, "deploy_scripts/deploy.sh");
-  const BUILD_SCRIPT = path.join(PROJECT_ROOT, "deploy_scripts/lib/build.sh");
+describe("Non-destructive image optimization (prepare_build_images)", () => {
+  beforeEach(() => {
+    for (const dir of [TEST_IMG_DIR, TEST_BUILD_DIR]) {
+      if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true });
+    }
+    fs.mkdirSync(TEST_IMG_DIR, { recursive: true });
+  });
 
+  afterEach(() => {
+    for (const dir of [TEST_IMG_DIR, TEST_BUILD_DIR]) {
+      if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true });
+    }
+  });
+
+  test("Given oversized source images, when prepare_build_images runs, then originals are unchanged", () => {
+    const imgPath = path.join(TEST_IMG_DIR, "photo.jpg");
+    createTestImage(imgPath, 1600, 1200);
+
+    const sizeBefore = fs.statSync(imgPath).size;
+    const widthBefore = getImageWidth(imgPath);
+
+    runPrepareBuildImages();
+
+    const sizeAfter = fs.statSync(imgPath).size;
+    const widthAfter = getImageWidth(imgPath);
+
+    assert.strictEqual(sizeAfter, sizeBefore, "Original image file size must not change");
+    assert.strictEqual(widthAfter, widthBefore, "Original image width must not change");
+  });
+
+  test("Given oversized source images, when prepare_build_images runs, then build dir has optimized copies", () => {
+    const imgPath = path.join(TEST_IMG_DIR, "photo.jpg");
+    createTestImage(imgPath, 1600, 1200);
+
+    runPrepareBuildImages();
+
+    const buildImgPath = path.join(TEST_BUILD_DIR, "photo.jpg");
+    assert.ok(fs.existsSync(buildImgPath), "Optimized copy should exist in build dir");
+
+    const buildWidth = getImageWidth(buildImgPath);
+    assert.strictEqual(buildWidth, MAX_WIDTH, "Build copy should be resized to MAX_WIDTH");
+  });
+
+  test("Given source images in subdirectories, when prepare_build_images runs, then directory structure is preserved", () => {
+    const subdir = path.join(TEST_IMG_DIR, "bg");
+    fs.mkdirSync(subdir, { recursive: true });
+
+    const imgPath = path.join(subdir, "hero.jpg");
+    createTestImage(imgPath, 2000, 1500);
+
+    runPrepareBuildImages();
+
+    const buildImgPath = path.join(TEST_BUILD_DIR, "bg", "hero.jpg");
+    assert.ok(fs.existsSync(buildImgPath), "Subdirectory structure should be preserved in build dir");
+
+    const buildWidth = getImageWidth(buildImgPath);
+    assert.strictEqual(buildWidth, MAX_WIDTH, "Nested build copy should be resized");
+  });
+
+  test("Given small source images, when prepare_build_images runs, then build copies match originals", () => {
+    const imgPath = path.join(TEST_IMG_DIR, "icon.jpg");
+    createTestImage(imgPath, 400, 300);
+
+    const originalSize = fs.statSync(imgPath).size;
+
+    runPrepareBuildImages();
+
+    const buildImgPath = path.join(TEST_BUILD_DIR, "icon.jpg");
+    const buildSize = fs.statSync(buildImgPath).size;
+
+    assert.strictEqual(buildSize, originalSize, "Small images should be copied without modification");
+  });
+});
+
+describe("Deploy pipeline integration", () => {
   test("Given deploy.sh sources libraries, when listing sources, then optimize-images.sh is included", () => {
     const content = fs.readFileSync(DEPLOY_SCRIPT, "utf-8");
 
@@ -249,21 +344,71 @@ describe("Deploy pipeline integration", () => {
     );
   });
 
-  test("Given build_static function, when building, then optimize_images is called before npm run build", () => {
+  test("Given build_static function, when building, then prepare_build_images is called before npm run build", () => {
     const content = fs.readFileSync(BUILD_SCRIPT, "utf-8");
 
     assert.ok(
-      content.includes("optimize_images"),
-      "build.sh must call optimize_images"
+      content.includes("prepare_build_images"),
+      "build.sh must call prepare_build_images"
     );
 
-    // Verify optimize_images is called BEFORE npm run build
-    const optimizePos = content.indexOf("optimize_images");
+    // Verify prepare and swap happen BEFORE npm run build
+    const preparePos = content.indexOf("prepare_build_images");
+    const swapPos = content.indexOf("swap_images_for_build");
     const npmBuildPos = content.indexOf("npm run build");
 
     assert.ok(
-      optimizePos < npmBuildPos,
-      "optimize_images must be called before npm run build"
+      preparePos < npmBuildPos,
+      "prepare_build_images must be called before npm run build"
+    );
+    assert.ok(
+      swapPos < npmBuildPos,
+      "swap_images_for_build must be called before npm run build"
+    );
+  });
+
+  test("Given build_static function, when building, then cleanup_build restores images after build", () => {
+    const content = fs.readFileSync(BUILD_SCRIPT, "utf-8");
+
+    // cleanup_build must call restore_images_after_build
+    assert.ok(
+      content.includes("restore_images_after_build"),
+      "build.sh must call restore_images_after_build (via cleanup_build)"
+    );
+
+    // build_static must call cleanup_build after npm run build
+    const buildStaticBody = content.slice(content.indexOf("build_static()"));
+    const npmBuildPos = buildStaticBody.indexOf("npm run build");
+    const cleanupPos = buildStaticBody.lastIndexOf("cleanup_build");
+
+    assert.ok(
+      cleanupPos > npmBuildPos,
+      "cleanup_build must be called after npm run build in build_static"
+    );
+  });
+
+  test("Given build_static function, when checked, then cleanup_build is set as trap handler", () => {
+    const content = fs.readFileSync(BUILD_SCRIPT, "utf-8");
+
+    assert.ok(
+      content.includes("trap cleanup_build EXIT"),
+      "build_static must set cleanup_build as EXIT trap for safety"
+    );
+  });
+
+  test("Given .gitignore, when checked, then build image directories are ignored", () => {
+    const gitignore = fs.readFileSync(
+      path.join(PROJECT_ROOT, ".gitignore"),
+      "utf-8"
+    );
+
+    assert.ok(
+      gitignore.includes(".images-build"),
+      ".gitignore must include .images-build"
+    );
+    assert.ok(
+      gitignore.includes(".images-original"),
+      ".gitignore must include .images-original"
     );
   });
 });

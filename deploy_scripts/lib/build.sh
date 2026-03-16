@@ -81,6 +81,12 @@ EOF
   log_success "Config set: export mode enabled"
 }
 
+# cleanup_build - Restore config and images on exit
+cleanup_build() {
+  restore_next_config
+  restore_images_after_build
+}
+
 # build_static - Build static site
 build_static() {
   log_section "BUILDING STATIC SITE"
@@ -88,14 +94,17 @@ build_static() {
   # Backup config
   backup_next_config
 
-  # Ensure restore runs on exit
-  trap restore_next_config EXIT
+  # Ensure cleanup runs on exit (config + images)
+  trap cleanup_build EXIT
 
   # Configure for static build
   configure_static_build
 
-  # Optimize oversized source images
-  optimize_images
+  # Copy and optimize images in build directory (originals untouched)
+  prepare_build_images
+
+  # Swap optimized images into place for build
+  swap_images_for_build
 
   # Remove previous build
   if [ -d "out" ] && [ "${DRY_RUN:-false}" != true ]; then
@@ -112,7 +121,7 @@ build_static() {
       log_success "Build completed successfully"
     else
       log_error "Build failed"
-      restore_next_config
+      cleanup_build
       exit 1
     fi
   fi
@@ -120,10 +129,10 @@ build_static() {
   # Validate output
   validate_out_directory
 
-  # Restore config
-  restore_next_config
+  # Restore original images and config
+  cleanup_build
 
-  # Remove trap since we restored manually
+  # Remove trap since we cleaned up manually
   trap - EXIT
 }
 
