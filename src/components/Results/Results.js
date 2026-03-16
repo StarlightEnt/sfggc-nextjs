@@ -24,6 +24,12 @@ const Results = ({ showStandingsLink = false, showOptionalEventsLink = false }) 
       <h3 className={`section-heading`}>
         2026 Tournament Results
       </h3>
+      
+      <div className={`${styles.Intro}`}>
+        <p className={``}>
+          **UPDATE.** Much apologies to our winners for the delay in getting your awards out.  We had a commitment of 30 days, and we did not meet that promise. Due to unforseen circumstances, we encountered a procedural hiccup in the check processing. Rest assured, all checks should be received during the week of March 16th.
+        </p>
+      </div>
           
       <div className={'row px-2 px-xl-0'}>
         {available.map((resultSet, i) => (
