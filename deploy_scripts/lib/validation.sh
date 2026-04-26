@@ -43,30 +43,18 @@ check_local_environment() {
   return 0
 }
 
-# check_build_output - Validate build output exists
+# check_build_output - Validate project is ready for deployment
 check_build_output() {
   local mode="$1"
 
   log_subsection "Build Output"
 
-  if [ "$mode" = "static" ] || [ "$mode" = "all" ]; then
-    if [ -d "out" ]; then
-      local file_count=$(find out -type f | wc -l | tr -d ' ')
-      log_success "Static build output exists ($file_count files)"
-    else
-      log_warn "Static build output (out/) not found"
-      log_info "Will build during deployment"
-    fi
-  fi
-
-  if [ "$mode" = "portal" ] || [ "$mode" = "all" ]; then
-    # Portal builds on server, but check package.json exists
-    if [ -f "package.json" ]; then
-      log_success "package.json found"
-    else
-      log_error "package.json not found"
-      return 1
-    fi
+  # Application builds on server, but check package.json exists locally
+  if [ -f "package.json" ]; then
+    log_success "package.json found"
+  else
+    log_error "package.json not found"
+    return 1
   fi
 
   return 0
@@ -105,31 +93,20 @@ check_server_environment() {
     return 0
   fi
 
-  # Check destination paths exist or can be created
-  if [ "$mode" = "static" ] || [ "$mode" = "all" ]; then
-    if ssh "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" "[ -d \"$DEPLOY_STATIC_PATH\" ] || mkdir -p \"$DEPLOY_STATIC_PATH\" 2>/dev/null" 2>/dev/null; then
-      log_success "Static path accessible: $DEPLOY_STATIC_PATH"
-    else
-      log_error "Cannot access static path: $DEPLOY_STATIC_PATH"
-      return 1
-    fi
+  # Check app path exists or can be created
+  if ssh "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" "[ -d \"$DEPLOY_APP_PATH\" ] || mkdir -p \"$DEPLOY_APP_PATH\" 2>/dev/null" 2>/dev/null; then
+    log_success "App path accessible: $DEPLOY_APP_PATH"
+  else
+    log_error "Cannot access app path: $DEPLOY_APP_PATH"
+    return 1
   fi
 
-  if [ "$mode" = "portal" ] || [ "$mode" = "all" ]; then
-    if ssh "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" "[ -d \"$DEPLOY_PORTAL_PATH\" ] || mkdir -p \"$DEPLOY_PORTAL_PATH\" 2>/dev/null" 2>/dev/null; then
-      log_success "Portal path accessible: $DEPLOY_PORTAL_PATH"
-    else
-      log_error "Cannot access portal path: $DEPLOY_PORTAL_PATH"
-      return 1
-    fi
-
-    # Check if Node.js is installed on server (for portal)
-    if ssh "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" "command -v node >/dev/null 2>&1" 2>/dev/null; then
-      local remote_node_version=$(ssh "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" "node --version" 2>/dev/null)
-      log_success "Node.js available on server: $remote_node_version"
-    else
-      log_warn "Node.js not found on server (required for portal)"
-    fi
+  # Check if Node.js is installed on server
+  if ssh "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" "command -v node >/dev/null 2>&1" 2>/dev/null; then
+    local remote_node_version=$(ssh "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" "node --version" 2>/dev/null)
+    log_success "Node.js available on server: $remote_node_version"
+  else
+    log_warn "Node.js not found on server (required for application)"
   fi
 
   # Check disk space on server

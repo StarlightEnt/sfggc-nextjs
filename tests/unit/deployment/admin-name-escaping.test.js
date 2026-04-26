@@ -3,14 +3,14 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const path = require("path");
 
-const DEPLOY_PORTAL_SH = path.join(
+const DEPLOY_APP_SH = path.join(
   process.cwd(),
-  "deploy_scripts/lib/deploy-portal.sh"
+  "deploy_scripts/lib/deploy-app.sh"
 );
 
 describe("Admin name escaping in deployment", () => {
   test("Given create_super_admin function, when passing ADMIN_NAME to remote script, then it properly escapes the value to handle spaces and special characters", () => {
-    const content = fs.readFileSync(DEPLOY_PORTAL_SH, "utf-8");
+    const content = fs.readFileSync(DEPLOY_APP_SH, "utf-8");
 
     // Should prompt for admin name
     assert.ok(
@@ -39,7 +39,7 @@ describe("Admin name escaping in deployment", () => {
   });
 
   test("Given create_super_admin function, when building SSH command, then ADMIN_EMAIL and ADMIN_PASSWORD are also properly escaped", () => {
-    const content = fs.readFileSync(DEPLOY_PORTAL_SH, "utf-8");
+    const content = fs.readFileSync(DEPLOY_APP_SH, "utf-8");
 
     const createAdminFunc = content.match(/create_super_admin\(\) \{[\s\S]*?^}/m);
     assert.ok(createAdminFunc, "create_super_admin function must exist");
@@ -55,7 +55,7 @@ describe("Admin name escaping in deployment", () => {
   });
 
   test("Given create_super_admin function, when checking ssh_command invocation, then escaped variables are used", () => {
-    const content = fs.readFileSync(DEPLOY_PORTAL_SH, "utf-8");
+    const content = fs.readFileSync(DEPLOY_APP_SH, "utf-8");
 
     // Find the ssh_command call that invokes create-super-admin.sh
     const sshCommandMatch = content.match(/ssh_command "cd.*create-super-admin\.sh[^"]*"/s);

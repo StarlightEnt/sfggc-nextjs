@@ -8,8 +8,12 @@ const RESULTS_COMPONENT_PATH = path.join(process.cwd(), "src/components/Results/
 
 const read = (filePath) => fs.readFileSync(filePath, "utf8");
 
-test("Given results page route, when checking source, then it fetches visibility flags client-side and passes them to Results component", () => {
+test("Given results page route, when checking source, then it fetches visibility flags server-side via getServerSideProps", () => {
   const page = read(RESULTS_PAGE_PATH);
+  assert.ok(
+    page.includes("getServerSideProps"),
+    "Results page should use getServerSideProps for server-side rendering"
+  );
   assert.ok(
     page.includes("/api/portal/admin/scores/visibility"),
     "Results page should fetch scores visibility from API"
@@ -19,12 +23,16 @@ test("Given results page route, when checking source, then it fetches visibility
     "Results page should fetch optional events visibility from API"
   );
   assert.ok(
+    page.includes("localhost"),
+    "Results page should use localhost for internal API calls (not external URL)"
+  );
+  assert.ok(
     page.includes("showStandingsLink"),
-    "Results page should track standings link visibility state"
+    "Results page should pass standings link visibility as prop"
   );
   assert.ok(
     page.includes("showOptionalEventsLink"),
-    "Results page should track optional events link visibility state"
+    "Results page should pass optional events link visibility as prop"
   );
 });
 

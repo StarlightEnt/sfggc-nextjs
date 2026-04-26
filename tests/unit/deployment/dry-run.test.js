@@ -166,62 +166,6 @@ test(
 );
 
 test(
-  "Given build.sh functions, when checking dry-run handling, then configure_static_build logs what it would do",
-  () => {
-    const content = readFile("deploy_scripts/lib/build.sh");
-
-    // configure_static_build checks DRY_RUN
-    const configureMatch = content.match(
-      /configure_static_build\(\) \{[\s\S]*?^}/m
-    );
-    assert.ok(configureMatch, "configure_static_build must exist");
-
-    const funcBody = configureMatch[0];
-
-    assert.ok(
-      funcBody.includes('[ "${DRY_RUN:-false}" = true ]'),
-      "configure_static_build must check DRY_RUN flag"
-    );
-
-    assert.ok(
-      funcBody.includes("log_dry_run"),
-      "configure_static_build must use log_dry_run in dry-run mode"
-    );
-
-    assert.ok(
-      funcBody.includes("return 0"),
-      "configure_static_build must return 0 in dry-run mode"
-    );
-  }
-);
-
-test(
-  "Given build.sh functions, when checking dry-run handling, then build_static logs but doesn't run npm",
-  () => {
-    const content = readFile("deploy_scripts/lib/build.sh");
-
-    // build_static checks DRY_RUN
-    const buildStaticMatch = content.match(
-      /build_static\(\) \{[\s\S]*?^}/m
-    );
-    assert.ok(buildStaticMatch, "build_static must exist");
-
-    const funcBody = buildStaticMatch[0];
-
-    assert.ok(
-      funcBody.includes('[ "${DRY_RUN:-false}" = true ]') ||
-      funcBody.includes('[ "${DRY_RUN:-false}" != true ]'),
-      "build_static must check DRY_RUN flag"
-    );
-
-    assert.ok(
-      funcBody.includes("log_dry_run") && funcBody.includes("npm run build"),
-      "build_static must log what npm command would run in dry-run mode"
-    );
-  }
-);
-
-test(
   "Given SSH helper functions, when checking dry-run handling, then ssh_command returns 0 without executing",
   () => {
     const content = readFile("deploy_scripts/lib/ssh.sh");
@@ -253,123 +197,87 @@ test(
 );
 
 test(
-  "Given deploy-static.sh functions, when checking dry-run handling, then sync_static_files logs but doesn't rsync",
+  "Given deploy-app.sh functions, when checking dry-run handling, then sync_app_files shows exclusions in verbose mode",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-static.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
-    // sync_static_files checks DRY_RUN
+    // sync_app_files checks DRY_RUN
     const syncMatch = content.match(
-      /sync_static_files\(\) \{[\s\S]*?^}/m
+      /sync_app_files\(\) \{[\s\S]*?^}/m
     );
-    assert.ok(syncMatch, "sync_static_files must exist");
+    assert.ok(syncMatch, "sync_app_files must exist");
 
     const funcBody = syncMatch[0];
 
     assert.ok(
       funcBody.includes('[ "${DRY_RUN:-false}" = true ]'),
-      "sync_static_files must check DRY_RUN flag"
+      "sync_app_files must check DRY_RUN flag"
     );
 
     assert.ok(
       funcBody.includes("log_dry_run"),
-      "sync_static_files must use log_dry_run"
-    );
-
-    assert.ok(
-      funcBody.includes("return 0"),
-      "sync_static_files must return 0 in dry-run mode"
-    );
-
-    // Shows what would be synced
-    assert.ok(
-      funcBody.includes("DEPLOY_STATIC_PATH") || funcBody.includes("out/"),
-      "sync_static_files dry-run message should mention source/destination"
-    );
-  }
-);
-
-test(
-  "Given deploy-portal.sh functions, when checking dry-run handling, then sync_portal_files shows exclusions in verbose mode",
-  () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
-
-    // sync_portal_files checks DRY_RUN
-    const syncMatch = content.match(
-      /sync_portal_files\(\) \{[\s\S]*?^}/m
-    );
-    assert.ok(syncMatch, "sync_portal_files must exist");
-
-    const funcBody = syncMatch[0];
-
-    assert.ok(
-      funcBody.includes('[ "${DRY_RUN:-false}" = true ]'),
-      "sync_portal_files must check DRY_RUN flag"
-    );
-
-    assert.ok(
-      funcBody.includes("log_dry_run"),
-      "sync_portal_files must use log_dry_run"
+      "sync_app_files must use log_dry_run"
     );
 
     // Shows exclusions if verbose
     assert.ok(
       funcBody.includes('[ "${VERBOSE:-false}" = true ]') &&
       (funcBody.includes("Excludes:") || funcBody.includes("node_modules")),
-      "sync_portal_files should show exclusions in verbose dry-run mode"
+      "sync_app_files should show exclusions in verbose dry-run mode"
     );
 
     assert.ok(
       funcBody.includes("return 0"),
-      "sync_portal_files must return 0 in dry-run mode"
+      "sync_app_files must return 0 in dry-run mode"
     );
   }
 );
 
 test(
-  "Given deploy-portal.sh setup_portal_environment, when checking dry-run, then it logs what secrets would be prompted for",
+  "Given deploy-app.sh setup_app_environment, when checking dry-run, then it logs what secrets would be prompted for",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
-    // setup_portal_environment checks DRY_RUN
+    // setup_app_environment checks DRY_RUN
     const setupMatch = content.match(
-      /setup_portal_environment\(\) \{[\s\S]*?^}/m
+      /setup_app_environment\(\) \{[\s\S]*?^}/m
     );
-    assert.ok(setupMatch, "setup_portal_environment must exist");
+    assert.ok(setupMatch, "setup_app_environment must exist");
 
     const funcBody = setupMatch[0];
 
     assert.ok(
       funcBody.includes('[ "${DRY_RUN:-false}" = true ]'),
-      "setup_portal_environment must check DRY_RUN flag"
+      "setup_app_environment must check DRY_RUN flag"
     );
 
     assert.ok(
       funcBody.includes("log_dry_run"),
-      "setup_portal_environment must use log_dry_run"
+      "setup_app_environment must use log_dry_run"
     );
 
     // Shows what would be prompted
     assert.ok(
       funcBody.includes("database password") || funcBody.includes("DB_PASS"),
-      "setup_portal_environment dry-run should mention database password"
+      "setup_app_environment dry-run should mention database password"
     );
 
     assert.ok(
       funcBody.includes("SMTP password") || funcBody.includes("SMTP_PASS"),
-      "setup_portal_environment dry-run should mention SMTP password"
+      "setup_app_environment dry-run should mention SMTP password"
     );
 
     assert.ok(
       funcBody.includes("session secret") || funcBody.includes("SESSION_SECRET"),
-      "setup_portal_environment dry-run should mention session secret"
+      "setup_app_environment dry-run should mention session secret"
     );
   }
 );
 
 test(
-  "Given deploy-portal.sh manage_pm2, when checking dry-run, then it logs PM2 operations without executing",
+  "Given deploy-app.sh manage_pm2, when checking dry-run, then it logs PM2 operations without executing",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // manage_pm2 checks DRY_RUN
     const pm2Match = content.match(
@@ -403,36 +311,6 @@ test(
     assert.ok(
       funcBody.includes("return 0"),
       "manage_pm2 must return 0 in dry-run mode"
-    );
-  }
-);
-
-test(
-  "Given validation functions, when checking dry-run, then they log checks but don't actually validate",
-  () => {
-    const content = readFile("deploy_scripts/lib/build.sh");
-
-    // validate_out_directory checks DRY_RUN
-    const validateMatch = content.match(
-      /validate_out_directory\(\) \{[\s\S]*?^}/m
-    );
-    assert.ok(validateMatch, "validate_out_directory must exist");
-
-    const funcBody = validateMatch[0];
-
-    assert.ok(
-      funcBody.includes('[ "${DRY_RUN:-false}" = true ]'),
-      "validate_out_directory must check DRY_RUN flag"
-    );
-
-    assert.ok(
-      funcBody.includes("log_dry_run"),
-      "validate_out_directory must use log_dry_run"
-    );
-
-    assert.ok(
-      funcBody.includes("return 0"),
-      "validate_out_directory must return 0 in dry-run mode"
     );
   }
 );
@@ -509,18 +387,16 @@ test(
 test(
   "Given all deployment functions, when checking dry-run consistency, then they all return 0 to simulate success",
   () => {
-    const buildContent = readFile("deploy_scripts/lib/build.sh");
     const sshContent = readFile("deploy_scripts/lib/ssh.sh");
-    const staticContent = readFile("deploy_scripts/lib/deploy-static.sh");
-    const portalContent = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const appContent = readFile("deploy_scripts/lib/deploy-app.sh");
 
-    const allContent = [buildContent, sshContent, staticContent, portalContent].join("\n");
+    const allContent = [sshContent, appContent].join("\n");
 
     // Find all DRY_RUN checks
     const dryRunChecks = allContent.match(/\[ "\$\{DRY_RUN:-false\}" = true \]/g);
 
     assert.ok(
-      dryRunChecks && dryRunChecks.length > 10,
+      dryRunChecks && dryRunChecks.length > 8,
       "deployment scripts must have multiple DRY_RUN checks (found: " +
       (dryRunChecks ? dryRunChecks.length : 0) + ")"
     );
@@ -547,7 +423,7 @@ test(
     }
 
     assert.ok(
-      dryRunBlocksWithReturn > 10,
+      dryRunBlocksWithReturn > 8,
       `Most DRY_RUN blocks must return 0 (found ${dryRunBlocksWithReturn} of ${totalDryRunBlocks})`
     );
   }

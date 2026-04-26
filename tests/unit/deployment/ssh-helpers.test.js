@@ -374,51 +374,27 @@ test(
 );
 
 test(
-  "Given deploy-portal.sh using check_remote_file_exists, when checking source, then it checks for .env.local with tilde path",
+  "Given deploy-app.sh using check_remote_file_exists, when checking source, then it checks for .env.local with tilde path",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
-    // setup_portal_environment uses check_remote_file_exists
+    // setup_app_environment uses check_remote_file_exists
     assert.ok(
       content.includes("check_remote_file_exists"),
-      "deploy-portal.sh must use check_remote_file_exists helper"
+      "deploy-app.sh must use check_remote_file_exists helper"
     );
 
     // Checks .env.local
     assert.ok(
       content.includes(".env.local"),
-      "setup_portal_environment must check for .env.local file"
+      "setup_app_environment must check for .env.local file"
     );
 
-    // Uses DEPLOY_PORTAL_PATH which may contain tilde
+    // Uses DEPLOY_APP_PATH which may contain tilde
     assert.ok(
-      content.includes("${DEPLOY_PORTAL_PATH}"),
-      "setup_portal_environment must use DEPLOY_PORTAL_PATH variable"
+      content.includes("${DEPLOY_APP_PATH}"),
+      "setup_app_environment must use DEPLOY_APP_PATH variable"
     );
   }
 );
 
-test(
-  "Given deploy-static.sh using ssh_command, when checking source, then it uses ssh_command for remote operations",
-  () => {
-    const content = readFile("deploy_scripts/lib/deploy-static.sh");
-
-    // verify_static_deployment uses ssh_command
-    assert.ok(
-      content.includes("ssh_command"),
-      "deploy-static.sh must use ssh_command helper for remote checks"
-    );
-
-    // Checks for index.html existence
-    assert.ok(
-      content.includes("index.html"),
-      "verify_static_deployment must check for index.html"
-    );
-
-    // Uses [ -f ] test
-    assert.ok(
-      content.includes("[ -f"),
-      "verify_static_deployment must use [ -f ] test for file existence"
-    );
-  }
-);

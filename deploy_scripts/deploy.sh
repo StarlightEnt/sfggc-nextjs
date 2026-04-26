@@ -1,45 +1,36 @@
 #!/bin/bash
-# SFGGC Unified Deployment Script
+# SFGGC Deployment Script
 #
-# Deploys static site, portal application, or both to production server.
+# Deploys the application (static pages + portal) to production server.
+# Everything runs through a single Next.js server managed by PM2.
 #
 # Usage:
 #   ./deploy_scripts/deploy.sh [OPTIONS]
 #
 # Options:
-#   --static          Deploy static site only (default if no flags)
-#   --portal          Deploy portal application only
-#   --all             Deploy both static and portal
 #   --dry-run         Show what would happen without executing
 #   --verbose         Show detailed dry-run output (with --dry-run)
 #   --debug           Show full debug output (with --dry-run)
 #   --config FILE     Use alternate config file (default: .deployrc)
 #   --server HOST     Override SSH host
 #   --user USER       Override SSH user
-#   --path PATH       Override deployment path
 #   -y, --yes         Skip confirmation prompts (auto-confirm deployment)
 #   --setup           Force environment reconfiguration (recreates .env.local)
 #   --skip-migrations Skip database migrations (not recommended)
 #   -h, --help        Show this help
 #
 # Examples:
-#   # Deploy static site (default)
+#   # Deploy application
 #   ./deploy_scripts/deploy.sh
 #
-#   # Deploy portal only
-#   ./deploy_scripts/deploy.sh --portal
-#
-#   # Deploy everything
-#   ./deploy_scripts/deploy.sh --all
-#
-#   # Dry run for portal
-#   ./deploy_scripts/deploy.sh --portal --dry-run
+#   # Deploy with auto-confirmation
+#   ./deploy_scripts/deploy.sh --yes
 #
 #   # Dry run with details
-#   ./deploy_scripts/deploy.sh --all --dry-run --verbose
+#   ./deploy_scripts/deploy.sh --dry-run --verbose
 #
 #   # Force environment reconfiguration (recover from broken .env.local)
-#   ./deploy_scripts/deploy.sh --portal --setup
+#   ./deploy_scripts/deploy.sh --setup
 
 set -euo pipefail
 
@@ -54,15 +45,10 @@ source "$SCRIPT_DIR/lib/config.sh"
 source "$SCRIPT_DIR/lib/ssh.sh"
 source "$SCRIPT_DIR/lib/validation.sh"
 source "$SCRIPT_DIR/lib/build.sh"
-source "$SCRIPT_DIR/lib/optimize-images.sh"
-source "$SCRIPT_DIR/lib/deploy-static.sh"
-source "$SCRIPT_DIR/lib/deploy-portal.sh"
+source "$SCRIPT_DIR/lib/deploy-app.sh"
 
 # ─── Default values ──────────────────────────────────────────────────────────
 
-DEPLOY_STATIC=false
-DEPLOY_PORTAL=false
-DEPLOY_ALL=false
 DRY_RUN=false
 VERBOSE=false
 DEBUG=false
@@ -73,22 +59,18 @@ CONFIG_FILE=".deployrc"
 
 CLI_SSH_HOST=""
 CLI_SSH_USER=""
-CLI_STATIC_PATH=""
-CLI_PORTAL_PATH=""
+CLI_APP_PATH=""
 
 # ─── Help function ───────────────────────────────────────────────────────────
 
 show_help() {
   cat << 'EOF'
-SFGGC Unified Deployment Script
+SFGGC Deployment Script
 
 Usage:
   ./deploy_scripts/deploy.sh [OPTIONS]
 
 Options:
-  --static          Deploy static site only (default if no flags)
-  --portal          Deploy portal application only
-  --all             Deploy both static and portal
   --dry-run         Show what would happen without executing
   --verbose         Show detailed dry-run output (with --dry-run)
   --debug           Show full debug output (with --dry-run)
@@ -97,29 +79,21 @@ Options:
   --user USER       Override SSH user
   -y, --yes         Skip confirmation prompts (auto-confirm deployment)
   --setup           Force environment reconfiguration (recreates .env.local)
+  --skip-migrations Skip database migrations (not recommended)
   -h, --help        Show this help
 
 Examples:
-  # Deploy static site (default)
+  # Deploy application
   ./deploy_scripts/deploy.sh
 
-  # Deploy portal only
-  ./deploy_scripts/deploy.sh --portal
-
-  # Deploy everything
-  ./deploy_scripts/deploy.sh --all
-
-  # Dry run for portal
-  ./deploy_scripts/deploy.sh --portal --dry-run
+  # Deploy with auto-confirmation
+  ./deploy_scripts/deploy.sh --yes
 
   # Dry run with details
-  ./deploy_scripts/deploy.sh --all --dry-run --verbose
+  ./deploy_scripts/deploy.sh --dry-run --verbose
 
   # Force environment reconfiguration (recover from broken .env.local)
-  ./deploy_scripts/deploy.sh --portal --setup
-
-  # Deploy everything with auto-confirmation
-  ./deploy_scripts/deploy.sh --all --yes
+  ./deploy_scripts/deploy.sh --setup
 
 Configuration:
   Create .deployrc from .deployrc.example for default settings:
@@ -138,15 +112,19 @@ parse_arguments() {
   while [[ $# -gt 0 ]]; do
     case $1 in
       --static)
-        DEPLOY_STATIC=true
-        shift
-        ;;
-      --portal)
-        DEPLOY_PORTAL=true
-        shift
+        log_error "The --static flag is no longer supported."
+        log_error "The application now deploys as a unified Next.js server."
+        log_error "Just run: ./deploy_scripts/deploy.sh"
+        exit 1
         ;;
       --all)
-        DEPLOY_ALL=true
+        log_error "The --all flag is no longer supported."
+        log_error "The application now deploys as a unified Next.js server."
+        log_error "Just run: ./deploy_scripts/deploy.sh"
+        exit 1
+        ;;
+      --portal)
+        # Accepted for backward compatibility (app mode is the default)
         shift
         ;;
       --dry-run)
@@ -206,13 +184,7 @@ parse_arguments() {
 # ─── Determine deployment mode ───────────────────────────────────────────────
 
 determine_mode() {
-  if [ "$DEPLOY_ALL" = true ]; then
-    echo "all"
-  elif [ "$DEPLOY_PORTAL" = true ]; then
-    echo "portal"
-  else
-    echo "static"  # Default
-  fi
+  echo "app"
 }
 
 # ─── Main execution ──────────────────────────────────────────────────────────
@@ -257,38 +229,8 @@ main() {
     run_all_checks "$mode" || exit 1
   fi
 
-  # Execute deployment based on mode
-  case "$mode" in
-    static)
-      deploy_static || exit 1
-      ;;
-    portal)
-      deploy_portal || exit 1
-      ;;
-    all)
-      deploy_static || exit 1
-
-      # CRITICAL: Ensure config is restored to server mode before portal deployment
-      # Static build temporarily changes next.config.js to export mode, then restores it.
-      # We must verify restoration completed before syncing files for portal.
-      log_step "Verifying server-mode config before portal deployment"
-      if ! check_config_is_server_mode "next.config.js"; then
-        log_error "Config still has 'output: export' after static build"
-        log_error "This would break portal deployment. Restoring now..."
-        restore_next_config
-
-        # Verify restoration worked
-        if ! check_config_is_server_mode "next.config.js"; then
-          log_error "Failed to restore server-mode config"
-          exit 1
-        fi
-      fi
-      log_success "Config verified: server mode active"
-
-      echo ""
-      deploy_portal || exit 1
-      ;;
-  esac
+  # Deploy application
+  deploy_app || exit 1
 
   # Show final summary
   echo ""
@@ -298,12 +240,7 @@ main() {
   if [ -n "${DEPLOY_DOMAIN:-}" ]; then
     echo ""
     log_info "Your deployment is available at:"
-    if [ "$mode" = "static" ] || [ "$mode" = "all" ]; then
-      log_info "  Static site: https://${DEPLOY_DOMAIN}"
-    fi
-    if [ "$mode" = "portal" ] || [ "$mode" = "all" ]; then
-      log_info "  Portal:      https://${DEPLOY_DOMAIN}/portal/"
-    fi
+    log_info "  https://${DEPLOY_DOMAIN}"
   fi
 
   echo ""

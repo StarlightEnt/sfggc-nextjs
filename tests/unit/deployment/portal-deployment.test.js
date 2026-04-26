@@ -10,26 +10,26 @@ const projectRoot = process.cwd();
 const readFile = (relativePath) =>
   fs.readFileSync(path.join(projectRoot, relativePath), "utf8");
 
-// ─── Portal Deployment Tests ─────────────────────────────────────────────────
+// ─── App Deployment Tests ───────────────────────────────────────────────────
 
 test(
-  "Given deploy_portal function, when checking orchestration, then it follows sequence: sync, install deps, setup env, init db, create admin, build, PM2, verify",
+  "Given deploy_app function, when checking orchestration, then it follows sequence: sync, install deps, setup env, init db, create admin, build, PM2, verify",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Function exists
     assert.ok(
-      content.includes("deploy_portal()"),
-      "deploy-portal.sh must define deploy_portal function"
+      content.includes("deploy_app()"),
+      "deploy-app.sh must define deploy_app function"
     );
 
     // Get function body
-    const deployPortalMatch = content.match(
-      /deploy_portal\(\) \{[\s\S]*?^}/m
+    const deployAppMatch = content.match(
+      /deploy_app\(\) \{[\s\S]*?^}/m
     );
-    assert.ok(deployPortalMatch, "deploy_portal function must exist");
+    assert.ok(deployAppMatch, "deploy_app function must exist");
 
-    const funcBody = deployPortalMatch[0];
+    const funcBody = deployAppMatch[0];
     const lines = funcBody.split("\n");
 
     // Find order of operations
@@ -43,25 +43,25 @@ test(
     let verifyIndex = -1;
 
     lines.forEach((line, idx) => {
-      if (line.includes("sync_portal_files")) syncIndex = idx;
-      if (line.includes("install_portal_dependencies")) installIndex = idx;
-      if (line.includes("setup_portal_environment")) setupEnvIndex = idx;
+      if (line.includes("sync_app_files")) syncIndex = idx;
+      if (line.includes("install_app_dependencies")) installIndex = idx;
+      if (line.includes("setup_app_environment")) setupEnvIndex = idx;
       if (line.includes("initialize_database")) initDbIndex = idx;
       if (line.includes("create_super_admin")) createAdminIndex = idx;
-      if (line.includes("build_portal_on_server")) buildIndex = idx;
+      if (line.includes("build_app_on_server")) buildIndex = idx;
       if (line.includes("manage_pm2")) pm2Index = idx;
-      if (line.includes("verify_portal_deployment")) verifyIndex = idx;
+      if (line.includes("verify_app_deployment")) verifyIndex = idx;
     });
 
     // Verify all steps are present
-    assert.ok(syncIndex >= 0, "deploy_portal must call sync_portal_files");
-    assert.ok(installIndex >= 0, "deploy_portal must call install_portal_dependencies");
-    assert.ok(setupEnvIndex >= 0, "deploy_portal must call setup_portal_environment");
-    assert.ok(initDbIndex >= 0, "deploy_portal must call initialize_database");
-    assert.ok(createAdminIndex >= 0, "deploy_portal must call create_super_admin");
-    assert.ok(buildIndex >= 0, "deploy_portal must call build_portal_on_server");
-    assert.ok(pm2Index >= 0, "deploy_portal must call manage_pm2");
-    assert.ok(verifyIndex >= 0, "deploy_portal must call verify_portal_deployment");
+    assert.ok(syncIndex >= 0, "deploy_app must call sync_app_files");
+    assert.ok(installIndex >= 0, "deploy_app must call install_app_dependencies");
+    assert.ok(setupEnvIndex >= 0, "deploy_app must call setup_app_environment");
+    assert.ok(initDbIndex >= 0, "deploy_app must call initialize_database");
+    assert.ok(createAdminIndex >= 0, "deploy_app must call create_super_admin");
+    assert.ok(buildIndex >= 0, "deploy_app must call build_app_on_server");
+    assert.ok(pm2Index >= 0, "deploy_app must call manage_pm2");
+    assert.ok(verifyIndex >= 0, "deploy_app must call verify_app_deployment");
 
     // Verify order
     assert.ok(syncIndex < installIndex, "sync must run before install deps");
@@ -75,144 +75,144 @@ test(
 );
 
 test(
-  "Given sync_portal_files function, when checking source, then it uses rsync with exclusions for node_modules, .git, .next, out, .env",
+  "Given sync_app_files function, when checking source, then it uses rsync with exclusions for node_modules, .git, .next, out, .env",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Function exists
     assert.ok(
-      content.includes("sync_portal_files()"),
-      "deploy-portal.sh must define sync_portal_files function"
+      content.includes("sync_app_files()"),
+      "deploy-app.sh must define sync_app_files function"
     );
 
     // Uses rsync
     assert.ok(
       content.includes("rsync"),
-      "sync_portal_files must use rsync"
+      "sync_app_files must use rsync"
     );
 
     // Excludes node_modules
     assert.ok(
       content.includes("--exclude='node_modules/'") ||
       content.includes("--exclude=node_modules"),
-      "sync_portal_files must exclude node_modules"
+      "sync_app_files must exclude node_modules"
     );
 
     // Excludes .git
     assert.ok(
       content.includes("--exclude='.git/'") ||
       content.includes("--exclude=.git"),
-      "sync_portal_files must exclude .git"
+      "sync_app_files must exclude .git"
     );
 
     // Excludes .next
     assert.ok(
       content.includes("--exclude='.next/'") ||
       content.includes("--exclude=.next"),
-      "sync_portal_files must exclude .next"
+      "sync_app_files must exclude .next"
     );
 
     // Excludes out
     assert.ok(
       content.includes("--exclude='out/'") ||
       content.includes("--exclude=out"),
-      "sync_portal_files must exclude out"
+      "sync_app_files must exclude out"
     );
 
     // Excludes .env files
     assert.ok(
       content.includes("--exclude='.env*'") ||
       content.includes("--exclude=.env"),
-      "sync_portal_files must exclude .env files"
+      "sync_app_files must exclude .env files"
     );
 
     // Uses --delete
     assert.ok(
       content.includes("--delete"),
-      "sync_portal_files must use --delete flag"
+      "sync_app_files must use --delete flag"
     );
 
-    // Uses DEPLOY_PORTAL_PATH
+    // Uses DEPLOY_APP_PATH
     assert.ok(
-      content.includes("${DEPLOY_PORTAL_PATH}"),
-      "sync_portal_files must sync to DEPLOY_PORTAL_PATH"
+      content.includes("${DEPLOY_APP_PATH}"),
+      "sync_app_files must sync to DEPLOY_APP_PATH"
     );
 
     // Respects DRY_RUN
     assert.ok(
       content.includes('[ "${DRY_RUN:-false}" = true ]'),
-      "sync_portal_files must check DRY_RUN flag"
+      "sync_app_files must check DRY_RUN flag"
     );
   }
 );
 
 test(
-  "Given setup_portal_environment function, when checking source, then it only prompts for secrets (not non-secret config values)",
+  "Given setup_app_environment function, when checking source, then it only prompts for secrets (not non-secret config values)",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Function exists
     assert.ok(
-      content.includes("setup_portal_environment()"),
-      "deploy-portal.sh must define setup_portal_environment function"
+      content.includes("setup_app_environment()"),
+      "deploy-app.sh must define setup_app_environment function"
     );
 
     // Checks if .env.local exists first
     assert.ok(
       content.includes("check_remote_file_exists") &&
       content.includes(".env.local"),
-      "setup_portal_environment must check if .env.local exists"
+      "setup_app_environment must check if .env.local exists"
     );
 
     // Returns early if exists
     assert.ok(
       content.includes("Environment already configured") ||
       content.includes("return 0"),
-      "setup_portal_environment must return early if .env.local exists"
+      "setup_app_environment must return early if .env.local exists"
     );
 
     // Uses DEPLOY_DB_USER from config (non-secret)
     assert.ok(
       content.includes("${DEPLOY_DB_USER}") || content.includes("DEPLOY_DB_USER"),
-      "setup_portal_environment must use DEPLOY_DB_USER from config"
+      "setup_app_environment must use DEPLOY_DB_USER from config"
     );
 
     // Prompts for DB password (secret)
     assert.ok(
       content.includes("read -sp") && content.includes("Database password"),
-      "setup_portal_environment must prompt for database password"
+      "setup_app_environment must prompt for database password"
     );
 
     // Prompts for SMTP password (secret)
     assert.ok(
       content.includes("read -sp") && content.includes("SMTP password"),
-      "setup_portal_environment must prompt for SMTP password"
+      "setup_app_environment must prompt for SMTP password"
     );
 
     // Generates session secret
     assert.ok(
       content.includes("openssl rand -hex 32"),
-      "setup_portal_environment must generate session secret with openssl"
+      "setup_app_environment must generate session secret with openssl"
     );
 
     // Creates .env.local on server
     assert.ok(
-      content.includes("cat > ${DEPLOY_PORTAL_PATH}/.env.local"),
-      "setup_portal_environment must create .env.local on server"
+      content.includes("cat > ${DEPLOY_APP_PATH}/.env.local"),
+      "setup_app_environment must create .env.local on server"
     );
 
     // Respects DRY_RUN
     assert.ok(
       content.includes('[ "${DRY_RUN:-false}" = true ]'),
-      "setup_portal_environment must check DRY_RUN flag"
+      "setup_app_environment must check DRY_RUN flag"
     );
   }
 );
 
 test(
-  "Given setup_portal_environment function, when checking .env.local content, then it includes all required environment variables",
+  "Given setup_app_environment function, when checking .env.local content, then it includes all required environment variables",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // PORTAL_DATABASE_URL
     assert.ok(
@@ -245,38 +245,38 @@ test(
 );
 
 test(
-  "Given install_portal_dependencies function, when checking source, then it runs npm install --production on server",
+  "Given install_app_dependencies function, when checking source, then it runs npm install --production on server",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Function exists
     assert.ok(
-      content.includes("install_portal_dependencies()"),
-      "deploy-portal.sh must define install_portal_dependencies function"
+      content.includes("install_app_dependencies()"),
+      "deploy-app.sh must define install_app_dependencies function"
     );
 
     // Uses ssh_command
     assert.ok(
       content.includes("ssh_command"),
-      "install_portal_dependencies must use ssh_command"
+      "install_app_dependencies must use ssh_command"
     );
 
     // Runs npm install --production
     assert.ok(
       content.includes("npm install --production"),
-      "install_portal_dependencies must run npm install --production"
+      "install_app_dependencies must run npm install --production"
     );
 
-    // Changes to DEPLOY_PORTAL_PATH
+    // Changes to DEPLOY_APP_PATH
     assert.ok(
-      content.includes("cd ${DEPLOY_PORTAL_PATH}"),
-      "install_portal_dependencies must cd to DEPLOY_PORTAL_PATH"
+      content.includes("cd ${DEPLOY_APP_PATH}"),
+      "install_app_dependencies must cd to DEPLOY_APP_PATH"
     );
 
     // Respects DRY_RUN
     assert.ok(
       content.includes('[ "${DRY_RUN:-false}" = true ]'),
-      "install_portal_dependencies must check DRY_RUN flag"
+      "install_app_dependencies must check DRY_RUN flag"
     );
   }
 );
@@ -284,12 +284,12 @@ test(
 test(
   "Given initialize_database function, when checking source, then it runs init-portal-db.sh on server",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Function exists
     assert.ok(
       content.includes("initialize_database()"),
-      "deploy-portal.sh must define initialize_database function"
+      "deploy-app.sh must define initialize_database function"
     );
 
     // Runs init-portal-db.sh
@@ -304,10 +304,10 @@ test(
       "initialize_database must use ssh_command"
     );
 
-    // Changes to DEPLOY_PORTAL_PATH
+    // Changes to DEPLOY_APP_PATH
     assert.ok(
-      content.includes("cd ${DEPLOY_PORTAL_PATH}"),
-      "initialize_database must cd to DEPLOY_PORTAL_PATH"
+      content.includes("cd ${DEPLOY_APP_PATH}"),
+      "initialize_database must cd to DEPLOY_APP_PATH"
     );
 
     // Idempotent (may warn if schema exists)
@@ -328,12 +328,12 @@ test(
 test(
   "Given create_super_admin function, when checking source, then it only creates admin if none exist",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Function exists
     assert.ok(
       content.includes("create_super_admin()"),
-      "deploy-portal.sh must define create_super_admin function"
+      "deploy-app.sh must define create_super_admin function"
     );
 
     // Counts existing admins
@@ -377,65 +377,65 @@ test(
 );
 
 test(
-  "Given build_portal_on_server function, when checking source, then it runs npm run build on server",
+  "Given build_app_on_server function, when checking source, then it runs npm run build on server",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Function exists
     assert.ok(
-      content.includes("build_portal_on_server()"),
-      "deploy-portal.sh must define build_portal_on_server function"
+      content.includes("build_app_on_server()"),
+      "deploy-app.sh must define build_app_on_server function"
     );
 
     // Uses ssh_command
     assert.ok(
       content.includes("ssh_command"),
-      "build_portal_on_server must use ssh_command"
+      "build_app_on_server must use ssh_command"
     );
 
     // Runs npm run build
     assert.ok(
       content.includes("npm run build"),
-      "build_portal_on_server must run npm run build"
+      "build_app_on_server must run npm run build"
     );
 
-    // Changes to DEPLOY_PORTAL_PATH
+    // Changes to DEPLOY_APP_PATH
     assert.ok(
-      content.includes("cd ${DEPLOY_PORTAL_PATH}"),
-      "build_portal_on_server must cd to DEPLOY_PORTAL_PATH"
+      content.includes("cd ${DEPLOY_APP_PATH}"),
+      "build_app_on_server must cd to DEPLOY_APP_PATH"
     );
 
     // Checks build success
     assert.ok(
       content.includes("Build completed successfully") ||
       content.includes("log_success"),
-      "build_portal_on_server must log success message"
+      "build_app_on_server must log success message"
     );
 
     // Respects DRY_RUN
     assert.ok(
       content.includes('[ "${DRY_RUN:-false}" = true ]'),
-      "build_portal_on_server must check DRY_RUN flag"
+      "build_app_on_server must check DRY_RUN flag"
     );
   }
 );
 
 test(
-  "Given build_portal_on_server function, when removing old build directories, then it removes both .next and out directories before building",
+  "Given build_app_on_server function, when removing old build directories, then it removes both .next and out directories before building",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Function exists
     assert.ok(
-      content.includes("build_portal_on_server()"),
-      "deploy-portal.sh must define build_portal_on_server function"
+      content.includes("build_app_on_server()"),
+      "deploy-app.sh must define build_app_on_server function"
     );
 
     // Get function body
     const buildFuncMatch = content.match(
-      /build_portal_on_server\(\) \{[\s\S]*?^}/m
+      /build_app_on_server\(\) \{[\s\S]*?^}/m
     );
-    assert.ok(buildFuncMatch, "build_portal_on_server function must exist");
+    assert.ok(buildFuncMatch, "build_app_on_server function must exist");
 
     const funcBody = buildFuncMatch[0];
     const lines = funcBody.split("\n");
@@ -456,25 +456,25 @@ test(
     // Must remove old build directories
     assert.ok(
       rmIndex >= 0,
-      "build_portal_on_server must remove old build directories"
+      "build_app_on_server must remove old build directories"
     );
 
     // Must remove BOTH .next and out
     assert.ok(
       funcBody.includes("rm -rf .next out") ||
       (funcBody.includes("rm -rf .next") && funcBody.includes("rm -rf out")),
-      "build_portal_on_server must remove both .next and out directories (prevents stale export mode cache)"
+      "build_app_on_server must remove both .next and out directories (prevents stale export mode cache)"
     );
 
     // Removal must happen BEFORE build
     assert.ok(
       buildIndex >= 0,
-      "build_portal_on_server must run npm run build"
+      "build_app_on_server must run npm run build"
     );
 
     assert.ok(
       rmIndex < buildIndex,
-      "build_portal_on_server must remove old build directories BEFORE running npm run build"
+      "build_app_on_server must remove old build directories BEFORE running npm run build"
     );
   }
 );
@@ -482,12 +482,12 @@ test(
 test(
   "Given manage_pm2 function, when checking source, then it installs PM2 if missing",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Function exists
     assert.ok(
       content.includes("manage_pm2()"),
-      "deploy-portal.sh must define manage_pm2 function"
+      "deploy-app.sh must define manage_pm2 function"
     );
 
     // Checks if PM2 is installed
@@ -513,7 +513,7 @@ test(
 test(
   "Given manage_pm2 function, when checking source, then it restarts existing process or starts new one",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Checks PM2 process status
     assert.ok(
@@ -544,7 +544,7 @@ test(
 test(
   "Given manage_pm2 function, when checking source, then it configures auto-restart via crontab",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Checks for existing crontab entry
     assert.ok(
@@ -567,113 +567,103 @@ test(
 );
 
 test(
-  "Given verify_portal_deployment function, when checking source, then it checks PM2 status is online",
+  "Given verify_app_deployment function, when checking source, then it checks PM2 status is online",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Function exists
     assert.ok(
-      content.includes("verify_portal_deployment()"),
-      "deploy-portal.sh must define verify_portal_deployment function"
+      content.includes("verify_app_deployment()"),
+      "deploy-app.sh must define verify_app_deployment function"
     );
 
     // Checks PM2 status
     assert.ok(
       content.includes("pm2 status") && content.includes("${DEPLOY_PM2_APP_NAME}"),
-      "verify_portal_deployment must check PM2 process status"
+      "verify_app_deployment must check PM2 process status"
     );
 
     // Checks for 'online' status
     assert.ok(
       content.includes("grep -q") && content.includes("online") ||
       content.includes('echo "$PM2_OUTPUT" | grep -q "online"'),
-      "verify_portal_deployment must check if PM2 status is 'online'"
+      "verify_app_deployment must check if PM2 status is 'online'"
     );
 
     // Respects DRY_RUN
     assert.ok(
       content.includes('[ "${DRY_RUN:-false}" = true ]'),
-      "verify_portal_deployment must check DRY_RUN flag"
+      "verify_app_deployment must check DRY_RUN flag"
     );
   }
 );
 
 test(
-  "Given verify_portal_deployment function, when checking source, then it optionally tests HTTP response to /portal/",
+  "Given verify_app_deployment function, when checking source, then it optionally tests HTTP response to /portal/",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Checks if curl is available
     assert.ok(
       content.includes("command -v curl"),
-      "verify_portal_deployment must check if curl is available"
+      "verify_app_deployment must check if curl is available"
     );
 
     // Tests /portal/ endpoint
     assert.ok(
       content.includes("/portal/"),
-      "verify_portal_deployment must test /portal/ endpoint"
+      "verify_app_deployment must test /portal/ endpoint"
     );
 
     // Uses DEPLOY_DOMAIN
     assert.ok(
       content.includes("${DEPLOY_DOMAIN}"),
-      "verify_portal_deployment must use DEPLOY_DOMAIN"
+      "verify_app_deployment must use DEPLOY_DOMAIN"
     );
 
     // Checks for 200 status
     assert.ok(
       content.includes("200") && content.includes("http_code"),
-      "verify_portal_deployment must check for HTTP 200 status"
+      "verify_app_deployment must check for HTTP 200 status"
     );
   }
 );
 
 test(
-  "Given deploy.sh main script, when checking --portal mode, then it calls deploy_portal",
+  "Given deploy.sh main script, when deploying, then it calls deploy_app",
   () => {
     const content = readFile("deploy_scripts/deploy.sh");
 
-    // Sources deploy-portal.sh
+    // Sources deploy-app.sh
     assert.ok(
-      content.includes('source "$SCRIPT_DIR/lib/deploy-portal.sh"'),
-      "deploy.sh must source deploy-portal.sh library"
+      content.includes('source "$SCRIPT_DIR/lib/deploy-app.sh"'),
+      "deploy.sh must source deploy-app.sh library"
     );
 
-    // Case handles portal mode
-    const caseBlock = content.match(/case "\$mode" in[\s\S]*?esac/);
-    assert.ok(caseBlock, "deploy.sh must have case statement for mode");
-
+    // Calls deploy_app
     assert.ok(
-      caseBlock[0].includes("portal)") &&
-      caseBlock[0].includes("deploy_portal"),
-      "deploy.sh must call deploy_portal in portal mode"
-    );
-
-    // Exits on deploy_portal failure
-    assert.ok(
-      caseBlock[0].includes("deploy_portal || exit 1"),
-      "deploy.sh must exit with status 1 if deploy_portal fails"
+      content.includes("deploy_app || exit 1"),
+      "deploy.sh must call deploy_app and exit with status 1 on failure"
     );
   }
 );
 
 test(
-  "Given deploy_portal function, when checking completion, then it shows next steps for nginx configuration",
+  "Given deploy_app function, when checking completion, then it shows next steps for nginx configuration",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Shows next steps
     assert.ok(
       content.includes("Next steps:") || content.includes("next steps"),
-      "deploy_portal must show next steps after completion"
+      "deploy_app must show next steps after completion"
     );
 
     // Mentions nginx configuration
     assert.ok(
       content.includes("nginx") &&
       (content.includes("proxy") || content.includes("/portal")),
-      "deploy_portal must mention nginx proxy configuration"
+      "deploy_app must mention nginx proxy configuration"
     );
 
     // Shows PM2 commands
@@ -681,7 +671,7 @@ test(
       content.includes("pm2 logs") &&
       content.includes("pm2 restart") &&
       content.includes("pm2 status"),
-      "deploy_portal must show useful PM2 commands"
+      "deploy_app must show useful PM2 commands"
     );
   }
 );
@@ -709,7 +699,7 @@ test(
     // Exports FORCE_SETUP for use in sourced scripts
     assert.ok(
       content.includes("export") && content.includes("FORCE_SETUP"),
-      "deploy.sh must export FORCE_SETUP for use in deploy-portal.sh"
+      "deploy.sh must export FORCE_SETUP for use in deploy-app.sh"
     );
   }
 );
@@ -742,55 +732,55 @@ test(
 );
 
 test(
-  "Given setup_portal_environment function, when FORCE_SETUP is true and .env.local exists, then it proceeds with reconfiguration instead of returning early",
+  "Given setup_app_environment function, when FORCE_SETUP is true and .env.local exists, then it proceeds with reconfiguration instead of returning early",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Function checks if .env.local exists
     assert.ok(
       content.includes("check_remote_file_exists") &&
       content.includes(".env.local"),
-      "setup_portal_environment must check if .env.local exists"
+      "setup_app_environment must check if .env.local exists"
     );
 
     // Checks FORCE_SETUP flag
     assert.ok(
       content.includes("FORCE_SETUP"),
-      "setup_portal_environment must check FORCE_SETUP flag"
+      "setup_app_environment must check FORCE_SETUP flag"
     );
 
     // When FORCE_SETUP is true, bypasses early return
     assert.ok(
       content.includes('[ "${FORCE_SETUP:-false}" = true ]'),
-      "setup_portal_environment must check FORCE_SETUP flag value"
+      "setup_app_environment must check FORCE_SETUP flag value"
     );
 
     // Shows warning when forcing reconfiguration
     assert.ok(
       content.includes("--setup flag forces reconfiguration") ||
       (content.includes("--setup") && content.includes("forces")),
-      "setup_portal_environment must warn when --setup forces reconfiguration"
+      "setup_app_environment must warn when --setup forces reconfiguration"
     );
   }
 );
 
 test(
-  "Given setup_portal_environment function, when FORCE_SETUP is false and .env.local exists, then it returns early without prompting",
+  "Given setup_app_environment function, when FORCE_SETUP is false and .env.local exists, then it returns early without prompting",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
     // Has early return path when .env.local exists and FORCE_SETUP is false
     assert.ok(
       content.includes("Environment already configured") &&
       content.includes("return 0"),
-      "setup_portal_environment must return early when .env.local exists and FORCE_SETUP is false"
+      "setup_app_environment must return early when .env.local exists and FORCE_SETUP is false"
     );
 
     // The else clause of FORCE_SETUP check contains the early return
     assert.ok(
       content.includes("else") &&
       content.includes("Environment already configured"),
-      "setup_portal_environment must have else branch that returns early"
+      "setup_app_environment must have else branch that returns early"
     );
   }
 );
@@ -798,15 +788,15 @@ test(
 // ─── CRITICAL: Empty credential validation ──────────────────────────────────
 
 test(
-  "Given setup_portal_environment function, when database password is read interactively, then it rejects empty input",
+  "Given setup_app_environment function, when database password is read interactively, then it rejects empty input",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
 
-    // Extract setup_portal_environment function body
+    // Extract setup_app_environment function body
     const funcMatch = content.match(
-      /setup_portal_environment\(\) \{[\s\S]*?^}/m
+      /setup_app_environment\(\) \{[\s\S]*?^}/m
     );
-    assert.ok(funcMatch, "setup_portal_environment function must exist");
+    assert.ok(funcMatch, "setup_app_environment function must exist");
     const funcBody = funcMatch[0];
 
     // After reading DB_PASS, there must be a check for empty value
@@ -815,25 +805,25 @@ test(
     assert.ok(
       funcBody.includes('read -sp') &&
       funcBody.match(/read -sp.*DB_PASS[\s\S]{0,80}-z.*DB_PASS/),
-      "setup_portal_environment must validate DB_PASS is non-empty after read"
+      "setup_app_environment must validate DB_PASS is non-empty after read"
     );
   }
 );
 
 test(
-  "Given setup_portal_environment function, when SMTP password is read interactively, then it rejects empty input",
+  "Given setup_app_environment function, when SMTP password is read interactively, then it rejects empty input",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
     const funcMatch = content.match(
-      /setup_portal_environment\(\) \{[\s\S]*?^}/m
+      /setup_app_environment\(\) \{[\s\S]*?^}/m
     );
-    assert.ok(funcMatch, "setup_portal_environment function must exist");
+    assert.ok(funcMatch, "setup_app_environment function must exist");
     const funcBody = funcMatch[0];
 
     // After reading SMTP_PASS, there must be a check for empty value
     assert.ok(
       funcBody.match(/read -sp.*SMTP_PASS[\s\S]{0,80}-z.*SMTP_PASS/),
-      "setup_portal_environment must validate SMTP_PASS is non-empty after read"
+      "setup_app_environment must validate SMTP_PASS is non-empty after read"
     );
   }
 );
@@ -841,7 +831,7 @@ test(
 test(
   "Given create_super_admin function, when admin email is read interactively, then it rejects empty input",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
     const funcMatch = content.match(
       /create_super_admin\(\) \{[\s\S]*?^}/m
     );
@@ -859,7 +849,7 @@ test(
 test(
   "Given create_super_admin function, when admin name is read interactively, then it rejects empty input",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
     const funcMatch = content.match(
       /create_super_admin\(\) \{[\s\S]*?^}/m
     );
@@ -877,7 +867,7 @@ test(
 test(
   "Given create_super_admin function, when admin password is read interactively, then it rejects empty input",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
     const funcMatch = content.match(
       /create_super_admin\(\) \{[\s\S]*?^}/m
     );
@@ -897,7 +887,7 @@ test(
 test(
   "Given create_super_admin function, when counting admins, then it sources .env.local before running node",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
     const funcMatch = content.match(
       /create_super_admin\(\) \{[\s\S]*?^}/m
     );
@@ -908,7 +898,7 @@ test(
     // not in the SSH session environment. Without sourcing .env.local first,
     // process.env.PORTAL_DATABASE_URL is empty and the check always returns 0.
     assert.ok(
-      funcBody.match(/source\s+\.env\.local/) || funcBody.match(/source\s+\$\{?DEPLOY_PORTAL_PATH/),
+      funcBody.match(/source\s+\.env\.local/) || funcBody.match(/source\s+\$\{?DEPLOY_APP_PATH/),
       "create_super_admin must source .env.local before running node -e to make PORTAL_DATABASE_URL available"
     );
   }
@@ -917,19 +907,19 @@ test(
 // ─── HIGH: Health check redirect handling ───────────────────────────────────
 
 test(
-  "Given verify_portal_deployment function, when curl checks portal, then it follows HTTP redirects",
+  "Given verify_app_deployment function, when curl checks portal, then it follows HTTP redirects",
   () => {
-    const content = readFile("deploy_scripts/lib/deploy-portal.sh");
+    const content = readFile("deploy_scripts/lib/deploy-app.sh");
     const funcMatch = content.match(
-      /verify_portal_deployment\(\) \{[\s\S]*?^}/m
+      /verify_app_deployment\(\) \{[\s\S]*?^}/m
     );
-    assert.ok(funcMatch, "verify_portal_deployment function must exist");
+    assert.ok(funcMatch, "verify_app_deployment function must exist");
     const funcBody = funcMatch[0];
 
     // curl must use -L flag to follow redirects (HTTP 301/302/308)
     assert.ok(
       funcBody.match(/curl\s[^"]*-L/) || funcBody.match(/curl\s[^"]*--location/),
-      "verify_portal_deployment curl must use -L (follow redirects) flag"
+      "verify_app_deployment curl must use -L (follow redirects) flag"
     );
   }
 );
