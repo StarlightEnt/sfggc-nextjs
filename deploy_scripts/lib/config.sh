@@ -51,6 +51,11 @@ load_config() {
       log_info "Loaded configuration from: $actual_file"
     fi
   fi
+
+  # Backward compatibility: migrate DEPLOY_PORTAL_PATH to DEPLOY_APP_PATH
+  if [ -n "${DEPLOY_PORTAL_PATH:-}" ] && [ -z "${DEPLOY_APP_PATH:-}" ]; then
+    DEPLOY_APP_PATH="$DEPLOY_PORTAL_PATH"
+  fi
 }
 
 # validate_config - Ensure required configuration values are present
@@ -68,19 +73,10 @@ validate_config() {
     ((errors++))
   fi
 
-  # Check paths based on deployment mode
-  if [ "${DEPLOY_MODE}" = "static" ] || [ "${DEPLOY_MODE}" = "all" ]; then
-    if [ -z "${DEPLOY_STATIC_PATH:-}" ]; then
-      log_error "DEPLOY_STATIC_PATH is not set"
-      ((errors++))
-    fi
-  fi
-
-  if [ "${DEPLOY_MODE}" = "portal" ] || [ "${DEPLOY_MODE}" = "all" ]; then
-    if [ -z "${DEPLOY_PORTAL_PATH:-}" ]; then
-      log_error "DEPLOY_PORTAL_PATH is not set"
-      ((errors++))
-    fi
+  # Check application path
+  if [ -z "${DEPLOY_APP_PATH:-}" ]; then
+    log_error "DEPLOY_APP_PATH is not set"
+    ((errors++))
   fi
 
   # Show helpful error message if validation fails
@@ -115,17 +111,10 @@ override_from_cli() {
     fi
   fi
 
-  if [ -n "${CLI_STATIC_PATH:-}" ]; then
-    DEPLOY_STATIC_PATH="$CLI_STATIC_PATH"
+  if [ -n "${CLI_APP_PATH:-}" ]; then
+    DEPLOY_APP_PATH="$CLI_APP_PATH"
     if [ "${DEBUG:-false}" = true ]; then
-      log_info "Override: DEPLOY_STATIC_PATH=$DEPLOY_STATIC_PATH"
-    fi
-  fi
-
-  if [ -n "${CLI_PORTAL_PATH:-}" ]; then
-    DEPLOY_PORTAL_PATH="$CLI_PORTAL_PATH"
-    if [ "${DEBUG:-false}" = true ]; then
-      log_info "Override: DEPLOY_PORTAL_PATH=$DEPLOY_PORTAL_PATH"
+      log_info "Override: DEPLOY_APP_PATH=$DEPLOY_APP_PATH"
     fi
   fi
 }
@@ -141,11 +130,8 @@ set_defaults() {
   # Default domain if not set
   DEPLOY_DOMAIN="${DEPLOY_DOMAIN:-www.goldengateclassic.org}"
 
-  # Default static path if not set
-  DEPLOY_STATIC_PATH="${DEPLOY_STATIC_PATH:-/home/$DEPLOY_SSH_USER/htdocs/$DEPLOY_DOMAIN}"
-
-  # Default portal path if not set
-  DEPLOY_PORTAL_PATH="${DEPLOY_PORTAL_PATH:-~/htdocs/$DEPLOY_DOMAIN/portal-app}"
+  # Default app path if not set
+  DEPLOY_APP_PATH="${DEPLOY_APP_PATH:-/home/$DEPLOY_SSH_USER/htdocs/$DEPLOY_DOMAIN/portal-app}"
 
   # Default PM2 app name if not set
   DEPLOY_PM2_APP_NAME="${DEPLOY_PM2_APP_NAME:-sfggc-portal}"
@@ -169,15 +155,8 @@ show_config() {
 
   log_info "SSH: ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}"
   log_info "Domain: ${DEPLOY_DOMAIN}"
-
-  if [ "${DEPLOY_MODE}" = "static" ] || [ "${DEPLOY_MODE}" = "all" ]; then
-    log_info "Static Path: ${DEPLOY_STATIC_PATH}"
-  fi
-
-  if [ "${DEPLOY_MODE}" = "portal" ] || [ "${DEPLOY_MODE}" = "all" ]; then
-    log_info "Portal Path: ${DEPLOY_PORTAL_PATH}"
-    log_info "PM2 App: ${DEPLOY_PM2_APP_NAME}"
-    log_info "Database: ${DEPLOY_DB_HOST}:${DEPLOY_DB_PORT}/${DEPLOY_DB_NAME}"
-    log_info "SMTP: ${DEPLOY_SMTP_HOST}:${DEPLOY_SMTP_PORT}"
-  fi
+  log_info "App Path: ${DEPLOY_APP_PATH}"
+  log_info "PM2 App: ${DEPLOY_PM2_APP_NAME}"
+  log_info "Database: ${DEPLOY_DB_HOST}:${DEPLOY_DB_PORT}/${DEPLOY_DB_NAME}"
+  log_info "SMTP: ${DEPLOY_SMTP_HOST}:${DEPLOY_SMTP_PORT}"
 }

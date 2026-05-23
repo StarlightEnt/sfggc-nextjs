@@ -1,31 +1,24 @@
 #!/bin/bash
-# deploy-portal.sh - Portal application deployment logic
+# deploy-app.sh - Application deployment logic
 
 # Source migrations library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/deploy-migrations.sh"
 
-# sync_portal_files - Upload portal application files to server
-sync_portal_files() {
+# sync_app_files - Upload portal application files to server
+sync_app_files() {
   log_step "Syncing portal application files"
 
   if [ "${DRY_RUN:-false}" = true ]; then
-    log_dry_run "Would sync project files to ${DEPLOY_PORTAL_PATH}"
+    log_dry_run "Would sync project files to ${DEPLOY_APP_PATH}"
     if [ "${VERBOSE:-false}" = true ]; then
       log_info "  Excludes: node_modules, .git, .next, out, .env*"
     fi
     return 0
   fi
 
-  # Show current local config status
-  if check_config_is_server_mode "next.config.js"; then
-    log_info "Local config: server mode (correct for portal)"
-  else
-    log_warn "Local config: export mode (will be fixed on server)"
-  fi
-
   # Create remote directory
-  ssh_command "mkdir -p ${DEPLOY_PORTAL_PATH}"
+  ssh_command "mkdir -p ${DEPLOY_APP_PATH}"
 
   # Sync files with exclusions
   local rsync_cmd="rsync -az --delete \
@@ -35,7 +28,7 @@ sync_portal_files() {
     --exclude='out/' \
     --exclude='.env*' \
     --exclude='deploy_temp_*' \
-    ./ ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}:${DEPLOY_PORTAL_PATH}/"
+    ./ ${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}:${DEPLOY_APP_PATH}/"
 
   if eval "$rsync_cmd"; then
     log_success "Files synced successfully"
@@ -47,12 +40,12 @@ sync_portal_files() {
   return 0
 }
 
-# setup_portal_environment - Create .env.local on server (first-time only, or with --setup flag)
-setup_portal_environment() {
+# setup_app_environment - Create .env.local on server (first-time only, or with --setup flag)
+setup_app_environment() {
   log_step "Checking portal environment configuration"
 
   # Check if .env.local already exists (skip check if --setup flag is set)
-  if check_remote_file_exists "${DEPLOY_PORTAL_PATH}/.env.local"; then
+  if check_remote_file_exists "${DEPLOY_APP_PATH}/.env.local"; then
     if [ "${FORCE_SETUP:-false}" = true ]; then
       log_warn "Existing .env.local found, but --setup flag forces reconfiguration"
     else
@@ -148,7 +141,7 @@ setup_portal_environment() {
   # Create .env.local on server
   log_step "Creating .env.local on server"
 
-  ssh_command "cat > ${DEPLOY_PORTAL_PATH}/.env.local << 'ENVEOF'
+  ssh_command "cat > ${DEPLOY_APP_PATH}/.env.local << 'ENVEOF'
 # Portal database
 PORTAL_DATABASE_URL=${PORTAL_DB_URL}
 
@@ -186,7 +179,7 @@ initialize_database() {
   fi
 
   # Run init script (idempotent)
-  if ssh_command "cd ${DEPLOY_PORTAL_PATH} && bash scripts/dev/init-portal-db.sh 2>&1"; then
+  if ssh_command "cd ${DEPLOY_APP_PATH} && bash scripts/dev/init-portal-db.sh 2>&1"; then
     log_success "Database schema initialized"
   else
     log_warn "Database init returned an error (may be OK if schema exists)"
@@ -209,7 +202,7 @@ create_super_admin() {
   # Count existing admins
   # Must source .env.local first — PORTAL_DATABASE_URL is only in .env.local,
   # not in the SSH session environment
-  local ADMIN_COUNT=$(ssh_command "cd ${DEPLOY_PORTAL_PATH} && set -a && source .env.local 2>/dev/null && set +a && node -e \"
+  local ADMIN_COUNT=$(ssh_command "cd ${DEPLOY_APP_PATH} && set -a && source .env.local 2>/dev/null && set +a && node -e \"
     const url = process.env.PORTAL_DATABASE_URL || '';
     if (url === '') { console.log('0'); process.exit(0); }
     const mysql = require('mysql2/promise');
@@ -286,7 +279,7 @@ create_super_admin() {
     local ESCAPED_NAME=$(printf '%q' "${ADMIN_NAME}")
     local ESCAPED_PASSWORD=$(printf '%q' "${ADMIN_PASSWORD}")
 
-    ssh_command "cd ${DEPLOY_PORTAL_PATH} && \
+    ssh_command "cd ${DEPLOY_APP_PATH} && \
       ADMIN_EMAIL=${ESCAPED_EMAIL} \
       ADMIN_NAME=${ESCAPED_NAME} \
       ADMIN_PASSWORD=${ESCAPED_PASSWORD} \
@@ -305,8 +298,8 @@ create_super_admin() {
   return 0
 }
 
-# install_portal_dependencies - Install npm packages on server
-install_portal_dependencies() {
+# install_app_dependencies - Install npm packages on server
+install_app_dependencies() {
   log_step "Installing dependencies on server"
 
   if [ "${DRY_RUN:-false}" = true ]; then
@@ -314,7 +307,7 @@ install_portal_dependencies() {
     return 0
   fi
 
-  ssh_command "cd ${DEPLOY_PORTAL_PATH} && npm install --production 2>&1 | tail -1"
+  ssh_command "cd ${DEPLOY_APP_PATH} && npm install --production 2>&1 | tail -1"
 
   if [ $? -eq 0 ]; then
     log_success "Dependencies installed"
@@ -337,14 +330,14 @@ validate_server_config() {
   fi
 
   # Check if config has export mode (would break portal)
-  local has_export=$(ssh_command "cd ${DEPLOY_PORTAL_PATH} && grep -c \"output.*['\\\"]export['\\\"]\" next.config.js 2>/dev/null || echo 0")
+  local has_export=$(ssh_command "cd ${DEPLOY_APP_PATH} && grep -c \"output.*['\\\"]export['\\\"]\" next.config.js 2>/dev/null || echo 0")
 
   if [ "$has_export" != "0" ]; then
     log_info "Server config has 'output: export' - portal requires server mode"
     log_info "Fixing server configuration..."
 
     # Create server-mode config on server (compress: false lets nginx handle compression)
-    ssh_command "cd ${DEPLOY_PORTAL_PATH} && cat > next.config.js << 'EOF'
+    ssh_command "cd ${DEPLOY_APP_PATH} && cat > next.config.js << 'EOF'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   compress: false,
@@ -369,8 +362,8 @@ EOF"
   return 0
 }
 
-# build_portal_on_server - Build Next.js application on server
-build_portal_on_server() {
+# build_app_on_server - Build Next.js application on server
+build_app_on_server() {
   log_step "Building Next.js application on server"
 
   if [ "${DRY_RUN:-false}" = true ]; then
@@ -386,10 +379,10 @@ build_portal_on_server() {
   # Remove old build to force fresh build with correct config
   # Remove both .next (server mode) and out (export mode) directories
   log_info "Removing old build directories..."
-  ssh_command "cd ${DEPLOY_PORTAL_PATH} && rm -rf .next out"
+  ssh_command "cd ${DEPLOY_APP_PATH} && rm -rf .next out"
 
   log_info "Running build with validated config..."
-  ssh_command "cd ${DEPLOY_PORTAL_PATH} && npm run build 2>&1 | tail -5"
+  ssh_command "cd ${DEPLOY_APP_PATH} && npm run build 2>&1 | tail -5"
 
   if [ $? -eq 0 ]; then
     log_success "Build completed successfully"
@@ -426,10 +419,10 @@ manage_pm2() {
 
   if [ "$PM2_STATUS" = "running" ]; then
     log_info "Restarting existing PM2 process..."
-    ssh_command "cd ${DEPLOY_PORTAL_PATH} && pm2 restart ${DEPLOY_PM2_APP_NAME} 2>&1 | tail -3"
+    ssh_command "cd ${DEPLOY_APP_PATH} && pm2 restart ${DEPLOY_PM2_APP_NAME} 2>&1 | tail -3"
   else
     log_info "Starting new PM2 process..."
-    ssh_command "cd ${DEPLOY_PORTAL_PATH} && pm2 start npm --name ${DEPLOY_PM2_APP_NAME} -- start 2>&1 | tail -3"
+    ssh_command "cd ${DEPLOY_APP_PATH} && pm2 start npm --name ${DEPLOY_PM2_APP_NAME} -- start 2>&1 | tail -3"
   fi
 
   # Save PM2 state
@@ -452,13 +445,13 @@ manage_pm2() {
   return 0
 }
 
-# verify_portal_deployment - Check portal is running
-verify_portal_deployment() {
-  log_step "Verifying portal deployment"
+# verify_app_deployment - Check application is running
+verify_app_deployment() {
+  log_step "Verifying application deployment"
 
   if [ "${DRY_RUN:-false}" = true ]; then
     log_dry_run "Would check PM2 status"
-    log_dry_run "Would test portal HTTP response"
+    log_dry_run "Would test HTTP response for / and /portal/"
     return 0
   fi
 
@@ -473,13 +466,22 @@ verify_portal_deployment() {
     return 1
   fi
 
-  # Test HTTP response (if domain configured)
+  # Test HTTP responses (if domain configured)
   if command -v curl >/dev/null 2>&1 && [ -n "${DEPLOY_DOMAIN:-}" ]; then
-    local response=$(curl -s -L -o /dev/null -w "%{http_code}" "https://${DEPLOY_DOMAIN}/portal/" 2>/dev/null || echo "000")
-    if [ "$response" = "200" ]; then
+    # Check homepage
+    local home_response=$(curl -s -L -o /dev/null -w "%{http_code}" "https://${DEPLOY_DOMAIN}/" 2>/dev/null || echo "000")
+    if [ "$home_response" = "200" ]; then
+      log_success "Homepage is responding: https://${DEPLOY_DOMAIN}/"
+    else
+      log_warn "Homepage may not be responding yet (HTTP $home_response)"
+    fi
+
+    # Check portal
+    local portal_response=$(curl -s -L -o /dev/null -w "%{http_code}" "https://${DEPLOY_DOMAIN}/portal/" 2>/dev/null || echo "000")
+    if [ "$portal_response" = "200" ]; then
       log_success "Portal is responding: https://${DEPLOY_DOMAIN}/portal/"
     else
-      log_warn "Portal may not be responding yet (HTTP $response)"
+      log_warn "Portal may not be responding yet (HTTP $portal_response)"
       log_info "Check nginx configuration and PM2 logs"
     fi
   fi
@@ -487,26 +489,26 @@ verify_portal_deployment() {
   return 0
 }
 
-# deploy_portal - Main portal deployment orchestrator
-deploy_portal() {
+# deploy_app - Main portal deployment orchestrator
+deploy_app() {
   local start_time=$(date +%s)
 
   log_section "PORTAL APPLICATION DEPLOYMENT"
 
   # Sync files
-  sync_portal_files || {
+  sync_app_files || {
     log_error "Portal deployment failed at file sync"
     return 1
   }
 
   # Install dependencies
-  install_portal_dependencies || {
+  install_app_dependencies || {
     log_error "Portal deployment failed at dependency installation"
     return 1
   }
 
   # Setup environment (first-time only)
-  setup_portal_environment || {
+  setup_app_environment || {
     log_error "Portal deployment failed at environment setup"
     return 1
   }
@@ -528,7 +530,7 @@ deploy_portal() {
   }
 
   # Build application
-  build_portal_on_server || {
+  build_app_on_server || {
     log_error "Portal deployment failed at build"
     return 1
   }
@@ -540,7 +542,7 @@ deploy_portal() {
   }
 
   # Verify deployment
-  verify_portal_deployment || {
+  verify_app_deployment || {
     log_error "Portal verification failed"
     return 1
   }

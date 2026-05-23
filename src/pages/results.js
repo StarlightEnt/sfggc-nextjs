@@ -1,27 +1,8 @@
-import { useEffect, useState } from "react";
 import RootLayout from "../components/layout/layout";
 import Results from "../components/Results/Results";
 import ScrMstWinners from "../components/ScrMstWinners/ScrMstWinners";
 
-const ResultsPage = () => {
-  const [showStandingsLink, setShowStandingsLink] = useState(false);
-  const [showOptionalEventsLink, setShowOptionalEventsLink] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/portal/admin/scores/visibility")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.participantsCanViewScores) setShowStandingsLink(true);
-      })
-      .catch(() => {});
-    fetch("/api/portal/admin/optional-events/visibility")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.participantsCanViewOptionalEvents) setShowOptionalEventsLink(true);
-      })
-      .catch(() => {});
-  }, []);
-
+const ResultsPage = ({ showStandingsLink, showOptionalEventsLink }) => {
   return (
     <div>
 
@@ -41,6 +22,25 @@ ResultsPage.getLayout = function getLayout(page) {
       {page}
     </RootLayout>
   );
+}
+
+export async function getServerSideProps() {
+  const baseUrl = `http://localhost:${process.env.PORT || 3000}`;
+
+  const [scoresRes, optionalRes] = await Promise.all([
+    fetch(`${baseUrl}/api/portal/admin/scores/visibility`).catch(() => null),
+    fetch(`${baseUrl}/api/portal/admin/optional-events/visibility`).catch(() => null),
+  ]);
+
+  const scoresData = scoresRes?.ok ? await scoresRes.json() : null;
+  const optionalData = optionalRes?.ok ? await optionalRes.json() : null;
+
+  return {
+    props: {
+      showStandingsLink: scoresData?.participantsCanViewScores ?? false,
+      showOptionalEventsLink: optionalData?.participantsCanViewOptionalEvents ?? false,
+    },
+  };
 }
 
 export default ResultsPage;

@@ -45,3 +45,7 @@ package-lock.json
 # deployment script backups
 deploy_scripts/lib/*.backup
 next.config.js.backup
+
+# build-time optimized images (originals stay in src/images/)
+.images-build/
+.images-original/

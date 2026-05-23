@@ -251,7 +251,31 @@ cd /path/to/project
 
 **Rule:** Always use `ssh -n` for non-interactive remote commands, especially inside loops.
 
-### 6. Mixing --setup with Non-Interactive Mode
+### 6. Static-Only Deploy Breaks CSS/JS (Build ID Mismatch)
+
+**Symptom:** Static site loses all styling after a static-only deploy (`deploy.sh` without `--all`).
+
+**Cause:** The static site and portal produce separate `_next/static/` directories with different build IDs. The original nginx config used `alias` to serve ALL `/_next/static` requests from the portal's `.next/static` directory. A static-only deploy generated a new build ID, but the portal's `.next/static` still had the old one — so all CSS/JS files 404'd.
+
+**Fix applied:** Changed `^~ /_next/static` in `backend/config/vhost.txt` from a portal-only `alias` to `try_files $uri @portal_next`:
+```nginx
+location ^~ /_next/static {
+    try_files $uri @portal_next;
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+
+location @portal_next {
+    proxy_pass http://portal_backend;
+    ...
+}
+```
+
+**How it works:** `try_files` checks the web root first (where rsync puts static site `_next/` assets). If the file isn't there (portal asset), it falls back to `@portal_next` which proxies to Node.js. This means static-only and portal-only deploys work independently.
+
+**Rule:** Never use a fixed `alias` for `/_next/static` — both the static site and portal publish assets there with different build IDs. Always use `try_files` with a proxy fallback.
+
+### 7. Mixing --setup with Non-Interactive Mode
 
 **Error:** Script fails with "Database password required but not provided".
 
@@ -353,19 +377,25 @@ ssh_command "cd $PATH && set -a && source .env.local 2>/dev/null && set +a && no
 
 **Solution:** `deploy_scripts/lib/optimize-images.sh` auto-resizes images wider than `MAX_IMAGE_WIDTH=800` using macOS `sips` (no external dependencies).
 
-**Pipeline integration:** Called from `build_static()` in `build.sh` **before** `npm run build`:
+**Pipeline integration:** Called from `build_static()` in `build.sh` using a non-destructive copy-swap-restore pattern:
 ```
-build_static() → optimize_images() → npm run build
+build_static():
+  1. prepare_build_images()  — cp src/images → .images-build, optimize copies
+  2. swap_images_for_build() — mv src/images → .images-original, mv .images-build → src/images
+  3. npm run build            — webpack resolves imports from src/images (now optimized)
+  4. cleanup_build()          — rm src/images (optimized), mv .images-original → src/images
 ```
 
 **Key details:**
+- Original source images are NEVER modified — optimization happens on copies only
 - Uses `sips --resampleWidth 800` for resizing (macOS built-in)
 - `get_file_size()` helper: cross-platform (`stat -f%z` macOS, `stat -c%s` Linux)
 - Respects `DRY_RUN` flag (logs what would change without modifying files)
-- Scans `src/images/` recursively for `.jpg`, `.jpeg`, `.png` files
-- Modifies source files in place (git tracks the change)
+- Scans recursively for `.jpg`, `.jpeg`, `.png` files
+- `trap cleanup_build EXIT` ensures originals are restored even on build failure
+- `.images-build` and `.images-original` are in `.gitignore`
 
-**Test:** `tests/unit/optimize-images.test.js` (9 BDD tests including dry-run, recursive, mixed-size scenarios)
+**Test:** `tests/unit/optimize-images.test.js` (16 BDD tests including non-destructive optimization, dry-run, recursive, and pipeline integration scenarios)
 
 ## Server-Mode Config Template
 
@@ -432,7 +462,7 @@ build_static() → optimize_images() → npm run build
 ```nginx
 location ^~ /portal { proxy_pass ...; }
 location ^~ /api/portal { proxy_pass ...; }
-location ^~ /_next/static { alias ...; }
+location ^~ /_next/static { try_files $uri @portal_next; }  # web root first, then portal
 location ^~ /_next { proxy_pass ...; }
 ```
 

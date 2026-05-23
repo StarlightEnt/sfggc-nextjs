@@ -7,14 +7,14 @@ run_migrations() {
   log_step "Running database migrations"
 
   # Check if migrations directory exists
-  if ! ssh_command "[ -d \"${DEPLOY_PORTAL_PATH}/${migration_dir}\" ]"; then
+  if ! ssh_command "[ -d \"${DEPLOY_APP_PATH}/${migration_dir}\" ]"; then
     log_info "No migrations directory found, skipping"
     return 0
   fi
 
   # Get list of migration scripts
   local migrations
-  migrations=$(ssh_command "find \"${DEPLOY_PORTAL_PATH}/${migration_dir}\" -name '*.sh' -type f | sort" 2>/dev/null)
+  migrations=$(ssh_command "find \"${DEPLOY_APP_PATH}/${migration_dir}\" -name '*.sh' -type f | sort" 2>/dev/null)
 
   if [[ -z "$migrations" ]]; then
     log_info "No migration scripts found"
@@ -39,7 +39,7 @@ run_migrations() {
 
     # Execute migration
     local output
-    if output=$(ssh_command "cd \"${DEPLOY_PORTAL_PATH}\" && bash \"$migration_path\" 2>&1"); then
+    if output=$(ssh_command "cd \"${DEPLOY_APP_PATH}\" && bash \"$migration_path\" 2>&1"); then
       # Check output for success indicators
       if echo "$output" | grep -qi "already exists\|migration complete\|successfully"; then
         log_success "✓ $migration_name completed"

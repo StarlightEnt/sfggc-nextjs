@@ -31,18 +31,11 @@ DEPLOY_SSH_HOST="54.70.1.215"
 DEPLOY_DOMAIN="www.goldengateclassic.org"
 
 # ============================================================================
-# Static Site Deployment
+# Application Deployment
 # ============================================================================
 
-# Path where static site files will be deployed
-DEPLOY_STATIC_PATH="/home/goldengateclassic/htdocs/www.goldengateclassic.org"
-
-# ============================================================================
-# Portal Application Deployment
-# ============================================================================
-
-# Path where portal application will be deployed
-DEPLOY_PORTAL_PATH="/home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app"
+# Path where the application will be deployed
+DEPLOY_APP_PATH="/home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app"
 
 # PM2 process name for the portal app
 DEPLOY_PM2_APP_NAME="sfggc-portal"

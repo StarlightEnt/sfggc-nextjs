@@ -9,64 +9,37 @@ describe("Deployment configuration path format", () => {
   test("Given .deployrc.example, when checking deployment paths, then no tilde paths are used", () => {
     const content = fs.readFileSync(DEPLOYRC_EXAMPLE, "utf-8");
 
-    // Extract DEPLOY_STATIC_PATH
-    const staticPathMatch = content.match(/DEPLOY_STATIC_PATH="([^"]+)"/);
-    assert.ok(staticPathMatch, "DEPLOY_STATIC_PATH should be defined");
-    const staticPath = staticPathMatch[1];
+    // Extract DEPLOY_APP_PATH
+    const appPathMatch = content.match(/DEPLOY_APP_PATH="([^"]+)"/);
+    assert.ok(appPathMatch, "DEPLOY_APP_PATH should be defined");
+    const appPath = appPathMatch[1];
 
-    // Extract DEPLOY_PORTAL_PATH
-    const portalPathMatch = content.match(/DEPLOY_PORTAL_PATH="([^"]+)"/);
-    assert.ok(portalPathMatch, "DEPLOY_PORTAL_PATH should be defined");
-    const portalPath = portalPathMatch[1];
-
-    // Both paths must NOT use tilde
-    assert.ok(!staticPath.includes("~"), `DEPLOY_STATIC_PATH must not use tilde: ${staticPath}`);
-    assert.ok(!portalPath.includes("~"), `DEPLOY_PORTAL_PATH must not use tilde: ${portalPath}`);
+    // Path must NOT use tilde
+    assert.ok(!appPath.includes("~"), `DEPLOY_APP_PATH must not use tilde: ${appPath}`);
   });
 
-  test("Given .deployrc.example, when checking deployment paths, then both use absolute paths", () => {
+  test("Given .deployrc.example, when checking deployment paths, then DEPLOY_APP_PATH uses absolute path", () => {
     const content = fs.readFileSync(DEPLOYRC_EXAMPLE, "utf-8");
 
-    // Extract paths
-    const staticPathMatch = content.match(/DEPLOY_STATIC_PATH="([^"]+)"/);
-    const portalPathMatch = content.match(/DEPLOY_PORTAL_PATH="([^"]+)"/);
+    // Extract path
+    const appPathMatch = content.match(/DEPLOY_APP_PATH="([^"]+)"/);
+    const appPath = appPathMatch[1];
 
-    const staticPath = staticPathMatch[1];
-    const portalPath = portalPathMatch[1];
-
-    // Both must start with /
-    assert.ok(staticPath.startsWith("/"), `DEPLOY_STATIC_PATH must be absolute: ${staticPath}`);
-    assert.ok(portalPath.startsWith("/"), `DEPLOY_PORTAL_PATH must be absolute: ${portalPath}`);
+    // Must start with /
+    assert.ok(appPath.startsWith("/"), `DEPLOY_APP_PATH must be absolute: ${appPath}`);
   });
 
-  test("Given .deployrc.example, when checking deployment paths, then both use consistent format", () => {
+  test("Given .deployrc.example, when checking deployment paths, then DEPLOY_APP_PATH uses /home/ prefix", () => {
     const content = fs.readFileSync(DEPLOYRC_EXAMPLE, "utf-8");
 
-    // Extract paths
-    const staticPathMatch = content.match(/DEPLOY_STATIC_PATH="([^"]+)"/);
-    const portalPathMatch = content.match(/DEPLOY_PORTAL_PATH="([^"]+)"/);
+    // Extract path
+    const appPathMatch = content.match(/DEPLOY_APP_PATH="([^"]+)"/);
+    const appPath = appPathMatch[1];
 
-    const staticPath = staticPathMatch[1];
-    const portalPath = portalPathMatch[1];
-
-    // Both should start with /home/ for consistency
+    // Should start with /home/ for consistency
     assert.ok(
-      staticPath.startsWith("/home/"),
-      `DEPLOY_STATIC_PATH should start with /home/: ${staticPath}`
-    );
-    assert.ok(
-      portalPath.startsWith("/home/"),
-      `DEPLOY_PORTAL_PATH should start with /home/: ${portalPath}`
-    );
-
-    // Both should use the same username
-    const staticUsername = staticPath.match(/^\/home\/([^/]+)\//)?.[1];
-    const portalUsername = portalPath.match(/^\/home\/([^/]+)\//)?.[1];
-
-    assert.strictEqual(
-      staticUsername,
-      portalUsername,
-      `Both paths should use same username. Static: ${staticUsername}, Portal: ${portalUsername}`
+      appPath.startsWith("/home/"),
+      `DEPLOY_APP_PATH should start with /home/: ${appPath}`
     );
   });
 
@@ -78,10 +51,10 @@ describe("Deployment configuration path format", () => {
     assert.ok(sshUserMatch, "DEPLOY_SSH_USER should be defined");
     const sshUser = sshUserMatch[1];
 
-    // Extract path username from static path
-    const staticPathMatch = content.match(/DEPLOY_STATIC_PATH="([^"]+)"/);
-    const staticPath = staticPathMatch[1];
-    const pathUsername = staticPath.match(/^\/home\/([^/]+)\//)?.[1];
+    // Extract path username from app path
+    const appPathMatch = content.match(/DEPLOY_APP_PATH="([^"]+)"/);
+    const appPath = appPathMatch[1];
+    const pathUsername = appPath.match(/^\/home\/([^/]+)\//)?.[1];
 
     assert.strictEqual(
       sshUser,
