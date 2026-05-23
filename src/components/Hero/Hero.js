@@ -10,7 +10,7 @@ const Hero = () => {
       <div className={`${styles.Content}`}>
 
         <h1 className={`display-1 ${styles.Title}`}>
-          The San Francisco Golden Gate Classic
+          The San Francisco Golden Gate Classic Invitational
         </h1>
 
         <h2 className={`display-2 ${styles.Subtitle}`}>
@@ -20,11 +20,11 @@ const Hero = () => {
         </h2>
 
         <h3 className={`display-3 ${styles.Dates}`}>
-          February 13-15, 2026
+          June 18-20, 2027
         </h3>
 
         <h4 className={`display-4 ${styles.Weekend}`}>
-          Presidents Day Weekend
+          Juneteenth Weekend
         </h4>
 
         <RegisterCTA/>
