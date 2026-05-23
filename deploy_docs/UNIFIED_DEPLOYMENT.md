@@ -1,17 +1,20 @@
 # Unified Deployment Guide
 
-This guide covers the unified deployment system for the SFGGC Next.js project, which supports deploying the static site, portal application, or both.
+This document covers the deployment system in depth. For the quick-start path, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+The site deploys as a single Next.js server (PM2 process `sfggc-portal`, port 3000) behind nginx. One command — `./deploy_scripts/deploy.sh` — does the entire deploy: file sync, dependency install, database migrations, build on the server, and PM2 restart. There is no static export, no separate "portal vs static" deploy, and no local build step.
 
 ## Table of Contents
 
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
-- [Deployment Modes](#deployment-modes)
-- [First-Time Portal Deployment](#first-time-portal-deployment)
+- [What the Deploy Does](#what-the-deploy-does)
+- [First-Time Setup](#first-time-setup)
 - [Command Line Flags](#command-line-flags)
 - [Dry-Run Mode](#dry-run-mode)
 - [Troubleshooting](#troubleshooting)
 - [Advanced Usage](#advanced-usage)
+- [Additional Resources](#additional-resources)
 
 ---
 
@@ -20,178 +23,108 @@ This guide covers the unified deployment system for the SFGGC Next.js project, w
 ### Prerequisites
 
 - Node.js and npm installed locally
-- SSH access to production server configured
-- For portal: Database credentials (AWS RDS) and SMTP password (AWS SES)
+- SSH access to production configured (see [DEPLOYMENT.md](DEPLOYMENT.md#ssh-key-setup-recommended))
+- For first-time setup: database password (AWS RDS), SMTP password (AWS SES), admin email/name/password
 
 ### Basic Usage
 
 ```bash
-# 1. Deploy static site (default)
+# Preview without changing anything
+./deploy_scripts/deploy.sh --dry-run --verbose
+
+# Deploy
 ./deploy_scripts/deploy.sh
 
-# 2. Deploy portal application
-./deploy_scripts/deploy.sh --portal
+# Deploy non-interactively (skip "Do you want to deploy?")
+./deploy_scripts/deploy.sh --yes
 
-# 3. Deploy everything
-./deploy_scripts/deploy.sh --all
+# Force environment reconfiguration (recover from broken .env.local)
+./deploy_scripts/deploy.sh --setup
 
-# 4. Skip deployment confirmation prompt
-./deploy_scripts/deploy.sh --portal --yes
-
-# 5. Force environment reconfiguration (recover from broken .env.local)
-./deploy_scripts/deploy.sh --portal --setup
-
-# 6. Non-interactive deployment (for CI/CD)
-export DEPLOY_DB_PASSWORD="secret" DEPLOY_SMTP_PASSWORD="secret"
-./deploy_scripts/deploy.sh --portal --yes  # No prompts!
+# Fully non-interactive (CI/CD)
+export DEPLOY_DB_PASSWORD="..." DEPLOY_SMTP_PASSWORD="..."
+./deploy_scripts/deploy.sh --yes
 ```
 
-**Important Notes:**
-- First-time portal deployments prompt for secrets (database password, SMTP password, admin account). See [Non-Interactive Mode](#non-interactive-mode-optional---for-automationci-cd) for automation via environment variables.
-- Use `--yes` or `-y` to skip the "Do you want to deploy?" confirmation prompt (does not affect credential prompts).
-- Use `--setup` to force environment reconfiguration, useful for recovering from broken `.env.local` files on the server.
+> **Important:** Run from the project root, not from inside `deploy_scripts/`. The script uses repo-relative paths.
+
+> **Note:** The old `--static` and `--all` flags now hard-error out — the unified deploy is the only mode. `--portal` is silently accepted for backwards compatibility.
 
 ---
 
 ## Configuration
 
-### Default Configuration (No Setup Required!)
+### Default Configuration (No Setup Required)
 
-The deployment script uses `.deployrc.example` automatically, which contains correct production values. **You typically don't need to create a custom configuration file.**
+The script uses `.deployrc.example` automatically, which contains correct production values. You typically don't need a custom config.
 
 ### Custom Configuration (Optional)
 
-Only create a custom `.deployrc` if you need different values (e.g., staging server, different paths):
+Only create a custom `.deployrc` if you need different values (e.g. staging):
 
-1. **Copy the example configuration:**
-   ```bash
-   cp .deployrc.example .deployrc
-   ```
-
-2. **Edit `.deployrc` with your values:**
-   ```bash
-   nano .deployrc  # or vim, code, etc.
-   ```
-
-3. **Secure the file:**
-   ```bash
-   chmod 600 .deployrc
-   ```
-
-The script will automatically use `.deployrc` if it exists, otherwise falls back to `.deployrc.example`.
-
-### Configuration Options
-
-**IMPORTANT:** Configuration files contain ONLY non-secret infrastructure settings. Secrets (passwords, credentials) are collected interactively during deployment and stored on the server, never in local config files.
-
-#### SSH Configuration
 ```bash
-DEPLOY_SSH_USER="goldengateclassic"       # SSH username
-DEPLOY_SSH_HOST="54.70.1.215"             # Server IP or hostname
-DEPLOY_DOMAIN="www.goldengateclassic.org" # Your domain
+cp .deployrc.example .deployrc
+nano .deployrc      # edit values
+chmod 600 .deployrc
 ```
 
-#### Static Site Deployment
-```bash
-DEPLOY_STATIC_PATH="/home/goldengateclassic/htdocs/www.goldengateclassic.org"
-```
+The script uses `.deployrc` if it exists, otherwise falls back to `.deployrc.example`.
 
-#### Portal Application Deployment
+### Configuration Keys
+
+**IMPORTANT:** Config files contain ONLY non-secret infrastructure settings. Secrets (passwords, session secret) are collected interactively during deployment and stored on the server in `.env.local`, never in local config.
+
 ```bash
-DEPLOY_PORTAL_PATH="/home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app"
+# SSH
+DEPLOY_SSH_USER="goldengateclassic"
+DEPLOY_SSH_HOST="sfggc"                          # SSH alias preferred
+DEPLOY_DOMAIN="www.goldengateclassic.org"
+
+# Application
+DEPLOY_APP_PATH="/home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app"
 DEPLOY_PM2_APP_NAME="sfggc-portal"
-```
 
-**Important:** Always use full absolute paths (e.g., `/home/username/...`), never tildes (`~`). Tildes are not reliably expanded in non-interactive SSH commands and can cause file existence checks to fail silently.
-
-#### Database Configuration (Portal Only) - NON-SECRET
-```bash
-DEPLOY_DB_HOST="shared2.cdms8mviovca.us-west-2.rds.amazonaws.com"
+# Database (non-secret)
+DEPLOY_DB_HOST="..."
 DEPLOY_DB_PORT="3306"
 DEPLOY_DB_NAME="goldengate"
-DEPLOY_DB_USER="goldengate"  # Username (non-secret, always the same)
-```
+DEPLOY_DB_USER="goldengate"
 
-**Note:** Database password is NOT in `.deployrc`. It is prompted interactively during first portal deployment and stored in `.env.local` on the server only.
-
-#### SMTP Configuration (Portal Only) - NON-SECRET
-```bash
-DEPLOY_SMTP_HOST="email-smtp.us-west-2.amazonaws.com"
+# SMTP (non-secret)
+DEPLOY_SMTP_HOST="..."
 DEPLOY_SMTP_PORT="587"
-DEPLOY_SMTP_USER="AKIAVU7WKXGTZZA3SOHN"
+DEPLOY_SMTP_USER="..."
 DEPLOY_SMTP_FROM="Golden Gate Classic <noreply@goldengateclassic.org>"
 ```
 
-**Note:** SMTP password is NOT in `.deployrc`. It is prompted interactively during first portal deployment and stored in `.env.local` on the server only.
+> Always use absolute paths in `DEPLOY_APP_PATH` (e.g. `/home/username/...`), never tildes. Tildes are not reliably expanded in non-interactive SSH commands and can cause file-existence checks to fail silently.
+
+Database and SMTP passwords are NOT in `.deployrc` — they are prompted on first deploy and stored in `.env.local` on the server.
 
 ---
 
-## Deployment Modes
+## What the Deploy Does
 
-### Static Site Only (Default)
+Every deploy runs the same sequence:
 
-Deploys the public-facing website (7 static pages).
+1. **Pre-flight checks** — Node.js, npm, git, SSH connectivity, server Node.js, disk space.
+2. **Sync files** — `rsync -az --delete` to `DEPLOY_APP_PATH`. Excludes `node_modules/`, `.git/`, `.next/`, `out/`, `.env*`, and any `deploy_temp_*`.
+3. **Install dependencies** — `npm install --production` on the server.
+4. **Set up environment** — creates `.env.local` interactively (first deploy only, unless `--setup` is passed).
+5. **Initialize database schema** — `bash scripts/dev/init-portal-db.sh` (idempotent).
+6. **Run database migrations** — every `*.sh` in `backend/scripts/migrations/` in alphabetical order. Each migration is idempotent.
+7. **Create super admin** — first deploy only, if no admins exist.
+8. **Build on server** — validates `next.config.js` is in server mode (rewrites it if a stale `output: 'export'` is found), removes old `.next/`, runs `npm run build` to produce `.next/`.
+9. **Manage PM2** — installs PM2 if missing, starts or restarts `sfggc-portal`, saves the PM2 process list, configures `@reboot pm2 resurrect` in crontab.
+10. **Verify** — checks PM2 status, curls the homepage and `/portal/` for HTTP 200, and fingerprints the response: reads `${DEPLOY_APP_PATH}/.next/BUILD_ID` on the server and compares it to the `buildId` in the public homepage's `__NEXT_DATA__`. Mismatch (or a non-Next.js response) fails the deploy. See [Build-ID Fingerprint Check](DEPLOYMENT.md#build-id-fingerprint-check) for the full mechanism, failure modes, and manual command.
 
-```bash
-./deploy_scripts/deploy.sh
-# or explicitly:
-./deploy_scripts/deploy.sh --static
-```
-
-**What it does:**
-1. Resizes oversized source images (wider than 800px) using macOS `sips`
-2. Builds static site (`npm run build` with `output: 'export'`)
-3. Creates backup of existing deployment on server
-4. Syncs files via rsync with `--delete` flag (excludes `portal-app/` to protect portal deployment)
-5. Generates `.htaccess` for Apache optimization
-6. Verifies deployment
-
-**Requirements:**
-- `out/` directory with built static files (auto-built if missing)
-
-### Portal Application Only
-
-Deploys the server-rendered portal system.
-
-```bash
-./deploy_scripts/deploy.sh --portal
-```
-
-**What it does:**
-1. Syncs application files (excluding node_modules, .git, .env)
-2. Installs dependencies on server (`npm install --production`)
-3. First-time only: Interactive setup for `.env.local`
-4. Initializes database schema (idempotent)
-5. First-time only: Creates super admin account
-6. Builds application on server (`npm run build`)
-7. Manages PM2 process (install/start/restart)
-8. Configures PM2 auto-restart on reboot
-9. Verifies deployment
-
-**Requirements:**
-- Database credentials (prompted on first deployment)
-- SMTP password (prompted on first deployment)
-
-### Both Static and Portal
-
-Deploys everything in sequence.
-
-```bash
-./deploy_scripts/deploy.sh --all
-```
-
-**What it does:**
-- Runs static deployment first (rsync excludes `portal-app/` from `--delete`)
-- Then runs portal deployment
-- Reports status for both
-
-**Important:** The static rsync uses `--delete` to remove stale files from the web root, but explicitly excludes `portal-app/` so that the portal's `.env.local` and other server-only files are preserved.
+The build happens on the server, not locally. You don't need to run `npm run build` before deploying.
 
 ---
 
-## First-Time Portal Deployment
+## First-Time Setup
 
-The first time you deploy the portal, the script will prompt for sensitive information.
+The first deploy prompts for credentials and creates a super admin. Subsequent deploys skip these steps because `.env.local` and admin rows already exist.
 
 ### Interactive Prompts (Default)
 
@@ -200,701 +133,331 @@ Database Configuration:
 ℹ Database username: goldengate (from config)
   Database password: ********
 
-  Admin session secret [auto-generated]: (press Enter to accept)
+  Admin session secret [auto-generated]:    (press Enter to accept)
   SMTP password (AWS SES): ********
-  Portal base URL [https://www.goldengateclassic.org]: (press Enter to accept)
+  Portal base URL [https://www.goldengateclassic.org]:
 
-No admin accounts found. Let's create a super admin.
+No admin accounts found. Creating super admin account.
   Admin email: admin@goldengateclassic.org
   Admin full name: Admin User
   Admin password: ********
 ```
 
-### Non-Interactive Mode (Optional - For Automation/CI-CD)
+### Non-Interactive Mode (CI/CD)
 
-For automation or CI/CD pipelines, you can provide secrets via environment variables instead of interactive prompts:
-
-**Portal Environment Secrets:**
-```bash
-export DEPLOY_DB_PASSWORD="your-database-password"
-export DEPLOY_SMTP_PASSWORD="your-aws-ses-smtp-password"
-
-# Optional (auto-generated/defaulted if not provided):
-export DEPLOY_SESSION_SECRET="64-char-hex-string"  # Random if not set
-export DEPLOY_PORTAL_BASE_URL="https://your-domain"  # Defaults to $DEPLOY_DOMAIN
-```
-
-**Admin Account Creation:**
-```bash
-export DEPLOY_ADMIN_EMAIL="admin@goldengateclassic.org"
-export DEPLOY_ADMIN_NAME="Tournament Administrator"
-export DEPLOY_ADMIN_PASSWORD="SecurePassword123!"
-```
-
-**Example - Non-Interactive First Deployment:**
-```bash
-# Set secrets via environment variables
-export DEPLOY_DB_PASSWORD="prod-db-password"
-export DEPLOY_SMTP_PASSWORD="aws-ses-smtp-password"
-export DEPLOY_ADMIN_EMAIL="admin@goldengateclassic.org"
-export DEPLOY_ADMIN_NAME="John Doe"
-export DEPLOY_ADMIN_PASSWORD="AdminSecurePass!"
-
-# Deploy portal (no prompts!)
-./deploy_scripts/deploy.sh --portal
-```
-
-**How It Works:**
-- If environment variables are set, the script uses them silently
-- If not set, the script prompts interactively (default behavior)
-- Mix and match: set some via env vars, prompt for others
-- After first deployment, subsequent deployments don't need secrets (config/admins already exist)
-
-**Non-Interactive Mode Safeguards:**
-When running in non-interactive mode (piped input or background execution), the script detects it and fails fast if required environment variables aren't set:
+Provide credentials via environment variables to skip prompts. Required for non-interactive runs:
 
 ```bash
-# This will fail with helpful error message
-echo "" | ./deploy_scripts/deploy.sh --portal
+# Required on first deploy / --setup
+export DEPLOY_DB_PASSWORD="..."
+export DEPLOY_SMTP_PASSWORD="..."
 
-# Error output:
-# ✗ Database password required but not provided
-# ✗ Running in non-interactive mode (piped or background)
-#
-# Solution: Set environment variable:
-#   export DEPLOY_DB_PASSWORD='your_password'
+# Required only on first deploy (when no admins exist yet)
+export DEPLOY_ADMIN_EMAIL="..."
+export DEPLOY_ADMIN_NAME="..."
+export DEPLOY_ADMIN_PASSWORD="..."
+
+./deploy_scripts/deploy.sh --yes
 ```
 
-This prevents silent failures and broken deployments with empty credentials.
+Optional overrides — auto-generated/defaulted if omitted (the script silently uses the defaults in non-interactive mode):
 
-**CI/CD Example (GitHub Actions):**
+```bash
+export DEPLOY_SESSION_SECRET="..."             # random 32-byte hex if unset
+export DEPLOY_PORTAL_BASE_URL="..."            # defaults to https://$DEPLOY_DOMAIN
+```
 
-For first-time deployment:
+**Safeguard:** When stdin is not a terminal (piped input, CI runner) and a required env var is missing, the script fails fast with an actionable error rather than writing empty credentials. Optional env vars never hang the script in non-interactive mode — defaults are used silently.
+
+### GitHub Actions Example
+
+First-time deployment:
+
 ```yaml
-- name: Deploy Portal (First Time)
+- name: Deploy (first time)
   env:
     DEPLOY_DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
     DEPLOY_SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
     DEPLOY_ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
     DEPLOY_ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
     DEPLOY_ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-  run: |
-    ./deploy_scripts/deploy.sh --portal --yes
+  run: ./deploy_scripts/deploy.sh --yes
 ```
 
-For subsequent deployments (credentials already on server):
+Subsequent deploys (credentials already on server):
+
 ```yaml
-- name: Deploy Portal Updates
-  run: |
-    ./deploy_scripts/deploy.sh --portal --yes
+- name: Deploy
+  run: ./deploy_scripts/deploy.sh --yes
 ```
 
-To force reconfiguration with new credentials:
+To rotate credentials:
+
 ```yaml
-- name: Update Portal Credentials
+- name: Rotate credentials
   env:
     DEPLOY_DB_PASSWORD: ${{ secrets.NEW_DB_PASSWORD }}
     DEPLOY_SMTP_PASSWORD: ${{ secrets.NEW_SMTP_PASSWORD }}
-  run: |
-    ./deploy_scripts/deploy.sh --portal --setup --yes
+  run: ./deploy_scripts/deploy.sh --setup --yes
 ```
 
-### What Gets Created
+### What Gets Created on First Deploy
 
-1. **`.env.local` on server** with:
-   - `PORTAL_DATABASE_URL` (includes username and password from your prompts)
-   - `ADMIN_SESSION_SECRET` (auto-generated 32-byte hex string)
-   - `PORTAL_BASE_URL`
-   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` (password from your prompt)
-   - `SMTP_FROM`
+1. **`.env.local` on the server** with `PORTAL_DATABASE_URL`, `ADMIN_SESSION_SECRET`, `PORTAL_BASE_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`.
+2. **Database schema** (`people`, `teams`, `doubles_pairs`, `scores`, `admins`, `audit_logs`, `participant_login_tokens`, `admin_password_resets`, etc.).
+3. **Super admin** in the `admins` table with a bcrypt-hashed password and role `super-admin`.
 
-2. **Database schema** (11 tables):
-   - `admins`, `people`, `teams`, `doubles_pairs`, `scores`
-   - `audit_logs`, `participant_login_tokens`, `admin_password_resets`
-   - `admin_actions`, `email_templates`
+### Where Secrets Live
 
-3. **Super admin account** in database:
-   - Email, name, and hashed password (bcrypt)
-   - Role: `super-admin`
+- **Local `.deployrc`:** ONLY non-secret infrastructure (hosts, ports, paths).
+- **Server `.env.local`:** real secrets (DB password, SMTP password, session secret).
+- **Database:** admin account with bcrypt-hashed password.
+- **Your terminal:** secrets visible briefly during prompts, never logged.
 
-### Where Secrets Are Stored
-
-**IMPORTANT - Security Model:**
-
-- **Local machine (`.deployrc`)**: Contains ONLY non-secret config (hosts, ports, paths)
-- **Server (`.env.local`)**: Contains secrets (database password, SMTP password, session secret)
-- **Database**: Contains admin account with hashed password (bcrypt)
-- **Your terminal**: Secrets visible only during interactive prompts, never logged
-
-**Secrets flow:**
-1. You type them during deployment (visible in terminal briefly)
-2. Script sends them securely via SSH to server
-3. Script writes them to `.env.local` on server
-4. Secrets never touch your local filesystem in any config file
-
-This design keeps secrets secure - they're only on the production server where they're needed.
-
-### Subsequent Deployments
-
-After first-time setup, the script will:
-- Skip environment configuration (`.env.local` exists)
-- Skip database initialization (schema exists)
-- Skip admin creation (admins exist)
-- Just sync code, install dependencies, build, and restart PM2
+Secrets never touch your local filesystem in any config file.
 
 ---
 
 ## Command Line Flags
 
-### Flag Reference
+| Flag | Short | Purpose |
+|---|---|---|
+| `--dry-run` | | Print what would happen without executing |
+| `--verbose` | | More detail in dry-run output |
+| `--debug` | | Full debug output (implies `--verbose`) |
+| `--yes` | `-y` | Skip the deployment confirmation prompt |
+| `--force` | | Alias for `--yes` (backwards-compatible) |
+| `--setup` | | Force `.env.local` reconfiguration |
+| `--skip-migrations` | | Skip database migrations (not recommended) |
+| `--config FILE` | | Use an alternate config file |
+| `--server HOST` | | Override SSH host |
+| `--user USER` | | Override SSH user |
+| `--help` | `-h` | Print help |
 
-| Flag | Short | Purpose | Affects Confirmation | Affects Credentials | Affects Setup |
-|------|-------|---------|---------------------|--------------------|--------------|
-| `--yes` | `-y` | Skip deployment confirmation | ✓ Skips | ✗ No effect | ✗ No effect |
-| `--force` | | Alias for `--yes` (backwards compatibility) | ✓ Skips | ✗ No effect | ✗ No effect |
-| `--setup` | | Force environment reconfiguration | ✗ No effect | ✗ No effect | ✓ Forces |
+### Removed Flags
 
-### Understanding Flag Behavior
+| Flag | What to use instead |
+|---|---|
+| `--static` | Just `./deploy_scripts/deploy.sh` (hard error if you pass `--static`) |
+| `--all` | Just `./deploy_scripts/deploy.sh` (hard error if you pass `--all`) |
+| `--portal` | Silently accepted; the deploy is unified, so this flag is a no-op |
 
-**`--yes` / `-y` Flag:**
-- **What it does:** Skips the "Do you want to deploy? [y/N]" confirmation prompt
-- **What it does NOT do:** Does not skip credential prompts during first-time setup
-- **Use case:** Automated deployments, CI/CD pipelines where you want to skip manual confirmation
-- **Example:**
-  ```bash
-  ./deploy_scripts/deploy.sh --portal --yes
-  # Skips: "Do you want to deploy?"
-  # Still prompts: Database password, SMTP password (if first-time)
-  ```
+### Flag Behavior Notes
 
-**`--setup` Flag:**
-- **What it does:** Forces reconfiguration of `.env.local` on the server, even if it already exists
-- **What it does NOT do:** Does not skip confirmation prompt (use `--yes` for that)
-- **Use case:** Recovering from broken `.env.local`, changing credentials, disaster recovery
-- **Example:**
-  ```bash
-  ./deploy_scripts/deploy.sh --portal --setup
-  # Prompts: "Do you want to deploy?" (unless --yes also used)
-  # Prompts: Database password, SMTP password (always, even if .env.local exists)
-  # Deletes: Existing .env.local
-  # Creates: Fresh .env.local with new credentials
-  ```
+**`--yes` / `-y`:**
+- Skips the "Do you want to deploy? [y/N]" prompt.
+- Does NOT skip credential prompts during first-time setup. Use environment variables for that.
 
-**Combining Flags:**
-```bash
-# Most common CI/CD pattern
-./deploy_scripts/deploy.sh --portal --yes
-# Skips confirmation, uses existing .env.local
+**`--setup`:**
+- Forces `.env.local` to be recreated on the server, even if it exists.
+- Use cases: recover from broken `.env.local`, rotate credentials, change session secret or base URL.
+- Does NOT delete or recreate admin accounts.
+- Does NOT skip the confirmation prompt — combine with `--yes` for unattended runs.
 
-# Reconfigure without confirmation prompt
-./deploy_scripts/deploy.sh --portal --setup --yes
-# Skips confirmation, forces credential prompts
-```
+### Common Combinations
 
-### Common Scenarios
-
-| Scenario | Command | What Happens |
-|----------|---------|--------------|
-| First deployment (interactive) | `./deploy_scripts/deploy.sh --portal` | Prompts for confirmation + credentials |
-| First deployment (CI/CD) | `./deploy_scripts/deploy.sh --portal --yes` + env vars | Skips confirmation, uses env vars for credentials |
-| Update deployment | `./deploy_scripts/deploy.sh --portal --yes` | Skips confirmation, uses existing `.env.local` |
-| Fix broken `.env.local` | `./deploy_scripts/deploy.sh --portal --setup` | Prompts for confirmation + credentials, recreates `.env.local` |
-| Change credentials (CI/CD) | `./deploy_scripts/deploy.sh --portal --setup --yes` + env vars | Skips confirmation, uses env vars, recreates `.env.local` |
+| Scenario | Command |
+|---|---|
+| First interactive deploy | `./deploy_scripts/deploy.sh` |
+| First CI/CD deploy | env vars + `./deploy_scripts/deploy.sh --yes` |
+| Routine update | `./deploy_scripts/deploy.sh --yes` |
+| Fix broken `.env.local` | `./deploy_scripts/deploy.sh --setup` |
+| Rotate credentials in CI | env vars + `./deploy_scripts/deploy.sh --setup --yes` |
 
 ---
 
 ## Dry-Run Mode
 
-Preview what will happen without making changes.
-
-### Basic Dry-Run
+Preview without making changes.
 
 ```bash
+# Basic dry-run
 ./deploy_scripts/deploy.sh --dry-run
+
+# Show what each step would do
+./deploy_scripts/deploy.sh --dry-run --verbose
+
+# Full environment + command traces
+./deploy_scripts/deploy.sh --dry-run --debug
 ```
 
-**Output:**
-```
-=== DEPLOYMENT PLAN ===
-Mode: Static Site
-Server: goldengateclassic@54.70.1.215
-Path: /home/goldengateclassic/htdocs/www.goldengateclassic.org
-
-⚠ DRY RUN MODE - No actual changes will be made
-
-=== STATIC SITE DEPLOYMENT ===
-○ Would create backup of existing files
-○ Would sync out/ to /home/goldengateclassic/...
-○ Would create .htaccess on server
-○ Would verify deployment
-✓ Static site deployed successfully!
-```
-
-### Verbose Dry-Run
-
-Shows commands that would be executed.
-
-```bash
-./deploy_scripts/deploy.sh --portal --dry-run --verbose
-```
-
-**Output:**
-```
-○ Would sync project files to ~/htdocs/...
-  Excludes: node_modules, .git, .next, out, .env*
-○ Would run: npm install --production
-○ Would prompt for database credentials
-○ Would run: bash scripts/dev/init-portal-db.sh
-...
-```
-
-### Debug Dry-Run
-
-Shows full environment and debugging information.
-
-```bash
-./deploy_scripts/deploy.sh --all --dry-run --debug
-```
-
-**Output includes:**
-- All configuration variables
-- Full command traces
-- Working directories
-- User context
+In dry-run mode `ssh_command` prints commands instead of executing them. You may notice some odd-looking output where command strings appear as "data" — these are harmless display artifacts that disappear in a real run.
 
 ---
 
 ## Troubleshooting
 
-### SSH Connection Failed
+### Pre-flight: SSH connection failed
 
-**Error:**
 ```
-✗ SSH connection failed to goldengateclassic@54.70.1.215
-```
-
-**Solution:**
-```bash
-# Set up SSH key authentication
-./deploy_scripts/setup-ssh.sh goldengateclassic@54.70.1.215 sfggc
-
-# Test connection manually
-ssh goldengateclassic@54.70.1.215 'echo OK'
+✗ SSH connection failed
 ```
 
-### Build Failed
+- Re-run `./deploy_scripts/setup-ssh.sh <user@host> <alias>`.
+- Test manually: `ssh sfggc 'echo OK'`.
+- Make sure `.deployrc` uses your SSH alias in `DEPLOY_SSH_HOST`, not just an IP.
 
-**Error:**
+### Build failed on the server
+
 ```
 ✗ Build failed
 ```
 
-**Solution:**
-```bash
-# Test build locally first
-npm run build
+- SSH in and look at the build output: `ssh sfggc "cd $DEPLOY_APP_PATH && npm run build 2>&1 | tail -50"`.
+- Verify `next.config.js` is in server mode (no `output: 'export'`). The deploy script auto-rewrites this if it detects a stale config, but local-machine checks won't.
+- Confirm dependencies installed cleanly: `ssh sfggc "cd $DEPLOY_APP_PATH && npm install --production"`.
 
-# Check for syntax errors
-npm run lint
+### Portal won't start (PM2 issue)
 
-# Ensure dependencies are installed
-npm install
-```
-
-### Portal Won't Start (PM2 Issues)
-
-**Error:**
 ```
 ✗ PM2 process is not running
 ```
 
-**Solution:**
 ```bash
-# SSH to server and check PM2 logs
-ssh goldengateclassic@54.70.1.215
-pm2 logs sfggc-portal
-
-# Common issues:
-# - Database connection error: Check .env.local credentials
-# - Port already in use: Check for other processes on port 3000
-# - Build errors: Check npm run build output
+ssh sfggc "pm2 logs sfggc-portal --lines 100"
 ```
 
-### Portal HTTP 502 Error
+Common causes:
+- Bad credentials in `.env.local` (recover with `--setup`).
+- Port 3000 already in use by another process.
+- Build artifact missing (`.next/` not produced — check the build step).
 
-**Error:**
-Portal returns 502 Bad Gateway
+### Portal returns 502
 
-**Solution:**
-1. Check PM2 status: `pm2 status sfggc-portal`
-2. Check nginx configuration (must proxy /portal to port 3000)
-3. Verify proxy configuration in `backend/config/vhost.txt`
-4. See `deploy_docs/PORTAL_DEPLOYMENT.md#7-nginx-configuration`
-5. For ISP-controlled nginx, see `deploy_docs/DEPLOYMENT.md#nginx-configuration-management`
+1. Check PM2: `ssh sfggc "pm2 status sfggc-portal"`.
+2. Confirm `upstream portal_backend` in `backend/config/vhost.txt` points to the right port.
+3. See [DEPLOYMENT.md#nginx-configuration-management](DEPLOYMENT.md#nginx-configuration-management) for the vhost workflow.
 
-### Portal Pages Load But Are Not Interactive (Missing Menus, Forms, Change Log)
+### Deploy fails at "Verifying public site serves the build we just deployed"
 
-**Issue:**
-Portal pages load and show some content, but interactive elements (admin menus, change log, participant edit forms, dropdowns) are invisible or non-functional.
+The fingerprint check at the end of the deploy compares `${DEPLOY_APP_PATH}/.next/BUILD_ID` on the server against the `buildId` embedded in the public homepage. Two variants of the failure:
 
-**Cause:**
-The nginx `^~` modifier is missing from the portal location blocks. Without it, the static site's regex location `~* \.(js|css|...)$` intercepts requests to `/_next/static/chunks/*.js`, returning 404 for all Next.js JavaScript bundles. React cannot hydrate without its client-side JS, so `useEffect` hooks never run and dynamic UI elements never render.
+**No `buildId` in public response:**
+```
+✗ Public homepage response has no Next.js buildId — nginx is not proxying to Node.js
+```
 
-**Diagnosis:**
-1. Open browser DevTools (F12) and check the Network tab
-2. Look for 404 responses on `/_next/static/chunks/*.js` files
-3. Check the Console tab for React hydration errors
+nginx is returning a non-Next.js response — almost always a stale static file from disk (look for nginx-style `<hex>-<hex>` etag and `last-modified` headers in the raw response). The fix: push `backend/config/vhost.txt` to CloudPanel.
 
-**Solution:**
-Verify that all four portal location blocks in `backend/config/vhost.txt` use the `^~` modifier:
+```bash
+cat backend/config/vhost.txt | pbcopy
+# CloudPanel → Sites → www.goldengateclassic.org → Vhost → paste → save
+curl -s https://www.goldengateclassic.org/ | grep -oE '"buildId":"[^"]+"'
+```
+
+The current build ID should now appear.
+
+**Mismatched buildIds:**
+```
+✗ Public site is serving a different build than the one just deployed
+   Server build:    a9OWyPU_EzVMzhHPEQgtF
+   Public response: sPPhhw451mwPAhK8Bf4jY
+```
+
+The server has the new build but the public URL is returning an older one. Causes, in order of likelihood:
+1. nginx vhost out of sync with `backend/config/vhost.txt` (push it).
+2. A CDN/proxy in front holding a cached response (purge it, or wait for TTL).
+3. The domain is pointing at the wrong server.
+
+See [DEPLOYMENT.md#build-id-fingerprint-check](DEPLOYMENT.md#build-id-fingerprint-check) for the full mechanism and a copy-pasteable manual check.
+
+### Portal pages load but menus / forms / change log are invisible
+
+**Cause:** Something is intercepting `/_next/static/chunks/*.js` requests and returning 404. React can't hydrate without its bundles. The usual culprit is a regex location (`~* \.(js|css|...)$`) added without making the corresponding prefix blocks use `^~`.
+
+**Fix:** Verify the current vhost still has `^~` on `/_next/static`. If anyone has added a static-asset regex, every prefix block that needs to serve `.js`/`.css` (including `/portal`, `/api/portal`, `/_next`) must use `^~` too:
 
 ```nginx
-location ^~ /portal { ... }
-location ^~ /api/portal { ... }
-location ^~ /_next/static { ... }
-location ^~ /_next { ... }
+location ^~ /_next/static { proxy_pass http://portal_backend; ... }
+location /                { proxy_pass http://portal_backend; ... }
 ```
 
-If any block is missing `^~`, add it, then copy the updated config to the ISP control panel. See `deploy_docs/DEPLOYMENT.md#configuration-file-structure` for the full explanation of why `^~` is required.
+Push the updated config via the ISP control panel. See [DEPLOYMENT.md#configuration-file-structure](DEPLOYMENT.md#configuration-file-structure) and [NGINX_SETUP.md](NGINX_SETUP.md).
 
-### SSR Pages Broken After Nginx Changes (Redirects, 404s, Empty Data)
+### `/_next/static/*` returns 404 after a deploy
 
-**Issue:**
-After deploying nginx vhost changes, all server-rendered portal pages break. Participant detail redirects to login, admin detail returns 404, and team pages show empty data -- even though the user has a valid session.
+**Cause:** the `^~ /_next/static` block uses a fixed `alias` pointing at a specific path. Build IDs change every deploy, and a stale alias path can't resolve the new IDs.
 
-**Cause:**
-`buildBaseUrl(req)` in `src/utils/portal/ssr-helpers.js` used `req.headers.host` to construct the URL for internal SSR API fetches. This created a self-referencing loop: Node.js SSR fetched its own public HTTPS URL, which went through nginx, which proxied back to Node.js. Cloud servers typically cannot connect to their own public IP from localhost (hairpin NAT). Even when the connection succeeds, cookies and forwarded headers may be lost in the round-trip.
+**Fix:** the current vhost proxies `/_next/static` to Node.js (which always serves the right build ID). Don't switch back to a fixed `alias`. If you want disk-served assets, use `try_files $uri @portal_next` with a proxy fallback rather than a fixed `alias`.
 
-**Diagnosis:**
-```bash
-# Direct to Node.js (should return correct data)
-curl -b "session=YOUR_COOKIE" http://localhost:3000/api/portal/participants/12345
+### SSR pages broken (redirects, 404s, or empty data)
 
-# Through nginx (returns {"notFound":true} or redirects)
-curl -b "session=YOUR_COOKIE" https://www.goldengateclassic.org/api/portal/participants/12345
-```
+**Cause:** `getServerSideProps` internal API calls were routing through the external HTTPS URL (`https://www.goldengateclassic.org`) and hitting hairpin-NAT problems on the cloud server.
 
-If the direct request succeeds but the nginx request fails, the SSR code is routing through the external URL instead of localhost.
+**Fix:** the `buildBaseUrl()` helper in `src/utils/portal/ssr-helpers.js` must always return `http://localhost:${PORT}` for internal fetches. Never use `req.headers.host`.
 
-**Solution:**
-`buildBaseUrl()` must always return `http://localhost:${PORT}`. See `SERVER_SETUP.md#troubleshooting-nginx-issues` for the full explanation.
+### Nginx proxy headers missing after adding a custom header
 
-### Nginx Proxy Headers Missing After Adding Custom Header
+**Cause:** adding ANY `proxy_set_header` directive inside a `location` block drops all inherited `proxy_set_header` directives from the parent scope. Nginx does not merge — the child fully replaces the parent.
 
-**Issue:**
-After adding a `proxy_set_header` directive to a location block, the portal starts logging `127.0.0.1` for client IPs, or session validation fails because `X-Forwarded-Proto` is missing.
+**Fix:** every proxy location block must explicitly include `Host`, `X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto`, and `Connection ""`. See [DEPLOYMENT.md#nginx-proxy-header-inheritance](DEPLOYMENT.md#nginx-proxy-header-inheritance).
 
-**Cause:**
-Nginx does not merge `proxy_set_header` directives between parent and child scopes. When ANY `proxy_set_header` is defined in a `location` block, ALL inherited directives from the parent `server` block are silently dropped.
+### Migrations only run partially (only the first one executes)
 
-**Solution:**
-Every proxy location block must explicitly include all required headers:
-```nginx
-proxy_set_header Host $host;
-proxy_set_header X-Real-IP $remote_addr;
-proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-proxy_set_header X-Forwarded-Proto $scheme;
-proxy_set_header Connection "";
-```
+**Cause:** historical bug — `ssh` without `-n` consumes stdin, and the migration runner reads paths from a `while read` loop. The fix is `ssh -n` in `deploy_scripts/lib/ssh.sh`.
 
-When adding a new proxy location, always copy the full header set from an existing working block. See `deploy_docs/DEPLOYMENT.md#nginx-proxy-header-inheritance` for details.
+**Fix:** already shipped. Pull latest code if you see this.
 
-### First-Time Setup Prompts Don't Appear
+### `.env.local` deleted after deploy
 
-**Issue:**
-Script doesn't prompt for database credentials
+**Cause:** historical bug — the static-site rsync used `--delete` and did not exclude `portal-app/`, wiping the portal directory including `.env.local`.
 
-**Cause:**
-`.env.local` already exists on server
+**Fix:** no longer relevant. The unified deploy rsyncs directly to `DEPLOY_APP_PATH` with `--exclude='.env*'`, so `.env.local` is never deleted or overwritten.
 
-**Solution:**
-```bash
-# Use --setup flag to force reconfiguration
-./deploy_scripts/deploy.sh --portal --setup
+### Portal responses are slow or double-compressed
 
-# Alternative: Manually remove .env.local
-ssh goldengateclassic@54.70.1.215
-rm ~/htdocs/www.goldengateclassic.org/portal-app/.env.local
+**Cause:** historical bug — generated `next.config.js` was missing `compress: false`, so Node.js compressed responses on top of nginx's gzip.
 
-# Then run deployment again
-./deploy_scripts/deploy.sh --portal
-```
+**Fix:** the deploy script writes `compress: false` into the server-mode config (see `write_server_mode_config` in `deploy_scripts/lib/build.sh`). Verify:
 
-### Database/SMTP Passwords Prompted Again on Subsequent Deployments
-
-**Issue:**
-After first deployment, running the script again prompts for database and SMTP passwords even though `.env.local` already exists on the server
-
-**Cause:**
-Tilde (`~`) in `DEPLOY_PORTAL_PATH` was not being expanded correctly in SSH file existence checks, causing the script to think `.env.local` doesn't exist
-
-**Symptom:**
-You see these prompts even though you previously entered the credentials:
-```
-Database Configuration:
-  Database password: ********
-  SMTP password (AWS SES): ********
-```
-
-**Solution:**
-This was fixed in the deployment scripts (v1.1, Feb 2026). Update to the latest version:
-
-```bash
-# Pull latest changes
-git pull origin main
-
-# Verify the fix in deploy_scripts/lib/ssh.sh
-grep -A 2 "Expand tilde" deploy_scripts/lib/ssh.sh
-```
-
-**Manual Workaround** (if you can't update):
-Use absolute paths instead of tilde in `.deployrc`:
-```bash
-# Instead of:
-DEPLOY_PORTAL_PATH="~/htdocs/www.goldengateclassic.org/portal-app"
-
-# Use absolute path:
-DEPLOY_PORTAL_PATH="/home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app"
-```
-
-### Password Prompted Multiple Times During Deployment
-
-**Issue:**
-SSH password requested 3+ times during pre-flight checks even though you have SSH access
-
-**Cause:**
-SSH key authentication isn't configured, or deployment script isn't using your SSH alias
-
-**Solution:**
-
-1. **Complete SSH key setup:**
-   ```bash
-   ./deploy_scripts/setup-ssh.sh goldengateclassic@54.70.1.215 sfggc
-   ```
-
-2. **Verify passwordless SSH works with alias:**
-   ```bash
-   ssh sfggc "echo Connection successful"
-   ```
-
-3. **Create `.deployrc` to use SSH alias:**
-   ```bash
-   # Copy and edit to use your SSH alias
-   cp .deployrc.example .deployrc
-   # Change DEPLOY_SSH_HOST to your alias (e.g., "sfggc")
-   ```
-
-   In `.deployrc`:
-   ```bash
-   DEPLOY_SSH_HOST="sfggc"  # Use SSH alias instead of IP
-   ```
-
-### Broken .env.local with Empty Passwords
-
-**Issue:**
-Portal won't start, database connection fails, or SMTP errors occur. Checking the server's `.env.local` reveals empty password fields:
-
-```bash
-PORTAL_DATABASE_URL=mysql://goldengate:@shared2.cdms8mviovca...
-SMTP_PASS=
-```
-
-**Cause:**
-This occurred in earlier versions of the deployment script when using the `--force` flag (now `--yes`) during first-time setup. The flag would skip the confirmation prompt but also inadvertently cause credential prompts to fail silently, resulting in empty passwords in `.env.local`.
-
-**Symptoms:**
-- Portal returns 502 Bad Gateway
-- PM2 logs show database connection errors
-- Login emails don't send (SMTP authentication failures)
-- `.env.local` exists but has empty password values
-
-**Solution:**
-
-Use the `--setup` flag to force reconfiguration:
-
-```bash
-./deploy_scripts/deploy.sh --portal --setup
-```
-
-The script will:
-1. Detect the existing `.env.local`
-2. Prompt you to confirm reconfiguration
-3. Interactively prompt for database password, SMTP password, and other credentials
-4. Create a fresh `.env.local` with correct values
-5. Restart the portal application
-
-**Skip confirmation prompt:**
-
-```bash
-./deploy_scripts/deploy.sh --portal --setup --yes
-```
-
-**Why this is fixed now:**
-The deployment script (v1.1+, Feb 2026) now properly separates concerns:
-- `--yes` (or `--force`) only skips the deployment confirmation
-- Credential prompts always work interactively during setup
-- Non-interactive mode (CI/CD) fails fast if environment variables aren't set
-
-### Deploy Creates Admin Account When Admins Already Exist
-
-**Issue:**
-Script prompts to create a super admin account even though admin accounts already exist in the database.
-
-**Cause:**
-The `create_super_admin()` function runs an inline `node -e` command via SSH to count admin rows. This command needs `PORTAL_DATABASE_URL` from `.env.local`, but `source .env.local` alone does not export variables to child processes (like `node`). Without the database URL, the query silently returns 0.
-
-Additionally, the Node.js comparison operator `!` was causing issues with SSH command escaping.
-
-**Symptoms:**
-```
-No admin accounts found
-Creating super admin account
-  Admin email: ________
-```
-
-Even though you already created an admin during a previous deployment.
-
-**Solution:**
-This was fixed in the deployment scripts (Feb 2026). The `create_super_admin()` function now uses `set -a` before sourcing `.env.local` to auto-export variables, and uses `===` instead of `!` to avoid SSH escaping problems:
-
-```bash
-# Before (broken):
-ssh "cd $PATH && source .env.local && node -e '...'"
-
-# After (fixed):
-ssh "cd $PATH && set -a && source .env.local 2>/dev/null && set +a && node -e '...'"
-```
-
-If you encounter this on an older version, update to the latest deployment scripts.
-
-### Portal .env.local Deleted After --all Deploy
-
-**Issue:**
-Every `--all` deploy triggers "First-time portal deployment detected" even though you already set up credentials.
-
-**Cause:**
-The static site rsync uses `--delete` to sync the `out/` directory to the web root. If `portal-app/` lives inside the web root and isn't excluded from `--delete`, rsync removes it — including `.env.local` with production credentials. The portal deploy runs second and finds nothing.
-
-**Symptom:**
-```
-First-time portal deployment detected
-Database Configuration:
-  Database password: ********
-```
-
-**Solution:**
-This was fixed in the deployment scripts (Feb 2026). The static rsync now excludes `portal-app/`:
-```bash
-rsync -avz --delete --exclude='portal-app' out/ user@host:$STATIC_PATH/
-```
-
-If you're on an older version, update to the latest. The fix is in `deploy_scripts/lib/deploy-static.sh`.
-
-**Key principle:** When rsync `--delete` syncs to a directory containing subdirectories managed by other deploy steps, those directories must be explicitly excluded.
-
-### Only 1 Migration Runs During Portal Deployment
-
-**Issue:**
-Only the first migration script runs; the rest are silently skipped.
-
-**Cause:**
-The `ssh` command without the `-n` flag reads from stdin. Inside the migration runner's `while read` loop, the first `ssh` call consumes remaining stdin, eating all remaining migration paths.
-
-**Solution:**
-This was fixed in the deployment scripts (Feb 2026). The `ssh_command()` function now uses `ssh -n`:
-```bash
-ssh -n "${DEPLOY_SSH_USER}@${DEPLOY_SSH_HOST}" "$command"
-```
-
-If you're on an older version, update to the latest. The fix is in `deploy_scripts/lib/ssh.sh`.
-
-**Key principle:** Always use `ssh -n` when calling ssh inside loops that read from stdin.
-
-### Portal Responses Are Slow or Double-Compressed
-
-**Issue:**
-Portal pages or API responses are unusually large, slow, or occasionally garbled. Browser DevTools may show unexpected `Content-Encoding` headers.
-
-**Cause:**
-The deploy scripts generate a server-mode `next.config.js` on the server during the build step. If this generated config is missing `compress: false`, Node.js compresses responses even though nginx already handles gzip compression. This results in double-compression, which wastes CPU, increases response sizes, and can corrupt binary data.
-
-**Affected files** (deploy script templates that generate `next.config.js`):
-- `deploy_scripts/lib/build.sh` (2 locations: static export config and server-mode config)
-- `deploy_scripts/lib/deploy-portal.sh` (1 location: remote server-mode config)
-
-**Fix:**
-All server-mode `next.config.js` templates in the deploy scripts must include `compress: false`:
-
-```javascript
-module.exports = {
-  compress: false,  // nginx handles compression
-  // ... other settings
-};
-```
-
-**Verification:**
-After deploying, check the response headers:
 ```bash
 curl -s -D - -o /dev/null -H "Accept-Encoding: gzip" https://www.goldengateclassic.org/portal | grep -i content-encoding
 ```
-You should see `Content-Encoding: gzip` from nginx, not from Node.js. If you see it from both, `compress: false` is missing.
 
-**Key Principle:** When nginx handles compression (which it does in this project), always set `compress: false` in `next.config.js` to prevent the Node.js server from also compressing. Only one layer should compress.
+You should see one `Content-Encoding: gzip` (from nginx), not two.
 
----
+### First-time setup prompts don't appear
 
-### Node.js Not Found on Server (NVM Users)
-
-**Issue:**
-```
-⚠ Node.js not found on server (required for portal)
-```
-
-Even though `node --version` works when you SSH interactively
-
-**Cause:**
-NVM isn't loaded in non-interactive SSH sessions (used by deployment script)
-
-**Solution:**
-
-Add NVM initialization to the beginning of your `.bashrc` on the server:
+`.env.local` already exists on the server. Use `--setup` to force reconfiguration:
 
 ```bash
-# SSH to server
-ssh your-server
+./deploy_scripts/deploy.sh --setup
+```
 
-# Add NVM init to top of .bashrc (before non-interactive check)
-cat > /tmp/fix_nvm.sh << 'EOF'
-#!/bin/bash
-if ! grep -q 'NVM initialization for non-interactive' ~/.bashrc; then
-  cat > /tmp/bashrc_new << 'INNEREOF'
-# NVM initialization for non-interactive shells (deployment, etc.)
+Or manually remove and redeploy:
+
+```bash
+ssh sfggc "rm $DEPLOY_APP_PATH/.env.local"
+./deploy_scripts/deploy.sh
+```
+
+### Broken `.env.local` with empty passwords
+
+**Cause:** historical bug from an earlier version of the script — the `--force` flag could cause silent credential failures during first-time setup.
+
+**Fix:** the current script properly separates `--yes` (confirmation skip) from credential collection. Recover with:
+
+```bash
+./deploy_scripts/deploy.sh --setup
+```
+
+### Deploy creates an admin even though admins exist
+
+**Cause:** historical bug — `node -e` couldn't read `PORTAL_DATABASE_URL` because `source .env.local` didn't export variables to child processes.
+
+**Fix:** the script now uses `set -a` before `source` to auto-export. Pull latest if you see this.
+
+### Node.js not found on server (NVM users)
+
+NVM doesn't load in non-interactive SSH sessions. Add NVM initialization to the top of `~/.bashrc` on the server (before the non-interactive-shell guard):
+
+```bash
+# At the very top of ~/.bashrc:
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
-INNEREOF
-  cat ~/.bashrc >> /tmp/bashrc_new
-  mv /tmp/bashrc_new ~/.bashrc
-  echo "✓ NVM initialization added"
-else
-  echo "✓ Already configured"
-fi
-EOF
-bash /tmp/fix_nvm.sh
 ```
 
-**Verify the fix:**
-```bash
-# Test from your local machine
-ssh your-server "node --version"
-# Should show Node.js version without errors
-```
-
-**Why this happens:**
-- NVM is typically loaded by `.bashrc` or `.bash_profile`
-- These files have a guard that returns early for non-interactive shells
-- Deployment scripts use non-interactive SSH, so NVM never loads
-- Solution: Add NVM initialization before the non-interactive guard
+Verify: `ssh sfggc "node --version"`.
 
 ---
 
@@ -903,121 +466,47 @@ ssh your-server "node --version"
 ### Override Configuration via CLI
 
 ```bash
-# Override SSH host
-./deploy_scripts/deploy.sh --server 192.168.1.100
-
-# Override SSH user
-./deploy_scripts/deploy.sh --user myuser
-
-# Combine overrides
-./deploy_scripts/deploy.sh --portal --server prod.example.com --user deploy
+./deploy_scripts/deploy.sh --server <host>
+./deploy_scripts/deploy.sh --user <user>
+./deploy_scripts/deploy.sh --server prod.example.com --user deploy
 ```
 
-### Use Alternate Configuration File
+### Use an Alternate Config File
 
 ```bash
-# Create staging configuration
 cp .deployrc.example .deployrc.staging
-# Edit .deployrc.staging with staging values
-
-# Deploy to staging
-./deploy_scripts/deploy.sh --config .deployrc.staging --portal
+# edit values
+./deploy_scripts/deploy.sh --config .deployrc.staging
 ```
-
-### Skip Confirmation Prompts
-
-```bash
-# Skip "Do you want to deploy?" confirmation
-./deploy_scripts/deploy.sh --all --yes
-
-# Alternative syntax (same behavior)
-./deploy_scripts/deploy.sh --portal -y
-
-# Note: --force is a backwards-compatible alias for --yes
-./deploy_scripts/deploy.sh --all --force
-```
-
-**Important:** The `--yes` flag only skips the deployment confirmation prompt. It does NOT skip credential prompts during first-time portal setup. Credential prompts always work interactively unless you provide them via environment variables.
 
 ### Force Environment Reconfiguration
 
-If your server's `.env.local` file becomes corrupted or contains incorrect credentials, use `--setup` to force reconfiguration:
-
 ```bash
-# Force environment reconfiguration
-./deploy_scripts/deploy.sh --portal --setup
-
-# With --yes to skip confirmation prompt
-./deploy_scripts/deploy.sh --portal --setup --yes
+./deploy_scripts/deploy.sh --setup
+./deploy_scripts/deploy.sh --setup --yes      # unattended
 ```
 
-**What `--setup` does:**
-- Deletes the existing `.env.local` on the server
-- Re-prompts for database password, SMTP password, and other credentials
-- Creates a fresh `.env.local` with the new values
-- Does NOT recreate admin accounts (existing admins remain)
+What `--setup` does:
+- Deletes the existing `.env.local` on the server.
+- Re-prompts (or reads env vars) for DB password, SMTP password, session secret, base URL.
+- Creates a fresh `.env.local`.
+- Does NOT recreate admin accounts.
 
-**When to use `--setup`:**
-- Database credentials changed
-- SMTP credentials changed
-- `.env.local` file is corrupted or contains errors
-- You need to change the session secret or base URL
-
-### Verify Deployment Plan
+### Always Test with Dry-Run First
 
 ```bash
-# Always test with dry-run first
-./deploy_scripts/deploy.sh --portal --dry-run --verbose
-
-# Review output carefully
-# Then run actual deployment
-./deploy_scripts/deploy.sh --portal
-```
-
----
-
-## Migration from Old Scripts
-
-If you were using the old deployment scripts:
-
-### Old Script Mapping
-
-| Old Script | New Command |
-|------------|-------------|
-| `deploy.sh <user@host> <path> <domain>` | `./deploy_scripts/deploy.sh --static` |
-| `deploy-manual.sh <user@host> <path> <domain>` | `./deploy_scripts/deploy.sh --static --verbose` |
-| `deploy-portal.sh <user@host>` | `./deploy_scripts/deploy.sh --portal` |
-
-### Old Scripts Still Work
-
-The old scripts have been converted to wrappers that forward to the new system with deprecation warnings:
-
-```bash
-# Still works, but shows warning
-./deploy_scripts/deploy-portal.sh goldengateclassic@54.70.1.215
-
-# Output:
-# ⚠️ WARNING: This script is deprecated
-#    Use: ./deploy_scripts/deploy.sh --portal
-# Forwarding to new deployment system...
+./deploy_scripts/deploy.sh --dry-run --verbose
+# review carefully, then:
+./deploy_scripts/deploy.sh
 ```
 
 ---
 
 ## Additional Resources
 
-- **Portal Deployment Details:** `deploy_docs/PORTAL_DEPLOYMENT.md`
-- **Server Setup:** `deploy_docs/SERVER_SETUP.md`
-- **Nginx Configuration (Direct Access):** `deploy_docs/NGINX_SETUP.md`
-- **Nginx Configuration (ISP-Controlled):** `deploy_docs/DEPLOYMENT.md#nginx-configuration-management`
-- **CloudPanel Guide:** `deploy_docs/CLOUDPANEL_NGINX_GUIDE.md`
-
----
-
-## Support
-
-For issues or questions:
-1. Check this guide and other documentation in `deploy_docs/`
-2. Run with `--dry-run --verbose` to diagnose issues
-3. Check server logs: `pm2 logs sfggc-portal` (for portal)
-4. Report issues at https://github.com/anthropics/claude-code/issues
+- **Deployment Quick Start:** [DEPLOYMENT.md](DEPLOYMENT.md)
+- **Portal Application Details:** [PORTAL_DEPLOYMENT.md](PORTAL_DEPLOYMENT.md)
+- **Server Setup & Troubleshooting:** [../SERVER_SETUP.md](../SERVER_SETUP.md)
+- **Database Migrations:** [MIGRATIONS.md](MIGRATIONS.md)
+- **Nginx Configuration:** [DEPLOYMENT.md#nginx-configuration-management](DEPLOYMENT.md#nginx-configuration-management)
+- **AI agent context for deploy patterns:** [../CLAUDE-DEPLOYMENT.md](../CLAUDE-DEPLOYMENT.md)

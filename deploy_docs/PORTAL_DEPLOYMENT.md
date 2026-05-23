@@ -1,52 +1,50 @@
 # Portal Deployment Guide
 
-This guide covers deploying the SFGGC tournament portal (admin dashboard + participant login) to the production CloudPanel server. The portal runs as a Next.js server application behind nginx, backed by MariaDB on AWS RDS.
+This guide covers deploying the SFGGC tournament portal (admin dashboard + participant login) to the production CloudPanel server. The portal is part of a unified Next.js server — the same Node.js process serves the public marketing pages and the portal. Both are deployed together by a single command.
+
+For general deployment, see [DEPLOYMENT.md](DEPLOYMENT.md) and [UNIFIED_DEPLOYMENT.md](UNIFIED_DEPLOYMENT.md). This document focuses on portal-specific concerns (database, admin account, SMTP, schema).
 
 ## Server Details
 
 | Resource | Value |
 |----------|-------|
-| Server | `54.70.1.215` (CloudPanel on AWS) |
-| SSH user | `goldengateclassic` |
-| Static site root | `/home/goldengateclassic/htdocs/www.goldengateclassic.org` |
-| Portal app dir | `~/htdocs/www.goldengateclassic.org/portal-app` |
+| Application directory | `/home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app` |
 | Database | MariaDB on RDS: `shared2.cdms8mviovca.us-west-2.rds.amazonaws.com:3306/goldengate` |
 | SMTP | AWS SES: `email-smtp.us-west-2.amazonaws.com:587` |
-| Process manager | PM2 |
+| Process manager | PM2 (`sfggc-portal`, port 3000) |
+| Web server | nginx (CloudPanel-managed; vhost in `backend/config/vhost.txt`) |
 
-## Quick Deploy (Automated Script)
+## Quick Deploy
 
-The unified deployment script handles everything: file sync, dependency install, database init, build, and PM2 setup.
+The unified deployment script handles everything: file sync, dependency install, database init + migrations, build on server, PM2 setup, and verification.
 
 ```bash
 # Run from the project root directory
-./deploy_scripts/deploy.sh --portal
+./deploy_scripts/deploy.sh
 
-# Skip confirmation prompt
-./deploy_scripts/deploy.sh --portal --yes
+# Skip the "Do you want to deploy?" prompt
+./deploy_scripts/deploy.sh --yes
 
 # Force environment reconfiguration (if .env.local is broken)
-./deploy_scripts/deploy.sh --portal --setup
+./deploy_scripts/deploy.sh --setup
 
 # Combine flags
-./deploy_scripts/deploy.sh --portal --setup --yes
+./deploy_scripts/deploy.sh --setup --yes
 ```
 
-**First-time deploy:** The script detects no `.env.local` on the server and interactively prompts for:
-- Database username and password
+**First deploy:** The script detects no `.env.local` on the server and interactively prompts for:
+- Database password (username is pre-configured as `goldengate`)
 - Admin session secret (auto-generates a default)
 - SMTP password (AWS SES)
 - First super-admin account (email, name, password)
 
-**Subsequent deploys:** The script skips environment and admin setup, syncs files, reinstalls dependencies, rebuilds, and restarts PM2.
+**Subsequent deploys:** Skip environment and admin setup, sync files, reinstall dependencies, run any new migrations, rebuild on the server, and restart PM2.
 
-**Flags:**
-- `--yes` or `-y`: Skip the "Do you want to deploy?" confirmation prompt (does not affect credential prompts)
-- `--setup`: Force environment reconfiguration, useful for recovering from broken `.env.local` files
+**Useful flags:**
+- `--yes` / `-y`: Skip the deployment confirmation prompt (does not affect credential prompts).
+- `--setup`: Force `.env.local` reconfiguration. Useful for recovering from broken credentials or rotating secrets.
 
-**Backwards compatibility:** The old `deploy-portal.sh` script still works but shows a deprecation warning.
-
-After the script finishes, you must configure nginx (see Section 7 below). This is a one-time manual step in CloudPanel.
+> The nginx vhost is already configured and lives in [backend/config/vhost.txt](../backend/config/vhost.txt). You only need to push it to CloudPanel when you change it — not on every deploy. See [DEPLOYMENT.md#nginx-configuration-management](DEPLOYMENT.md#nginx-configuration-management).
 
 ---
 
@@ -91,14 +89,16 @@ SMTP_FROM=Golden Gate Classic <noreply@goldengateclassic.org>
 rsync -az --delete \
   --exclude='node_modules/' --exclude='.git/' --exclude='.next/' \
   --exclude='out/' --exclude='.env*' \
-  ./ goldengateclassic@54.70.1.215:~/htdocs/www.goldengateclassic.org/portal-app/
+  ./ goldengateclassic@<server>:/home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app/
 ```
+
+Use absolute paths on the remote, never `~/...` — tildes are not reliably expanded in non-interactive SSH commands and can cause file-existence checks to fail silently.
 
 ### 3. Install Dependencies
 
 ```bash
-ssh goldengateclassic@54.70.1.215
-cd ~/htdocs/www.goldengateclassic.org/portal-app
+ssh <server>
+cd /home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app
 npm install --production
 ```
 
@@ -157,96 +157,44 @@ PM2_PATH=$(which pm2)
 
 ### 7. Nginx Configuration (CloudPanel)
 
-The site uses a **hybrid nginx config**: static files for the public site and a reverse proxy for the portal.
+The current nginx vhost lives in version control at [backend/config/vhost.txt](../backend/config/vhost.txt) and proxies all traffic — public pages, portal pages, API routes, and dynamic Next.js endpoints — to the unified Next.js server on port 3000. There is no static file serving from disk.
 
-#### If You Have Direct Nginx Access
-
-In CloudPanel, add the upstream block and location blocks to the nginx vhost for `www.goldengateclassic.org`:
+The vhost is intentionally minimal:
 
 ```nginx
-# Upstream block (BEFORE the server {} block)
+# Upstream (before the server block)
 upstream portal_backend {
     server 127.0.0.1:3000;
     keepalive 16;    # persistent connections, saves 20-50ms/request
 }
 
-server {
-    # ... SSL config ...
+# Build artifacts — long-lived cache headers
+location ^~ /_next/static {
+    proxy_pass http://portal_backend;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
 
-    # Static public site (existing -- keep this)
-    location / {
-        try_files $uri $uri/ $uri.html /index.html;
-    }
-
-    # Portal pages -- proxy to Next.js server
-    # CRITICAL: ^~ prevents the static asset regex from hijacking portal JS files
-    location ^~ /portal {
-        proxy_pass http://portal_backend;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # Portal API routes
-    location ^~ /api/portal {
-        proxy_pass http://portal_backend;
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # Next.js static assets -- served from disk (bypasses Node.js)
-    location ^~ /_next/static {
-        alias /home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app/.next/static;
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # Next.js dynamic requests
-    location ^~ /_next {
-        proxy_pass http://portal_backend;
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
-        proxy_set_header Host $host;
-    }
+# Catch-all — everything else goes to Next.js
+location / {
+    proxy_pass http://portal_backend;
+    # ... standard proxy headers ...
 }
 ```
 
-**CRITICAL:** The `^~` modifier on all four portal location blocks is mandatory. Without it, the regex location `~* \.(js|css|...)$` (for caching static site assets) intercepts `/_next/static/*.js` requests, returning 404 for all Next.js bundles. This completely breaks React hydration -- pages load but all interactive elements (menus, forms, change log) are invisible.
+**CRITICAL:** The `^~` on `/_next/static` is defensive. If anyone reintroduces a regex location like `~* \.(js|css|...)$`, or adds dedicated `/portal`, `/api/portal`, or `/_next` proxy blocks, those new prefix blocks MUST also use `^~`. Otherwise the regex hijacks `/_next/static/*.js` requests, returns 404 for every Next.js bundle, and breaks React hydration entirely — pages load but every interactive element (menus, forms, change log) is invisible.
 
-After saving in CloudPanel, test and reload:
+**You do not have direct nginx access** (no `nginx -t`, no `systemctl reload nginx`). To push a new vhost:
 
-```bash
-sudo nginx -t
-sudo systemctl reload nginx
-```
+1. Edit `backend/config/vhost.txt` locally and commit.
+2. Copy to clipboard: `cat backend/config/vhost.txt | pbcopy` (macOS).
+3. Log into the CloudPanel ISP portal → Sites → domain → Vhost (or Nginx Config).
+4. Paste, save. CloudPanel validates syntax and reloads nginx automatically.
+5. Verify: `curl -I https://www.goldengateclassic.org/portal/`.
 
-#### If You Do NOT Have Direct Nginx Access (ISP-Controlled)
-
-If you cannot run `nginx -t` or `systemctl reload nginx` directly, use the copy/paste workflow:
-
-**Configuration File:** `backend/config/vhost.txt`
-
-This file contains the complete nginx vhost configuration, including the upstream block and all portal proxy settings with the required `^~` modifiers.
-
-**Workflow:**
-1. **Edit locally:** `nano backend/config/vhost.txt`
-2. **Copy to clipboard:** `cat backend/config/vhost.txt | pbcopy` (macOS)
-3. **Paste in ISP control panel:** Log into web portal → Nginx/Vhost config → Paste → Save
-4. **Test:** `curl -I https://www.goldengateclassic.org/portal`
-5. **Commit:** `git add backend/config/vhost.txt && git commit -m "Update nginx config"`
-
-The ISP control panel will automatically validate syntax and reload nginx when you save.
-
-For detailed instructions, see: `DEPLOYMENT.md#nginx-configuration-management`
+For the full workflow, proxy header rules, and additional troubleshooting, see [DEPLOYMENT.md#nginx-configuration-management](DEPLOYMENT.md#nginx-configuration-management).
 
 ### 8. Import Data
 
@@ -267,18 +215,21 @@ bash scripts/dev/import-igbo-xml.sh /path/to/igbo.xml
 
 ```bash
 # From your local machine (project root)
-./deploy_scripts/deploy.sh --portal
-
-# Skip confirmation prompt
-./deploy_scripts/deploy.sh --portal --yes
+./deploy_scripts/deploy.sh --yes
 ```
 
-Or manually:
+Or manually if you need to bypass the unified script:
 
 ```bash
-# Sync, rebuild, restart
-rsync -az --delete --exclude='node_modules/' --exclude='.git/' --exclude='.next/' --exclude='out/' --exclude='.env*' ./ goldengateclassic@54.70.1.215:~/htdocs/www.goldengateclassic.org/portal-app/
-ssh goldengateclassic@54.70.1.215 "cd ~/htdocs/www.goldengateclassic.org/portal-app && npm install --production && npm run build && pm2 restart sfggc-portal"
+rsync -az --delete \
+  --exclude='node_modules/' --exclude='.git/' --exclude='.next/' \
+  --exclude='out/' --exclude='.env*' \
+  ./ <user>@<server>:/home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app/
+
+ssh <user>@<server> "cd /home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app && \
+  npm install --production && \
+  npm run build && \
+  pm2 restart sfggc-portal"
 ```
 
 ---
@@ -326,16 +277,16 @@ curl -b "session=COOKIE" https://www.goldengateclassic.org/api/portal/participan
 
 **Fix:** Ensure `buildBaseUrl()` returns `http://localhost:${PORT}`. See `SERVER_SETUP.md#troubleshooting-nginx-issues` for the full explanation.
 
-### Static site pages return 404 after adding portal
-Make sure the `location /` block with `try_files` is still present in the nginx config. The portal proxy blocks should be added alongside it, not replace it.
+### Public site pages return 404
+The unified vhost proxies `location /` to the same Node.js upstream as the portal. If public pages 404, the upstream (PM2 process `sfggc-portal`) is down or the `location /` block is missing from `backend/config/vhost.txt`. Check `pm2 status sfggc-portal` and confirm the vhost was pushed via CloudPanel.
 
 ### Broken .env.local with empty passwords
-If your portal won't start and you see empty passwords in `.env.local` on the server, use the `--setup` flag to force reconfiguration:
+If the portal won't start and you see empty passwords in `.env.local` on the server, use `--setup` to force reconfiguration:
 
 ```bash
-./deploy_scripts/deploy.sh --portal --setup
+./deploy_scripts/deploy.sh --setup
 ```
 
-This can happen if an older version of the deployment script was used with the `--force` flag during first-time setup. The script will now properly prompt for all credentials and create a fresh `.env.local` file.
+This can happen if an older version of the deployment script was used with `--force` during first-time setup. The current script properly separates `--yes` (confirmation skip) from credential collection and fails fast in non-interactive mode without env vars.
 
-See the [UNIFIED_DEPLOYMENT.md](UNIFIED_DEPLOYMENT.md#broken-envlocal-with-empty-passwords) guide for more details.
+See [UNIFIED_DEPLOYMENT.md#broken-envlocal-with-empty-passwords](UNIFIED_DEPLOYMENT.md#broken-envlocal-with-empty-passwords) for more.

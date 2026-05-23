@@ -189,7 +189,7 @@ The `scores` table has a unique constraint on `(pid, event_type)` to ensure each
 The migration:
 1. Removes any existing duplicate records (keeping the most recent)
 2. Adds unique index `pid_event_unique` on `(pid, event_type)`
-3. Runs automatically during portal deployment via `deploy_scripts/lib/deploy-portal.sh`
+3. Runs automatically during deployment via `deploy_scripts/lib/deploy-migrations.sh`
 
 See [MIGRATIONS.md](../deploy_docs/MIGRATIONS.md) for details on the migration system.
 

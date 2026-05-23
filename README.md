@@ -1,8 +1,8 @@
 # Golden Gate Classic website
 
-This is the informational website for the Golden Gate Classic, an IGBO-affiliated bowling tournament. The site is available at [www.goldengateclassic.org](http://www.goldengateclassic.org).
+This is the website for the Golden Gate Classic, an IGBO-affiliated bowling tournament. The site is available at [www.goldengateclassic.org](http://www.goldengateclassic.org).
 
-It's built as a static website using the [Next.js](https://nextjs.org/) framework and [React-Bootstrap](https://react-bootstrap.github.io/).
+It is a unified [Next.js](https://nextjs.org/) server application (Next.js 14, React 18, Bootstrap 5) that serves both the public marketing pages and a database-backed tournament portal under a single Node.js process managed by PM2 behind nginx.
 
 It uses Bootstrap 5, and I started the design with mobile viewports, then adapted them for medium and large ones. Since two out of every three visitors is on a mobile device, it seemed like the best approach.
 
@@ -19,47 +19,28 @@ I have also used this project to further my understanding of Bootstrap's impleme
 
 ## Deployment
 
-Deployment scripts are located in the `deploy_scripts/` directory. **Important: These scripts must be run from the project root directory** because they use relative paths to locate the `out` directory created by the build process.
+The site deploys as a single Next.js server (PM2 process `sfggc-portal`, port 3000) behind nginx. One command handles everything: file sync, dependency install, database migrations, build on the server, and PM2 restart.
 
 ### Quick Start
 
-1. **Set up SSH keys** (recommended for passwordless deployment):
+1. **Set up SSH keys** (one-time, for passwordless deployment):
    ```bash
    ./deploy_scripts/setup-ssh.sh <ssh_user@server> <server_alias>
    ```
-   Example: `./deploy_scripts/setup-ssh.sh jfuggc@54.70.1.215 sfggc-server`
 
-2. Build the static site:
+2. **Deploy** (run from the project root):
    ```bash
-   ./deploy_scripts/build.sh
+   ./deploy_scripts/deploy.sh
    ```
-   Or manually: `npm run build`
+   Use `--dry-run --verbose` to preview, `--yes` to skip the confirmation prompt, `--setup` to force `.env.local` reconfiguration. See `./deploy_scripts/deploy.sh --help` for all flags.
 
-3. Deploy using the automated script (from the project root):
-   ```bash
-   ./deploy_scripts/deploy.sh <ssh_user@server> <domain_path> <domain_name>
-   ```
-   Or use the server alias if you set up SSH keys:
-   ```bash
-   ./deploy_scripts/deploy.sh <server_alias> <domain_path> <domain_name>
-   ```
+The build happens on the server and produces `.next/`, not `out/` — there is no static export. nginx proxies all traffic to Node.js on port 3000; the vhost lives in [backend/config/vhost.txt](backend/config/vhost.txt) and is pushed via the ISP control panel (no direct nginx access).
 
-4. Or use the manual deployment script for step-by-step deployment:
-   ```bash
-   ./deploy_scripts/deploy-manual.sh <ssh_user@server> <domain_path> <domain_name>
-   ```
-
-For detailed deployment instructions, see the [deployment guide](deploy_docs/DEPLOYMENT.md).
-
-If you encounter server permission issues or other deployment problems, see [SERVER_SETUP.md](SERVER_SETUP.md) for troubleshooting steps and server configuration guidance.
-
-**Web Server Configuration:**
-- Using **Apache**: The deployment script automatically configures `.htaccess` for you
-- Using **Nginx**: See the nginx configuration guides in [`deploy_docs/`](deploy_docs/) for setup instructions
+For detailed instructions see [deploy_docs/DEPLOYMENT.md](deploy_docs/DEPLOYMENT.md). For server troubleshooting see [SERVER_SETUP.md](SERVER_SETUP.md).
 
 ## Portal
 
-The repository also includes a tournament portal for admin and participant access. The portal runs as a Next.js server application with MariaDB.
+The repository includes a tournament portal for admin and participant access, served from the same Next.js process as the public site. It is backed by MariaDB (AWS RDS in production).
 
 - **Portal documentation**: [`portal_docs/README.md`](portal_docs/README.md)
 - **Setup guide**: [`portal_docs/PORTAL_SETUP.md`](portal_docs/PORTAL_SETUP.md)

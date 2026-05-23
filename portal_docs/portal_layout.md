@@ -115,7 +115,7 @@ sfggc-nextjs/
 
 - Frontend portal pages live under `src/pages/portal/` to keep routing aligned with the main site.
 - Portal UI components live under `src/components/Portal/` to follow the existing feature-folder pattern.
-- Backend code is isolated under `backend/` to keep API and data concerns separate from the static site.
+- Backend code is isolated under `backend/` to keep API and data concerns separate from the public-facing pages.
 - Admin scripts live under `backend/scripts/admin/` for convenience while keeping them out of request paths.
 - Frontend tests live under `tests/frontend/`.
 - Shared unit/integration tests live under `tests/unit/` and `tests/helpers/`.

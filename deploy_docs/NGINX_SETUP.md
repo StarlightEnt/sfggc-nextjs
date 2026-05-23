@@ -2,34 +2,28 @@
 
 ## Source of Truth
 
-The nginx vhost configuration is managed in version control at:
-
-```
-backend/config/vhost.txt
-```
-
-This file contains the **complete** server block: SSL listeners, portal proxy blocks, static site serving, and caching rules. All nginx changes should be made to this file.
+The nginx vhost is managed in version control at [backend/config/vhost.txt](../backend/config/vhost.txt). It contains the complete server block: SSL listeners, application proxy blocks, and caching rules. Every nginx change is made to that file first.
 
 ## How to Update Nginx
 
-We do **not** have direct SSH access to nginx. All changes go through CloudPanel:
+You do **not** have direct SSH access to nginx. All changes go through CloudPanel:
 
-1. Edit `backend/config/vhost.txt` locally
-2. Copy to clipboard: `cat backend/config/vhost.txt | pbcopy`
-3. Log into CloudPanel ISP portal
-4. Navigate to **Sites** → select domain → **Nginx Settings** / **Vhost**
-5. Paste entire contents (replacing everything)
-6. Save (CloudPanel validates syntax and reloads nginx automatically)
+1. Edit `backend/config/vhost.txt` locally and commit.
+2. Copy to clipboard: `cat backend/config/vhost.txt | pbcopy` (macOS).
+3. Log into the CloudPanel ISP portal.
+4. **Sites** → select domain → **Vhost** (or **Nginx Settings**).
+5. Paste the entire file, replacing the existing contents.
+6. Save. CloudPanel validates the syntax and reloads nginx automatically.
 
-**Do NOT** attempt `nginx -t`, `systemctl reload nginx`, or direct editing of `/etc/nginx/` files — we don't have those permissions.
+**Do NOT** attempt `nginx -t`, `systemctl reload nginx`, or direct editing of `/etc/nginx/` files — those require permissions you don't have.
 
 ## Configuration Overview
 
-The vhost config has four main sections:
+The current vhost is intentionally minimal. There are only two application-level location blocks; everything else (the public marketing pages, `/portal`, `/api/portal`, dynamic `/_next` requests) goes through the catch-all and is handled by Next.js itself.
 
 ### 1. Upstream Block
 
-Persistent connections to the Node.js portal backend (saves 20-50ms per request):
+Persistent connections to the Node.js application (saves 20–50 ms per request):
 
 ```nginx
 upstream portal_backend {
@@ -38,80 +32,111 @@ upstream portal_backend {
 }
 ```
 
-### 2. Portal Proxy Blocks
+`keepalive` requires `proxy_set_header Connection ""` (empty string) in every proxied block — never `'upgrade'`.
 
-Four `location ^~` blocks proxy requests to Node.js. The `^~` modifier is **critical** — without it, the static asset regex (`~* \.(js|css|...)$`) hijacks portal JS requests, breaking React hydration.
+### 2. SSL and Server Settings
+
+Standard CloudPanel placeholders: `{{ssl_certificate}}`, `{{ssl_certificate_key}}`, `{{root}}`, access/error log directives, the Let's Encrypt validation block, and the `include /etc/nginx/global_settings;` line. Preserve all placeholders exactly when pasting into the panel.
+
+### 3. Build Artifact Caching
 
 ```nginx
-location ^~ /portal { proxy_pass http://portal_backend; ... }
-location ^~ /api/portal { proxy_pass http://portal_backend; ... }
-location ^~ /_next/static { alias .../portal-app/.next/static; ... }
-location ^~ /_next { proxy_pass http://portal_backend; ... }
+location ^~ /_next/static {
+  proxy_pass http://portal_backend;
+  proxy_http_version 1.1;
+  proxy_set_header Connection "";
+  expires 1y;
+  add_header Cache-Control "public, immutable";
+}
 ```
 
-### 3. Static Site Serving
+Next.js content-hashes the filenames in `/_next/static/`, so a one-year `Cache-Control: public, immutable` is safe. The `^~` modifier is defensive (see Key Configuration Rules below).
 
-Serves the pre-built static pages (homepage, results, rules, etc.):
+### 4. Catch-All Application Proxy
 
 ```nginx
 location / {
-    # Strip trailing slash — /results/ becomes /results, preventing 403
-    # on directories that collide with static page names
-    rewrite ^/(.+)/$ /$1 permanent;
-
-    # Check .html BEFORE directory to serve results.html instead of results/
-    try_files $uri $uri.html $uri/ /index.html;
+  proxy_pass http://portal_backend;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection "";
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_cache_bypass $http_upgrade;
 }
 ```
 
-**Why this order matters:** The `results/` directory (containing PDFs) shares a name with `results.html` (the Next.js page). If `$uri/` is checked before `$uri.html`, nginx finds the directory and returns 403. The trailing slash rewrite handles cached/typed URLs like `/results/`.
-
-### 4. Static Asset Caching
-
-```nginx
-location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-}
-```
+This block handles every other request: public pages, portal pages, API routes, dynamic Next.js endpoints. Next.js does the routing.
 
 ## Key Configuration Rules
 
 | Rule | Why |
 |---|---|
-| `^~` on all portal locations | Prevents regex `~* \.(js|css)$` from hijacking portal JS/CSS requests |
-| `$uri.html` before `$uri/` in try_files | Prevents 403 when a page name collides with a directory |
-| `rewrite ^/(.+)/$ /$1 permanent` | Strips trailing slash so `.html` check can match |
-| `proxy_set_header Connection ""` | Required for keepalive (NOT `"upgrade"`) |
-| `compress: false` in next.config.js | Nginx handles gzip — avoids double compression |
+| `^~` on `/_next/static` | Defensive — if a regex location like `~* \.(js|css)$` is ever added, regex beats plain prefix and would hijack JS bundles. `^~` blocks that. |
+| `proxy_set_header Connection ""` in every proxy block | Required for upstream keepalive. `"upgrade"` defeats it. |
+| Headers in each proxy block depend on block type | Nginx does not merge `proxy_set_header` across scopes — child blocks fully replace parent. App/dynamic blocks need the full forwarded-header set; cache-only blocks (like `^~ /_next/static`) only need keepalive headers. See [DEPLOYMENT.md#nginx-proxy-header-inheritance](DEPLOYMENT.md#nginx-proxy-header-inheritance). |
+| `compress: false` in `next.config.js` | Nginx handles gzip — avoids double compression and corrupt binary responses. |
+| Never use a fixed `alias` for `/_next/static` | Build IDs change every deploy; a stale alias path would 404 all assets. Proxy to Node.js (current), or use `try_files $uri @portal_next` if disk-serving is reintroduced. |
+
+## Defensive Notes for Future Changes
+
+The current vhost is small on purpose. Some patterns to know if anyone proposes adding to it:
+
+**If a static-asset regex is reintroduced:**
+
+```nginx
+location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ { ... }
+```
+
+…then every plain-prefix block that needs to serve `.js`/`.css` (especially anything under `/_next/`) MUST use `^~`. Otherwise the regex steals those requests and React hydration breaks. The current `/_next/static` block already uses `^~` defensively, but you would also need to add explicit `^~` blocks for `/portal`, `/api/portal`, and `/_next` so the regex cannot intercept their assets either.
+
+**If on-disk page serving is reintroduced (e.g., a colliding `results/` directory vs. `results.html`):**
+
+Use both a trailing-slash rewrite and `.html` before directory in `try_files`:
+
+```nginx
+location / {
+  rewrite ^/(.+)/$ /$1 permanent;             # /results/ → /results
+  try_files $uri $uri.html $uri/ /index.html; # .html before directory
+}
+```
+
+Without both, directory listings clash with same-named `.html` pages and return 403. The current vhost doesn't need this because everything goes through Next.js.
 
 ## Common Issues
 
-### 403 Forbidden
-- **Cause 1**: A static page name collides with a directory (e.g., `/results` is both `results.html` and a `results/` folder with PDFs). Nginx tries to list the directory instead of serving the `.html` file.
-- **Fix**: Ensure `try_files` checks `$uri.html` before `$uri/`, and the trailing slash rewrite is present. See [Static Site Serving](#3-static-site-serving) above.
-- **Cause 2**: Wrong directory permissions or incorrect root path.
+### Portal returns 502
 
-### 404 Not Found (but files exist)
-- **Cause**: Root path is incorrect or try_files not configured
-- **Fix**: Verify the CloudPanel `{{root}}` placeholder resolves to `/home/goldengateclassic/htdocs/www.goldengateclassic.org`
+Node.js is down. `ssh sfggc "pm2 status sfggc-portal"`, then `pm2 logs sfggc-portal --lines 100`.
 
-### Portal loads but menus/forms are invisible
-- **Cause**: `^~` modifier missing from portal location blocks — the static asset regex is catching `/_next/static/*.js` requests
-- **Fix**: Add `^~` to all four portal locations. See [Portal Proxy Blocks](#2-portal-proxy-blocks).
+### Pages load but menus / forms / change log are invisible
 
-### CSS/JS not loading
-- **Cause**: Static files not being served correctly
-- **Fix**: Ensure `/_next/static` location block exists with correct `alias` path
+JavaScript bundles are 404'ing. Open DevTools → Network and look for failed `/_next/static/chunks/*.js` requests. Almost certainly caused by a regex location being added without `^~` on the corresponding prefix block. See the defensive notes above.
 
-## Testing
+### Configuration rejected by ISP panel
 
-After updating the config in CloudPanel:
+- Check for syntax errors (missing semicolons, unclosed braces).
+- Verify CloudPanel placeholders are preserved: `{{root}}`, `{{ssl_certificate}}`, `{{ssl_certificate_key}}`, `{{nginx_access_log}}`, `{{nginx_error_log}}`, `{{settings}}`.
 
-1. **Static site**: `curl -s -o /dev/null -w "%{http_code}" https://www.goldengateclassic.org/`
-2. **Results page**: `curl -s -o /dev/null -w "%{http_code}" https://www.goldengateclassic.org/results`
-3. **Results PDF**: `curl -s -o /dev/null -w "%{http_code}" https://www.goldengateclassic.org/results/2026/sm_qualifier_final.pdf`
-4. **Portal**: `curl -s -o /dev/null -w "%{http_code}" https://www.goldengateclassic.org/portal/`
-5. **Portal API**: `curl -s -o /dev/null -w "%{http_code}" https://www.goldengateclassic.org/api/portal/admin/session`
+### Changes not taking effect
 
-Expected: 200, 200, 200, 308, 401
+Verify the panel reported a successful save; wait 30–60 seconds for the reload; clear browser cache.
+
+## Testing After a Vhost Change
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://www.goldengateclassic.org/
+curl -s -o /dev/null -w "%{http_code}\n" https://www.goldengateclassic.org/results
+curl -s -o /dev/null -w "%{http_code}\n" https://www.goldengateclassic.org/portal/
+curl -s -o /dev/null -w "%{http_code}\n" https://www.goldengateclassic.org/api/portal/admin/session
+```
+
+Expected: 200, 200, 200, 401 (the admin session check correctly returns 401 when unauthenticated).
+
+## Related Documentation
+
+- **Full nginx workflow + header rules:** [DEPLOYMENT.md#nginx-configuration-management](DEPLOYMENT.md#nginx-configuration-management)
+- **CloudPanel UI navigation:** [CLOUDPANEL_NGINX_GUIDE.md](CLOUDPANEL_NGINX_GUIDE.md)
+- **Source of truth:** [backend/config/vhost.txt](../backend/config/vhost.txt)

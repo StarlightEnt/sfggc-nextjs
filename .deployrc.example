@@ -130,7 +130,7 @@ DEPLOY_SMTP_FROM="Golden Gate Classic <noreply@goldengateclassic.org>"
 #   export DEPLOY_ADMIN_EMAIL="admin@goldengateclassic.org"
 #   export DEPLOY_ADMIN_NAME="Tournament Admin"
 #   export DEPLOY_ADMIN_PASSWORD="AdminPass123!"
-#   ./deploy_scripts/deploy.sh --portal
+#   ./deploy_scripts/deploy.sh
 #
 # If environment variables are not set, the script will prompt interactively.
 # After first deployment, subsequent deployments don't need these (config

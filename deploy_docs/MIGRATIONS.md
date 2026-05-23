@@ -12,10 +12,10 @@ When you deploy the portal, migrations run automatically:
 
 ```bash
 # Standard portal deployment (migrations run automatically)
-./deploy_scripts/deploy.sh --portal
+./deploy_scripts/deploy.sh
 
 # Skip migrations if needed (not recommended)
-./deploy_scripts/deploy.sh --portal --skip-migrations
+./deploy_scripts/deploy.sh --skip-migrations
 ```
 
 ### Migration Discovery
@@ -188,7 +188,7 @@ describe("Your migration", () => {
 The migration will run automatically:
 
 ```bash
-./deploy_scripts/deploy.sh --portal
+./deploy_scripts/deploy.sh
 ```
 
 ## Migration Naming Conventions
@@ -219,7 +219,7 @@ If a migration fails during deployment:
 Only skip migrations if absolutely necessary (e.g., during rollback):
 
 ```bash
-./deploy_scripts/deploy.sh --portal --skip-migrations
+./deploy_scripts/deploy.sh --skip-migrations
 ```
 
 ### Running Migrations Manually
