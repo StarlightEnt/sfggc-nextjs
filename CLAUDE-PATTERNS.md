@@ -704,7 +704,7 @@ const nextConfig = {
 };
 ```
 
-**Current state:** Already configured. See `CLAUDE-DEPLOYMENT.md#Nginx Gzip and next.config.js`.
+**Current state:** Already configured. See `CLAUDE-DEPLOYMENT.md#Nginx Gzip + next.config.js`.
 
 ## Visibility Toggle Route Pattern
 
@@ -731,11 +731,11 @@ export default createVisibilityToggleHandler({
 - Factory: `src/utils/portal/visibility-toggle-route.js`
 - Consumers: `src/pages/api/portal/admin/scores/visibility.js`, `src/pages/api/portal/admin/optional-events/visibility.js`
 
-## Client-Side Visibility Fetching on Static Pages
+## Client-Side Visibility Fetching on Public Pages
 
-**Problem:** Static export pages (`output: 'export'`) cannot use `getServerSideProps`. Dynamic content visibility must be determined at runtime.
+**Rule:** Public marketing pages (e.g. `src/pages/results.js`) fetch visibility flags client-side, not via `getServerSideProps`. Keeps pages cacheable at nginx/CDN, avoids per-request SSR for read-mostly content. Deliberate pattern — do not "fix" by adding SSR.
 
-**Pattern:** Use `useEffect` + `fetch` to query public visibility endpoints, then conditionally render UI elements.
+**Pattern:** `useEffect` + `fetch` against public visibility endpoints, conditional render.
 
 ```javascript
 const [showStandingsLink, setShowStandingsLink] = useState(false);
@@ -746,18 +746,18 @@ useEffect(() => {
     .then((data) => {
       if (data?.participantsCanViewScores) setShowStandingsLink(true);
     })
-    .catch(() => {});  // Silently fail -- links stay hidden
+    .catch(() => {});  // silent fail — links stay hidden
 }, []);
 ```
 
-**Key rules:**
-- Default state is `false` (hidden) -- links only appear after successful API response
-- `.catch(() => {})` prevents unhandled rejection when API is unreachable
-- Visibility endpoints must allow unauthenticated GET (see Visibility Toggle Route Pattern above)
+**Rules:**
+- Default state `false` (hidden); link appears only after successful response.
+- `.catch(() => {})` to swallow unhandled rejection when API unreachable.
+- Visibility endpoint must allow unauthenticated GET (see Visibility Toggle Route Pattern above).
 
 **Files:**
 - Page: `src/pages/results.js`
-- Component: `src/components/Results/Results.js` (receives `showStandingsLink`, `showOptionalEventsLink` as props)
+- Component: `src/components/Results/Results.js` (props: `showStandingsLink`, `showOptionalEventsLink`)
 - Test: `tests/frontend/results-page-public-links.test.js`
 
 ## Component Data Array Pattern
