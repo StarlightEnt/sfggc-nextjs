@@ -103,11 +103,13 @@ setup_app_environment() {
 
   # Generate or use provided session secret
   local SESSION_SECRET="${DEPLOY_SESSION_SECRET:-$(openssl rand -hex 32)}"
-  if [ -z "${DEPLOY_SESSION_SECRET:-}" ]; then
+  if [ -n "${DEPLOY_SESSION_SECRET:-}" ]; then
+    log_info "Session secret: (from DEPLOY_SESSION_SECRET env var)"
+  elif [ ! -t 0 ]; then
+    log_info "Session secret: (auto-generated; set DEPLOY_SESSION_SECRET to override)"
+  else
     read -p "  Admin session secret [$SESSION_SECRET]: " SESSION_INPUT
     SESSION_SECRET="${SESSION_INPUT:-$SESSION_SECRET}"
-  else
-    log_info "Session secret: (from DEPLOY_SESSION_SECRET env var)"
   fi
 
   # Get SMTP password (from env var or prompt)
@@ -131,11 +133,13 @@ setup_app_environment() {
 
   # Get portal base URL (from env var or prompt)
   local PORTAL_BASE_URL="${DEPLOY_PORTAL_BASE_URL:-https://${DEPLOY_DOMAIN}}"
-  if [ -z "${DEPLOY_PORTAL_BASE_URL:-}" ]; then
+  if [ -n "${DEPLOY_PORTAL_BASE_URL:-}" ]; then
+    log_info "Portal base URL: $PORTAL_BASE_URL (from DEPLOY_PORTAL_BASE_URL env var)"
+  elif [ ! -t 0 ]; then
+    log_info "Portal base URL: $PORTAL_BASE_URL (default; set DEPLOY_PORTAL_BASE_URL to override)"
+  else
     read -p "  Portal base URL [$PORTAL_BASE_URL]: " PORTAL_BASE_URL_INPUT
     PORTAL_BASE_URL="${PORTAL_BASE_URL_INPUT:-$PORTAL_BASE_URL}"
-  else
-    log_info "Portal base URL: $PORTAL_BASE_URL (from DEPLOY_PORTAL_BASE_URL env var)"
   fi
 
   # Create .env.local on server
@@ -445,6 +449,72 @@ manage_pm2() {
   return 0
 }
 
+# verify_build_id_served - Confirm public URL is serving the build we just deployed.
+# Catches vhost drift, stale-file serving, CDN caching, etc. — any scenario where
+# nginx returns 200 from the wrong source.
+verify_build_id_served() {
+  if [ -z "${DEPLOY_DOMAIN:-}" ]; then
+    return 0
+  fi
+  if ! command -v curl >/dev/null 2>&1; then
+    log_warn "curl not available — skipping build-ID fingerprint check"
+    return 0
+  fi
+
+  log_step "Verifying public site serves the build we just deployed"
+
+  # The build ID Next.js wrote during the build we just ran on the server.
+  # `|| true` neutralizes the pipeline exit status so a missing BUILD_ID falls
+  # through to the empty-value check below instead of tripping set -e + pipefail
+  # mid-assignment.
+  local server_build_id
+  server_build_id=$(ssh_command "cat ${DEPLOY_APP_PATH}/.next/BUILD_ID 2>/dev/null" | tr -d '[:space:]' || true)
+  if [ -z "$server_build_id" ]; then
+    log_error "Could not read .next/BUILD_ID on server — build may have failed"
+    return 1
+  fi
+
+  # The build ID Next.js embeds in every server-rendered page via __NEXT_DATA__.
+  local public_html
+  public_html=$(curl -fsSL "https://${DEPLOY_DOMAIN}/" 2>/dev/null) || {
+    log_error "Could not fetch https://${DEPLOY_DOMAIN}/"
+    return 1
+  }
+  # `|| true` ensures a no-match grep does not exit the script before the
+  # empty-value check below can emit the diagnostic.
+  local public_build_id
+  public_build_id=$(echo "$public_html" | grep -oE '"buildId":"[^"]+"' | head -1 | sed 's/.*"buildId":"\([^"]*\)".*/\1/' || true)
+
+  if [ -z "$public_build_id" ]; then
+    log_error "Public homepage response has no Next.js buildId — nginx is not proxying to Node.js"
+    log_error ""
+    log_error "Server build:    $server_build_id"
+    log_error "Public response: <none — looks like static file from disk>"
+    log_error ""
+    log_error "FIX: Push backend/config/vhost.txt to CloudPanel:"
+    log_error "  1. cat backend/config/vhost.txt | pbcopy"
+    log_error "  2. CloudPanel → Sites → ${DEPLOY_DOMAIN} → Vhost"
+    log_error "  3. Replace contents, save"
+    return 1
+  fi
+
+  if [ "$public_build_id" != "$server_build_id" ]; then
+    log_error "Public site is serving a different build than the one just deployed"
+    log_error ""
+    log_error "Server build:    $server_build_id"
+    log_error "Public response: $public_build_id"
+    log_error ""
+    log_error "Possible causes:"
+    log_error "  - nginx vhost out of sync with backend/config/vhost.txt (push via CloudPanel)"
+    log_error "  - CDN/proxy in front holding stale response"
+    log_error "  - Wrong server pointed at the domain"
+    return 1
+  fi
+
+  log_success "Public site serves the deployed build ($server_build_id)"
+  return 0
+}
+
 # verify_app_deployment - Check application is running
 verify_app_deployment() {
   log_step "Verifying application deployment"
@@ -452,6 +522,7 @@ verify_app_deployment() {
   if [ "${DRY_RUN:-false}" = true ]; then
     log_dry_run "Would check PM2 status"
     log_dry_run "Would test HTTP response for / and /portal/"
+    log_dry_run "Would verify public buildId matches server's .next/BUILD_ID"
     return 0
   fi
 
@@ -485,6 +556,9 @@ verify_app_deployment() {
       log_info "Check nginx configuration and PM2 logs"
     fi
   fi
+
+  # Fingerprint check: does the public URL actually serve the build we just shipped?
+  verify_build_id_served || return 1
 
   return 0
 }
@@ -555,10 +629,13 @@ deploy_app() {
   if [ "${DRY_RUN:-false}" != true ]; then
     echo ""
     log_info "Next steps:"
-    log_info "  1. Update nginx to proxy /portal and /api/portal to port 3000"
-    log_info "     (see deploy_docs/PORTAL_DEPLOYMENT.md for nginx config)"
-    log_info "  2. Test: https://${DEPLOY_DOMAIN}/portal/"
-    log_info "  3. Test admin login at /portal/admin/"
+    log_info "  1. Test: https://${DEPLOY_DOMAIN}/        (public homepage)"
+    log_info "  2. Test: https://${DEPLOY_DOMAIN}/portal/ (portal admin login)"
+    log_info ""
+    log_info "If the public site shows stale content despite this 'success':"
+    log_info "  The build-ID fingerprint check above should have already failed."
+    log_info "  If it didn't, suspect nginx vhost drift — push backend/config/vhost.txt"
+    log_info "  via CloudPanel. See deploy_docs/DEPLOYMENT.md#nginx-configuration-management"
     echo ""
     log_info "Useful commands (on server):"
     log_info "  pm2 logs ${DEPLOY_PM2_APP_NAME}      # View application logs"

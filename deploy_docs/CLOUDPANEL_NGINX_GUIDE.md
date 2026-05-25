@@ -1,256 +1,103 @@
-# How to Update Nginx Configuration in CloudPanel
+# Updating Nginx Configuration in CloudPanel
 
-## Step-by-Step Guide
+This is a UI-navigation reference for finding and updating the nginx vhost configuration in the CloudPanel control panel. The configuration itself lives in version control at [backend/config/vhost.txt](../backend/config/vhost.txt) and is the source of truth — never edit configuration directly in the panel without first updating that file.
 
-### Step 1: Log into CloudPanel
-1. Open your web browser
-2. Navigate to your CloudPanel URL (usually `https://your-server-ip:8443` or your CloudPanel domain)
-3. Log in with your credentials
+For the full configuration-management workflow (edit → clipboard → paste → verify → commit), the proxy header rules, and the `^~` modifier warning, see [DEPLOYMENT.md → Nginx Configuration Management](DEPLOYMENT.md#nginx-configuration-management). This guide only covers how to navigate the CloudPanel UI.
 
-### Step 2: Navigate to Your Site
-1. In the left sidebar, click on **"Sites"** (or "Websites")
-2. Find and click on your domain: **www1.goldengateclassic.org**
-3. This will open the site management page
+## Step 1: Log into CloudPanel
 
-### Step 3: Access Nginx Settings
-CloudPanel has different ways to access nginx configuration depending on the version:
+1. Open your browser.
+2. Navigate to the CloudPanel URL (usually `https://your-server-ip:8443` or your CloudPanel domain).
+3. Log in.
 
-#### Option A: Direct Nginx Tab
-Look for a tab or menu item labeled:
-- **"Nginx"**
-- **"Nginx Config"**
-- **"Web Server"**
-- **"Server Configuration"**
+## Step 2: Open the Site
 
-#### Option B: Advanced Settings
-1. Look for **"Advanced"** or **"Settings"** tab
-2. Inside, find **"Nginx"** or **"Custom Nginx Config"**
-3. Or look for **"Custom Directives"** or **"Custom Configuration"**
+1. In the left sidebar click **Sites** (or **Websites**).
+2. Click on `www.goldengateclassic.org`.
 
-#### Option C: Edit Configuration File
-1. Look for **"File Manager"** or **"Files"** in the left sidebar
-2. Navigate to `/etc/nginx/sites-available/` or `/etc/nginx/conf.d/`
-3. Find the configuration file for your domain
-4. CloudPanel may have a **"Edit"** button next to the file
+## Step 3: Find the Vhost Editor
 
-### Step 4: Add or Modify Configuration
+CloudPanel's UI varies slightly by version. The nginx vhost editor is typically labelled one of:
 
-Once you find the nginx configuration area, you need to add or modify these directives:
+- **Vhost** (most common in current CloudPanel)
+- **Nginx** / **Nginx Config**
+- **Web Server** → **Server Configuration**
+- Under an **Advanced** or **Settings** tab as **Custom Nginx Config** / **Custom Directives**
 
-#### If there's a "Custom Directives" or "Custom Nginx Config" text box:
+If you cannot find it under the site, look under the site's **Settings** sub-menu.
 
-**Paste this configuration:**
+## Step 4: Paste the Vhost
 
-```nginx
-# Enable gzip compression
-gzip on;
-gzip_vary on;
-gzip_min_length 1024;
-gzip_types text/plain text/css text/xml text/javascript 
-           application/x-javascript application/xml+rss 
-           application/javascript application/json 
-           image/svg+xml;
+1. On your local machine, copy the current `backend/config/vhost.txt`:
 
-# Security headers
-add_header X-Content-Type-Options "nosniff" always;
-add_header X-Frame-Options "DENY" always;
-add_header X-XSS-Protection "1; mode=block" always;
+   ```bash
+   # macOS
+   cat backend/config/vhost.txt | pbcopy
 
-# Cache static assets (images, fonts, etc.)
-location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-}
+   # Linux (requires xclip)
+   cat backend/config/vhost.txt | xclip -selection clipboard
 
-# Serve Next.js static files with long cache
-location /_next/static {
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-}
+   # Windows (WSL)
+   cat backend/config/vhost.txt | clip.exe
+   ```
 
-# Handle Next.js client-side routing (CRITICAL!)
-location / {
-    try_files $uri $uri/ $uri.html /index.html;
-}
+2. In the CloudPanel vhost editor, select all existing content and replace it with the clipboard contents.
 
-# Handle 404 errors with Next.js custom page
-error_page 404 /404.html;
-location = /404.html {
-    internal;
-}
+3. **Preserve CloudPanel placeholders.** The vhost.txt file uses placeholders such as `{{root}}`, `{{ssl_certificate}}`, `{{ssl_certificate_key}}` — CloudPanel substitutes these automatically. Do not replace them with hard-coded values.
 
-# Deny access to hidden files
-location ~ /\. {
-    deny all;
-    access_log off;
-    log_not_found off;
-}
-```
+4. Save.
 
-#### If you're editing the full configuration file:
+CloudPanel validates the syntax on save, reloads nginx if the config is valid, and surfaces any errors directly in the panel.
 
-Find the `server` block for your domain and make sure it includes:
+## Step 5: Verify
 
-```nginx
-server {
-    listen 80;
-    listen [::]:80;
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    
-    server_name www1.goldengateclassic.org www.goldengateclassic.org goldengateclassic.org;
-    
-    # Make sure root points to your deployment directory
-    root /home/goldengateclassic/htdocs/www.goldengateclassic.org;
-    index index.html;
-
-    # Enable gzip compression
-    gzip on;
-    gzip_vary on;
-    gzip_min_length 1024;
-    gzip_types text/plain text/css text/xml text/javascript 
-               application/x-javascript application/xml+rss 
-               application/javascript application/json 
-               image/svg+xml;
-
-    # Security headers
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-Frame-Options "DENY" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-
-    # Cache static assets
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # Serve Next.js static files
-    location /_next/static {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # Handle Next.js client-side routing (CRITICAL!)
-    location / {
-        try_files $uri $uri/ $uri.html /index.html;
-    }
-
-    # Handle 404 errors
-    error_page 404 /404.html;
-    location = /404.html {
-        internal;
-    }
-
-    # Deny access to hidden files
-    location ~ /\. {
-        deny all;
-        access_log off;
-        log_not_found off;
-    }
-}
-```
-
-### Step 5: Save and Apply Changes
-1. Click **"Save"** or **"Apply"** button
-2. CloudPanel will usually:
-   - Test the nginx configuration automatically
-   - Reload nginx if the test passes
-   - Show you any errors if the configuration is invalid
-
-### Step 6: Verify the Configuration
-
-If CloudPanel doesn't automatically test, you can verify via SSH:
+From your local machine:
 
 ```bash
-ssh goldengateclassic@54.70.1.215
-sudo nginx -t
+curl -I https://www.goldengateclassic.org/
+curl -I https://www.goldengateclassic.org/portal/
 ```
 
-If the test passes, reload nginx:
-```bash
-sudo systemctl reload nginx
-```
+Both should return HTTP 200. A 502 means nginx reloaded but the Node.js upstream is not responding — check `pm2 status` on the server.
 
-### Step 7: Test Your Website
+For deeper verification, open the portal in a browser and confirm interactive elements (admin menus, change log, edit forms) render. If pages load but interactive elements are missing, `/_next/static/*.js` is 404'ing. The current vhost has one `^~` block (`/_next/static`) that's defensive against regex hijacking — confirm that block is present and that no regex location like `~* \.(js|css)$` was added to compete with it. See [DEPLOYMENT.md → Configuration File Structure](DEPLOYMENT.md#configuration-file-structure).
 
-1. Open your browser and visit: `https://www1.goldengateclassic.org/`
-2. Test navigating to different pages:
-   - `/committee`
-   - `/results`
-   - `/rules`
-   - `/san-francisco`
-3. Check browser console (F12) for any errors
-4. Test that CSS and images are loading
+## What the Vhost Actually Contains
+
+The current configuration is a unified proxy: nginx terminates TLS, sets cache headers on `/_next/static`, and proxies everything to the Next.js server on `127.0.0.1:3000`. There is no static file serving from disk. The vhost is intentionally minimal — two application location blocks (`^~ /_next/static` for cache headers and a catch-all `location /`), plus the SSL/server boilerplate.
+
+Read [backend/config/vhost.txt](../backend/config/vhost.txt) directly to see the full configuration.
 
 ## Troubleshooting
 
-### If you can't find nginx settings in CloudPanel:
+**Cannot find the vhost editor in CloudPanel:**
+- Check the version — newer versions consolidate it under **Sites** → **Vhost**.
+- Make sure your CloudPanel account has admin privileges for the site.
 
-1. **Check CloudPanel version**: Newer versions have different interfaces
-2. **Look for "PHP" or "Web Server" settings**: Nginx config might be under these tabs
-3. **Check permissions**: You might need admin/root access to modify nginx config
-4. **Use File Manager**: Navigate to `/etc/nginx/sites-available/` and edit the file directly
+**CloudPanel rejects the configuration on save:**
+- Check the error message in the panel.
+- Common causes: missing semicolons, unclosed braces, removed CloudPanel placeholders.
+- Verify you copied the entire file (vhost.txt has an `upstream` block before the `server {}` block — both must be present).
 
-### If CloudPanel shows "Configuration Error":
+**Changes don't take effect:**
+- Confirm you saved in the panel (not just pasted).
+- Wait 30–60 seconds for the nginx reload.
+- Clear browser cache or hard-refresh (Ctrl/Cmd + Shift + R).
 
-1. Check that all braces `{ }` are properly closed
-2. Ensure there are no syntax errors
-3. Make sure the `root` path is correct
-4. Verify all semicolons `;` are present at the end of directives
+## Do NOT Edit Nginx Directly via SSH
 
-### If changes don't take effect:
-
-1. Make sure you clicked "Save" or "Apply"
-2. Wait a few seconds for nginx to reload
-3. Clear your browser cache
-4. Try hard refresh (Ctrl+F5 or Cmd+Shift+R)
-5. Check nginx error logs:
-   ```bash
-   sudo tail -f /var/log/nginx/error.log
-   ```
-
-## Important Notes
-
-⚠️ **The `try_files` directive is CRITICAL!**
-
-Without this line:
-```nginx
-location / {
-    try_files $uri $uri/ $uri.html /index.html;
-}
-```
-
-Your Next.js routes won't work properly - you'll get 404 errors when visiting pages directly or refreshing.
-
-✅ **Always verify the `root` path matches your deployment directory:**
-```nginx
-root /home/goldengateclassic/htdocs/www.goldengateclassic.org;
-```
-
-## Alternative: SSH Method
-
-If CloudPanel's interface doesn't work for you, you can always configure nginx via SSH:
+You do not have permission to do this on the production server, and even if you did:
 
 ```bash
-# SSH into server
-ssh goldengateclassic@54.70.1.215
-
-# Edit nginx config (may need sudo)
-sudo nano /etc/nginx/sites-available/www1.goldengateclassic.org
-
-# Or find the config file
-sudo find /etc/nginx -name "*goldengateclassic*"
-
-# Test configuration
-sudo nginx -t
-
-# Reload nginx
-sudo systemctl reload nginx
+nginx -t                    # Will fail (no permission)
+systemctl reload nginx      # Will fail (no permission)
+sudo vim /etc/nginx/...     # Will fail (no sudo)
 ```
 
-See `NGINX_SETUP.md` for complete SSH-based instructions.
+The ISP-controlled hosting model means the only supported nginx configuration path is **`backend/config/vhost.txt` → CloudPanel paste → save**. Any out-of-band edits will be overwritten the next time someone deploys the vhost from the repo.
 
+## Related Documentation
 
-
-
-
+- **Full workflow + proxy header rules + ^~ warning:** [DEPLOYMENT.md → Nginx Configuration Management](DEPLOYMENT.md#nginx-configuration-management)
+- **Source of truth for the configuration:** [backend/config/vhost.txt](../backend/config/vhost.txt)
+- **Direct-SSH nginx reference (other environments):** [NGINX_SETUP.md](NGINX_SETUP.md)

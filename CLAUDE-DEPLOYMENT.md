@@ -1,86 +1,56 @@
 # CLAUDE-DEPLOYMENT.md
 
-Deployment patterns and critical gotchas for AI agents assisting with deployment tasks.
+Deployment patterns and gotchas.
 
 ## Deployment Script Architecture
 
-**Unified Script:** `deploy_scripts/deploy.sh` handles static site, portal, or both.
+**Unified script:** `deploy_scripts/deploy.sh` — one command does sync, install, env setup, migrations, build on server, PM2 restart, verification. No "static vs portal" split. No static export.
 
-**Critical Rule:** Run from project root, never from within `deploy_scripts/` (uses relative paths to `out/`).
+**Build output:** `.next/` (server mode). No `out/` directory. `next.config.js` has `compress: false` and `images: { unoptimized: true }`, never `output: 'export'`.
 
-## Flag Behavior and Critical Distinctions
+**Critical rule:** Run from project root, never from inside `deploy_scripts/` (repo-relative paths).
 
-### The --yes Flag (Deployment Confirmation)
+**Removed flags:** `--static` and `--all` hard-error. `--portal` accepted as a no-op (backwards compat).
 
-**Purpose:** Skip deployment confirmation prompt ("Do you want to deploy?")
+## Flag Behavior
 
-**Scope:** Only affects deployment confirmation, NOT credential prompts
+### `--yes` / `-y`
 
-**Usage:**
-```bash
-# Auto-confirm deployment, but credentials still prompt interactively
-./deploy_scripts/deploy.sh --portal --yes
-```
+Skips deployment confirmation prompt only. Does NOT skip credential prompts on first-time setup. Provide credentials via env vars for unattended runs.
 
-**When to use:**
-- CI/CD pipelines (with environment variables for credentials)
-- Scripted deployments
-- Skipping "Press Y to continue" prompts
+### `--setup`
 
-### The --setup Flag (Environment Reconfiguration)
+Forces `.env.local` recreation even if it exists. Bypasses the "already configured" check. Re-prompts for ALL credentials (or reads env vars; fails fast non-interactive without env vars). Always requires credential input.
 
-**Purpose:** Force recreation of server `.env.local` file
+Use for: disaster recovery, broken `.env.local`, credential rotation, server migration.
 
-**Behavior:**
-- Deletes existing `.env.local` on server
-- Prompts for ALL credentials interactively (or fails if non-interactive without env vars)
-- Use cases: disaster recovery, broken config, credential rotation, server migration
+### `--skip-migrations`
 
-**Usage:**
-```bash
-# Force environment reconfiguration
-./deploy_scripts/deploy.sh --portal --setup --yes
-```
-
-**Critical:** `--setup` ALWAYS requires credential input (interactive OR env vars). Never runs silently.
+Skips migration step. Not recommended — migrations are idempotent.
 
 ### Flag Combinations
 
 | Flags | Behavior |
 |---|---|
-| `--portal` | First-time: prompts for credentials. Subsequent: skips prompts (config exists) |
-| `--portal --yes` | Auto-confirm deployment, credentials still prompt if needed |
-| `--portal --setup` | Force reconfiguration, prompts for credentials, asks deployment confirmation |
-| `--portal --setup --yes` | Force reconfiguration, prompts for credentials, auto-confirm deployment |
+| (none) | Prompts for confirmation; prompts for credentials first-time only |
+| `--yes` | Skip confirmation; credentials still prompt first-time |
+| `--setup` | Force reconfig; re-prompts credentials; confirmation still prompts |
+| `--setup --yes` | Force reconfig with env-var credentials; no prompts |
+| `--dry-run --verbose` | Preview deploy without changes |
 
 ## Credential Handling: Interactive vs Non-Interactive
 
 ### Interactive Mode Detection
 
-Script detects non-interactive mode with `[ ! -t 0 ]` (stdin is not a terminal).
+Detect non-interactive mode with `[ ! -t 0 ]` (stdin not a terminal). Non-interactive: piped input, background jobs, CI/CD without TTY, cron.
 
-**Non-interactive contexts:**
-- Piped input: `echo "yes" | ./deploy.sh`
-- Background jobs: `./deploy.sh &`
-- CI/CD runners without TTY allocation
-- Cron jobs
+### Critical Pattern: Fail-Fast on Missing Credentials
 
-### Critical Bug Fixed (2026-02-09)
+`read -sp` returns success even without input in non-interactive mode — silently creates empty credentials in `.env.local`. All credential prompts MUST check `[ ! -t 0 ]` before `read`:
 
-**Problem:** `read` commands with `--force` flag failed silently in non-interactive mode, creating empty credentials in `.env.local`.
-
-**Root cause:** `read -sp` returns success even when no input provided in non-interactive mode.
-
-**Symptom:** Database authentication failures, broken portal deployment, no visible errors during deployment.
-
-**Fix:** Check `[ ! -t 0 ]` before prompting, fail fast with clear error message.
-
-**Pattern enforced:**
 ```bash
-# Get database password (from env var or prompt)
 local DB_PASS="${DEPLOY_DB_PASSWORD:-}"
 if [ -z "$DB_PASS" ]; then
-  # Check if running interactively (stdin is a terminal)
   if [ ! -t 0 ]; then
     log_error "Database password required but not provided"
     log_error "Running in non-interactive mode (piped or background)"
@@ -96,274 +66,212 @@ else
 fi
 ```
 
-**Rule:** All credential prompts MUST check for non-interactive mode before calling `read`.
+Rule: all credential prompts must follow this pattern.
 
 ## Non-Interactive Deployment (CI/CD)
 
-**Required environment variables:**
+Required (or the script fails fast):
+
 ```bash
 export DEPLOY_DB_PASSWORD='...'          # Database password
-export DEPLOY_SMTP_PASSWORD='...'        # SMTP password for email
-export DEPLOY_ADMIN_EMAIL='...'          # Super admin email (first-time only)
-export DEPLOY_ADMIN_NAME='...'           # Super admin name (first-time only)
-export DEPLOY_ADMIN_PASSWORD='...'       # Super admin password (first-time only)
+export DEPLOY_SMTP_PASSWORD='...'        # SMTP password (AWS SES)
+export DEPLOY_ADMIN_EMAIL='...'          # Super admin email (first deploy only)
+export DEPLOY_ADMIN_NAME='...'           # Super admin name  (first deploy only)
+export DEPLOY_ADMIN_PASSWORD='...'       # Super admin password (first deploy only)
 ```
 
-**Optional environment variables:**
+Optional — silently use defaults in non-interactive mode if omitted:
+
 ```bash
-export DEPLOY_SESSION_SECRET='...'       # Session secret (auto-generated if omitted)
-export DEPLOY_PORTAL_BASE_URL='...'      # Portal base URL (defaults to https://$DOMAIN)
+export DEPLOY_SESSION_SECRET='...'       # auto-generated hex if unset
+export DEPLOY_PORTAL_BASE_URL='...'      # defaults to https://$DEPLOY_DOMAIN
 ```
 
-**CI/CD deployment pattern:**
-```bash
-# Set all required secrets
-export DEPLOY_DB_PASSWORD="$SECRET_DB_PASSWORD"
-export DEPLOY_SMTP_PASSWORD="$SECRET_SMTP_PASSWORD"
+Standard CI/CD pattern (subsequent deploys, credentials already on server):
 
-# Run deployment with auto-confirmation
-./deploy_scripts/deploy.sh --portal --yes
+```bash
+./deploy_scripts/deploy.sh --yes
 ```
 
-**First-time CI/CD deployment:**
+First-time CI/CD deployment:
+
 ```bash
-# Set all credentials including admin account
 export DEPLOY_DB_PASSWORD="$SECRET_DB_PASSWORD"
 export DEPLOY_SMTP_PASSWORD="$SECRET_SMTP_PASSWORD"
 export DEPLOY_ADMIN_EMAIL="admin@example.com"
 export DEPLOY_ADMIN_NAME="Admin User"
 export DEPLOY_ADMIN_PASSWORD="$SECRET_ADMIN_PASSWORD"
+./deploy_scripts/deploy.sh --yes
+```
 
-# Run with auto-confirmation
-./deploy_scripts/deploy.sh --portal --yes
+Credential rotation:
+
+```bash
+export DEPLOY_DB_PASSWORD="$NEW_DB_PASSWORD"
+export DEPLOY_SMTP_PASSWORD="$NEW_SMTP_PASSWORD"
+./deploy_scripts/deploy.sh --setup --yes
 ```
 
 ## Common Deployment Patterns
 
-### First-Time Portal Deployment (Interactive)
+### First-Time Deployment (Interactive)
 
 ```bash
-# Build and deploy portal with interactive prompts
-npm run build
-./deploy_scripts/deploy.sh --portal --yes
+./deploy_scripts/deploy.sh
 ```
 
-Prompts for:
-- Database password (stored in server `.env.local`)
-- SMTP password (stored in server `.env.local`)
-- Admin email, name, password (stored in database)
-- Session secret (auto-generated, or custom)
+Prompts confirmation, then: DB password, SMTP password, session secret (auto-generated default), portal base URL, and (if no admins) super admin email/name/password. Server creates `.env.local`, runs schema + migrations, inserts admin row.
 
-### Subsequent Portal Deployments
+### Subsequent Deployment
 
 ```bash
-# Code changes only, no credential prompts
-npm run build
-./deploy_scripts/deploy.sh --portal --yes
+./deploy_scripts/deploy.sh --yes
 ```
 
-Skips credential prompts (`.env.local` exists, admin account exists).
+`.env.local` and admin rows exist — credential/admin prompts skipped. Syncs code, runs new migrations, builds, restarts PM2.
 
 ### Environment Reconfiguration (Disaster Recovery)
 
-**Scenarios:**
-- Broken `.env.local` file (wrong password, missing values)
-- Credential rotation (new database password)
-- Server migration (different database host)
+For broken `.env.local`, credential rotation, server migration:
 
 ```bash
-# Force environment reconfiguration
-./deploy_scripts/deploy.sh --portal --setup --yes
+./deploy_scripts/deploy.sh --setup --yes
 ```
 
-Recreates `.env.local` from scratch, prompts for ALL credentials.
+Recreates `.env.local` from scratch. Does NOT touch admin accounts.
 
-### Full Deployment (Static + Portal)
+### Dry Run
 
 ```bash
-# Deploy everything
-npm run build
-./deploy_scripts/deploy.sh --all --yes
+./deploy_scripts/deploy.sh --dry-run            # preview
+./deploy_scripts/deploy.sh --dry-run --verbose  # step detail
+./deploy_scripts/deploy.sh --dry-run --debug    # env + command traces
 ```
 
-### Dry Run (Preview Without Executing)
-
-```bash
-# See what would happen
-./deploy_scripts/deploy.sh --portal --dry-run
-
-# See detailed output
-./deploy_scripts/deploy.sh --all --dry-run --verbose
-```
+Dry-run echoes commands instead of executing. Migration step may show the literal `find` command as data — display artifact, not a bug.
 
 ## Critical Deployment Gotchas
 
-### 1. Silent Credential Failures
+### 1. Silent Credential Failures (Non-Interactive Mode)
 
-**Symptom:** Deployment succeeds but portal fails with database auth errors.
+**Symptom:** Deploy succeeds but portal fails with DB auth errors.
 
-**Cause:** Non-interactive mode with missing environment variables.
+**Cause:** Non-interactive mode with missing env vars. Current script's fail-fast guard catches this; reports of this symptom indicate an older checkout.
 
-**Detection:** Check `.env.local` on server for empty values:
+**Detection:**
+
 ```bash
-ssh user@server "cat /path/to/portal/.env.local"
+ssh sfggc "cat $DEPLOY_APP_PATH/.env.local | grep -E '(DATABASE_URL|SMTP_PASS)='"
 ```
 
-**Fix:** Provide credentials via environment variables OR run interactively.
+**Fix:** Provide credentials via env vars, or run interactively, then re-run with `--setup`.
 
-### 2. Using --force Instead of --yes
+### 2. `--force` vs `--yes`
 
-**Legacy issue:** Old documentation referenced `--force` flag.
+`--force` is aliased to `--yes`. Both work. Prefer `--yes`.
 
-**Current:** Use `--yes` or `-y` for deployment confirmation.
+### 3. Wrong Directory
 
-**Note:** `--force` is aliased to `--yes` for backward compatibility, but `--yes` is preferred.
+**Error:** path resolution fails, rsync source empty, build context wrong.
 
-### 3. Running from Wrong Directory
+**Cause:** Running script from inside `deploy_scripts/`.
 
-**Error:** `out/` directory not found.
+**Fix:** Run from project root.
 
-**Cause:** Running deployment script from within `deploy_scripts/`.
+### 4. SSH Stdin Consumption Skips Migrations (Historical)
 
-**Fix:** Always run from project root:
-```bash
-cd /path/to/project
-./deploy_scripts/deploy.sh --portal
-```
+**Symptom:** Only 1 of N migrations runs.
 
-### 4. Static Rsync --delete Destroys Portal Directory
+**Cause:** `ssh` without `-n` reads from stdin. Inside the migration runner's `while read` loop, the first `ssh` call consumed the rest of stdin, eating remaining migration paths.
 
-**Symptom:** Every `--all` deploy triggers "First-time portal deployment detected."
-
-**Cause:** Static rsync uses `--delete` to sync `out/` to web root. `portal-app/` doesn't exist in `out/`, so rsync deletes it — including `.env.local`.
-
-**Fix applied:** `--exclude='portal-app'` added to static rsync in `deploy-static.sh`.
-
-**Rule:** When rsync `--delete` targets a directory containing subdirectories managed by other deploy steps, those subdirectories MUST be excluded.
-
-### 5. SSH Stdin Consumption Skips Migrations
-
-**Symptom:** Only 1 of N migrations runs during portal deployment.
-
-**Cause:** `ssh` without `-n` reads from stdin. Inside `while read` loops, the first `ssh` call consumes remaining stdin.
-
-**Fix applied:** `ssh -n` in `ssh_command()` function (`lib/ssh.sh`).
+**Fix:** `ssh -n` in `ssh_command()` (`lib/ssh.sh`). Shipped.
 
 **Rule:** Always use `ssh -n` for non-interactive remote commands, especially inside loops.
 
-### 6. Static-Only Deploy Breaks CSS/JS (Build ID Mismatch)
+### 5. Build ID Mismatch Across Deploys (Historical)
 
-**Symptom:** Static site loses all styling after a static-only deploy (`deploy.sh` without `--all`).
+**Symptom:** Site loses all styling after deploy because `/_next/static/*` returns 404.
 
-**Cause:** The static site and portal produce separate `_next/static/` directories with different build IDs. The original nginx config used `alias` to serve ALL `/_next/static` requests from the portal's `.next/static` directory. A static-only deploy generated a new build ID, but the portal's `.next/static` still had the old one — so all CSS/JS files 404'd.
+**Cause:** Fixed `alias` for `/_next/static` pointed at one specific `.next/static` directory. Build ID changes every deploy → alias path stale → all CSS/JS 404s.
 
-**Fix applied:** Changed `^~ /_next/static` in `backend/config/vhost.txt` from a portal-only `alias` to `try_files $uri @portal_next`:
+**Fix:** Current `backend/config/vhost.txt` proxies `/_next/static` to Node.js (always serves current build ID) with long-lived cache headers:
+
 ```nginx
 location ^~ /_next/static {
-    try_files $uri @portal_next;
+    proxy_pass http://portal_backend;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
     expires 1y;
     add_header Cache-Control "public, immutable";
 }
-
-location @portal_next {
-    proxy_pass http://portal_backend;
-    ...
-}
 ```
 
-**How it works:** `try_files` checks the web root first (where rsync puts static site `_next/` assets). If the file isn't there (portal asset), it falls back to `@portal_next` which proxies to Node.js. This means static-only and portal-only deploys work independently.
+**Rule:** Never use a fixed `alias` for `/_next/static` — build ID changes every deploy. Proxy to Node.js, or `try_files $uri @portal_next` with proxy fallback.
 
-**Rule:** Never use a fixed `alias` for `/_next/static` — both the static site and portal publish assets there with different build IDs. Always use `try_files` with a proxy fallback.
+### 6. SSR Self-Referencing Fetch Loop (Historical)
 
-### 7. Mixing --setup with Non-Interactive Mode
+**Symptom:** SSR pages broken with valid session: participant detail redirects to login, admin detail 404, team pages empty.
 
-**Error:** Script fails with "Database password required but not provided".
+**Cause:** `buildBaseUrl(req)` used `req.headers.host` for internal SSR fetches → self-referencing loop (Node → nginx HTTPS → Node). Cloud servers often can't connect to their own public IP (hairpin NAT); cookies/forwarded headers may be lost even when connection succeeds.
 
-**Cause:** `--setup` forces credential prompts, but running in non-interactive mode.
+**Fix:** `buildBaseUrl()` in `src/utils/portal/ssr-helpers.js` must always return `http://localhost:${PORT}`. Never use `req.headers.host`.
 
-**Fix:** Provide ALL credentials via environment variables when using `--setup` in CI/CD.
+**Rule:** `getServerSideProps` internal API calls must never loop through external URL/nginx. Always `http://localhost:PORT`.
 
-## Agent Guidance: Helping Users with Deployment
+### 7. `--setup` Non-Interactive Without Env Vars
 
-### Diagnostic Questions
+**Error:** "Database password required but not provided."
 
-When user reports deployment issues, ask:
+**Cause:** `--setup` always requires credentials; fails fast non-interactively without env vars.
 
-1. **First-time or subsequent deployment?**
-   - First-time: Credentials required
-   - Subsequent: Should skip credential prompts
+**Fix:** Provide all credentials via env vars when using `--setup` in CI/CD.
 
-2. **Running interactively or in CI/CD?**
-   - Interactive: Prompts work
-   - CI/CD: Requires environment variables
+### 8. Stale Content After "Successful" Deploy (Vhost Drift)
 
-3. **Using --setup flag?**
-   - Without: Preserves existing `.env.local`
-   - With: Forces credential re-entry
+**Symptom:** Deploy reports success but public URL serves old content. User says "I deployed but the site still shows the old version."
 
-4. **Portal working after deployment?**
-   - Yes: Deployment succeeded
-   - No: Check `.env.local` for empty credentials
+**Cause:** Nginx vhost in CloudPanel out of sync with `backend/config/vhost.txt` — nginx serves a stale static file from disk instead of proxying to Node.js. HTTP 200 hides the failure.
 
-### Troubleshooting Workflow
+**Detection (canonical):** Build-ID fingerprint check — `verify_build_id_served()` in `deploy_scripts/lib/deploy-app.sh` runs this at the end of every deploy. Two failure modes:
 
-**Portal fails after deployment:**
+| Outcome | Meaning | Fix |
+|---|---|---|
+| No `buildId` in public response | Nginx not proxying to Node.js (vhost drift, serving disk file) | Push `backend/config/vhost.txt` to CloudPanel |
+| `buildId` mismatch | Server built new code but public sees old | Check vhost drift first, then CDN cache, then DNS/wrong server |
 
-1. Check `.env.local` on server:
+**Manual one-liner (same check):**
+
 ```bash
-ssh user@server "cat /path/to/portal/.env.local | grep -E '(DATABASE_URL|SMTP)'"
+SERVER_BID=$(ssh sfggc "cat $DEPLOY_APP_PATH/.next/BUILD_ID")
+PUBLIC_BID=$(curl -fsSL https://$DEPLOY_DOMAIN/ | grep -oE '"buildId":"[^"]+"' | head -1 | sed 's/.*"buildId":"\([^"]*\)".*/\1/')
+[ "$SERVER_BID" = "$PUBLIC_BID" ] && echo MATCH || echo MISMATCH
 ```
 
-2. Look for empty values or malformed URLs.
-
-3. If credentials missing:
-```bash
-# Interactive fix
-./deploy_scripts/deploy.sh --portal --setup --yes
-
-# CI/CD fix
-export DEPLOY_DB_PASSWORD="correct_password"
-export DEPLOY_SMTP_PASSWORD="correct_password"
-./deploy_scripts/deploy.sh --portal --setup --yes
-```
-
-**Database connection fails:**
-
-Check database password in `.env.local`, verify database user exists, test connection from server:
-```bash
-ssh user@server "cd /path/to/portal && node -e \"const db = require('./src/utils/portal/db.js'); db.getConnection().then(() => console.log('OK')).catch(e => console.error(e.message))\""
-```
-
-**SMTP fails (magic links not sending):**
-
-Check SMTP credentials in `.env.local`, verify SMTP host/port, test connection:
-```bash
-ssh user@server "cd /path/to/portal && node backend/scripts/test-smtp.sh"
-```
+**Rule:** When user reports stale content after deploy, run fingerprint check first. Do NOT suggest browser/CDN cache clears before ruling out vhost drift. See `deploy_docs/DEPLOYMENT.md#build-id-fingerprint-check`.
 
 ## SSH Inline Node.js Scripts
 
-When running `node -e` via SSH that reads `.env.local`:
-
-**Problem:** `.env.local` uses plain assignment (`KEY=value`, no `export`), so `source` alone does not export vars to child processes like `node`.
+**Problem:** `.env.local` uses plain assignment (`KEY=value`, no `export`). `source` alone does not export vars to child processes like `node`.
 
 **Pattern:**
+
 ```bash
-ssh_command "cd $PORTAL_PATH && set -a && source .env.local 2>/dev/null && set +a && node -e \"
+ssh_command "cd $DEPLOY_APP_PATH && set -a && source .env.local 2>/dev/null && set +a && node -e \"
     const db = require('./src/utils/portal/db.js');
     // ... script
 \""
 ```
 
 **Rules:**
-1. `set -a` before `source`, `set +a` after -- auto-exports all sourced variables
-2. Avoid `!` operator in inline scripts -- SSH layers escape it to `\!`. Use `=== ''` or `=== undefined` instead
-3. Wrap `node -e` script in escaped double quotes inside the SSH command string
-4. Always `2>/dev/null` on source to suppress missing-file warnings in dry-run
+1. `set -a` before `source`, `set +a` after — auto-exports sourced vars to child processes.
+2. Avoid `!` operator in inline scripts — SSH escapes to `\!`. Use `=== ''` or `=== undefined`.
+3. Wrap `node -e` script in escaped double quotes inside SSH command string.
+4. Always `2>/dev/null` on `source` to suppress missing-file warnings in dry-run.
 
-**Deploy verification example (check admin account exists):**
+**Example (check super admin exists):**
+
 ```bash
-ssh_command "cd $PATH && set -a && source .env.local 2>/dev/null && set +a && node -e \"
+ssh_command "cd $DEPLOY_APP_PATH && set -a && source .env.local 2>/dev/null && set +a && node -e \"
     const { query, closePool } = require('./src/utils/portal/db.js');
     query('SELECT COUNT(*) as count FROM admins WHERE role = ?', ['super-admin'])
       .then(([rows]) => { console.log(rows[0].count > 0 ? 'EXISTS' : 'MISSING'); })
@@ -371,113 +279,123 @@ ssh_command "cd $PATH && set -a && source .env.local 2>/dev/null && set +a && no
 \""
 ```
 
-## Image Optimization in Deploy Pipeline
-
-**Problem:** `next.config.js` sets `images: { unoptimized: true }` for static export, so Next.js does not optimize images. Oversized source images ship at full resolution, increasing page load times.
-
-**Solution:** `deploy_scripts/lib/optimize-images.sh` auto-resizes images wider than `MAX_IMAGE_WIDTH=800` using macOS `sips` (no external dependencies).
-
-**Pipeline integration:** Called from `build_static()` in `build.sh` using a non-destructive copy-swap-restore pattern:
-```
-build_static():
-  1. prepare_build_images()  — cp src/images → .images-build, optimize copies
-  2. swap_images_for_build() — mv src/images → .images-original, mv .images-build → src/images
-  3. npm run build            — webpack resolves imports from src/images (now optimized)
-  4. cleanup_build()          — rm src/images (optimized), mv .images-original → src/images
-```
-
-**Key details:**
-- Original source images are NEVER modified — optimization happens on copies only
-- Uses `sips --resampleWidth 800` for resizing (macOS built-in)
-- `get_file_size()` helper: cross-platform (`stat -f%z` macOS, `stat -c%s` Linux)
-- Respects `DRY_RUN` flag (logs what would change without modifying files)
-- Scans recursively for `.jpg`, `.jpeg`, `.png` files
-- `trap cleanup_build EXIT` ensures originals are restored even on build failure
-- `.images-build` and `.images-original` are in `.gitignore`
-
-**Test:** `tests/unit/optimize-images.test.js` (16 BDD tests including non-destructive optimization, dry-run, recursive, and pipeline integration scenarios)
-
 ## Server-Mode Config Template
 
-**Problem:** Three places generated `next.config.js` for server mode using inline heredocs. Template drift caused production incident where `compress: false` was missing from some templates.
+`next.config.js` on server must have `compress: false` — nginx handles gzip; Node compressing on top causes double-compression (wasted CPU, larger responses, garbled binary).
 
-**Solution:** Extracted shared `write_server_mode_config()` function in `deploy_scripts/lib/build.sh`. Both `build_portal_local()` and `ensure_server_mode_config()` call this single function.
+**Single source of truth:** `write_server_mode_config()` in `deploy_scripts/lib/build.sh`. Local-build helpers and the inline server-side rewrite in `deploy-app.sh` must match this template. When modifying:
 
-**Note:** `deploy_scripts/lib/deploy-portal.sh` has a third instance that writes via SSH to the remote server -- left as inline heredoc since it cannot call the local function.
+1. Update `write_server_mode_config()` in `lib/build.sh`.
+2. Update inline heredoc in `validate_server_config()` in `lib/deploy-app.sh` to match.
+3. Run `tests/unit/nextjs-compress-config.test.js`, `tests/unit/deployment/unified-app-deployment.test.js`, `tests/unit/deployment/nginx-config.test.js`.
 
-**Rule:** When modifying the server-mode `next.config.js` template, update `write_server_mode_config()` in `build.sh`. Verify the remote template in `deploy-portal.sh` matches.
+**Verify after deploy:**
 
-**Test:** `tests/unit/deployment/config-management.test.js`
+```bash
+curl -s -D - -o /dev/null -H "Accept-Encoding: gzip" https://www.goldengateclassic.org/portal | grep -i content-encoding
+```
+
+Expect one `Content-Encoding: gzip` (from nginx). Two means `compress: false` is missing.
 
 ## Deployment Script Structure
 
 **Entry point:** `deploy_scripts/deploy.sh`
 
 **Function libraries:**
-- `lib/output.sh` - Logging functions
-- `lib/config.sh` - Configuration loading
-- `lib/ssh.sh` - SSH connection helpers
-- `lib/validation.sh` - Validation checks
-- `lib/build.sh` - Build process (`write_server_mode_config()` single source of truth)
-- `lib/optimize-images.sh` - Pre-build image resizing (macOS `sips`, `MAX_IMAGE_WIDTH=800`)
-- `lib/deploy-static.sh` - Static site deployment (rsync with `--exclude='portal-app'`)
-- `lib/deploy-portal.sh` - Portal deployment (credentials, database, admin)
-- `lib/deploy-migrations.sh` - Database migration runner (depends on `ssh -n` in ssh.sh)
 
-**Credential prompts (all in `lib/deploy-portal.sh`):**
-- Line 99: Database password (`read -sp`)
-- Line 125: SMTP password (`read -sp`)
-- Line 233: Admin email (`read -p`)
-- Line 244: Admin name (`read -p`)
-- Line 255: Admin password (`read -sp`)
+- `lib/output.sh` — logging helpers
+- `lib/config.sh` — `.deployrc` loading, defaults, CLI overrides
+- `lib/ssh.sh` — SSH helpers (uses `ssh -n` for non-interactive commands)
+- `lib/validation.sh` — pre-flight checks (local + remote environment)
+- `lib/build.sh` — `write_server_mode_config()` template, build orchestration
+- `lib/deploy-app.sh` — unified application deployment (sync, install, env setup, build, PM2, verify); `verify_build_id_served()` is the canonical "did the deploy actually ship" check
+- `lib/deploy-migrations.sh` — runs every `*.sh` in `backend/scripts/migrations/`
 
-**Each prompt checks `[ ! -t 0 ]` before calling `read`.**
+**Credential prompts (all in `lib/deploy-app.sh`):**
+- Database password
+- SMTP password
+- Session secret (with auto-generated default)
+- Portal base URL
+- Admin email / name / password (first deploy only, if no admins exist)
+
+Every prompt checks `[ ! -t 0 ]` before calling `read`.
 
 ## Server Configuration: Nginx Management
 
-**Critical:** User does NOT have direct nginx access. All nginx configuration changes MUST follow this workflow.
+**Critical:** No direct nginx access — hosting is ISP-controlled via CloudPanel. All nginx changes go through file-in-repo → clipboard → CloudPanel paste workflow.
 
 ### Nginx Configuration Workflow
 
 **File:** `backend/config/vhost.txt`
 
 **Process:**
-1. Edit `backend/config/vhost.txt` locally
-2. Copy to clipboard: `cat backend/config/vhost.txt | pbcopy`
-3. Log into CloudPanel ISP portal → nginx/vhost configuration
-4. Paste entire contents and save (panel validates and reloads nginx)
+1. Edit `backend/config/vhost.txt` locally.
+2. `cat backend/config/vhost.txt | pbcopy`.
+3. CloudPanel ISP portal → Sites → domain → Vhost (or Nginx Config).
+4. Paste and save (panel validates, reloads nginx).
 
 **Do NOT suggest:**
-- SSH nginx commands (`nginx -t`, `systemctl reload nginx`, etc.)
-- Direct editing of `/etc/nginx/` files
-- Server-side nginx configuration changes
+- SSH nginx commands (`nginx -t`, `systemctl reload nginx`, `nginx -s reload`).
+- Direct edits to `/etc/nginx/`.
+- Server-side nginx changes via SSH.
 
-### Nginx ^~ Modifier Requirement
+### Nginx `^~` Modifier Requirement
 
-**CRITICAL:** All portal proxy prefix locations MUST use `^~` modifier.
+**CRITICAL:** Current vhost has one `^~` block (`/_next/static`) and one catch-all `location /`. The `^~` is defensive — any prefix block serving `.js`/`.css` MUST use it, or a future regex `~* \.(js|css|...)$` will hijack JS requests.
 
-**Why:** Nginx regex `location ~* \.(js|css|...)$` overrides plain prefix locations. Without `^~`, `/_next/static/*.js` matches the static asset regex instead of the proxy block, returning 404 for all JS bundles. This breaks React hydration entirely -- client-side JS never loads, `useEffect`/`useAdminSession` never run, interactive features are invisible.
+**Current pattern in `backend/config/vhost.txt`:**
 
-**Required pattern in `backend/config/vhost.txt`:**
 ```nginx
-location ^~ /portal { proxy_pass ...; }
-location ^~ /api/portal { proxy_pass ...; }
-location ^~ /_next/static { try_files $uri @portal_next; }  # web root first, then portal
-location ^~ /_next { proxy_pass ...; }
+location ^~ /_next/static { proxy_pass http://portal_backend; ... }
+location /                { proxy_pass http://portal_backend; ... }
 ```
 
-**Nginx location priority (highest to lowest):**
+If anyone reintroduces a static-asset regex, or adds dedicated proxy blocks for `/portal`, `/api/portal`, or `/_next`, those new prefix blocks MUST also use `^~`. Otherwise the regex steals `.js`/`.css`, every Next.js bundle 404s, React can't hydrate — `useEffect`/`useAdminSession` never run, admin menus/change log/edit forms are invisible.
+
+**Nginx location priority (highest → lowest):**
 
 | Type | Example | Behavior |
 |---|---|---|
-| `= /path` | Exact match | Checked first |
-| `^~ /prefix` | Prefix, suppresses regex | Checked second, stops regex check |
+| `= /path` | Exact | Checked first |
+| `^~ /prefix` | Prefix, suppresses regex | Checked second, stops regex |
 | `~* \.js$` | Regex (case-insensitive) | Checked third, overrides plain prefix |
 | `/prefix` | Plain prefix | Lowest priority |
 
+### Nginx Proxy Header Inheritance
+
+**Critical rule:** ANY `proxy_set_header` directive inside a `location` block silently drops ALL `proxy_set_header` directives inherited from `server` scope. Nginx does not merge headers.
+
+Required headers depend on block type.
+
+**App/dynamic proxy blocks** (catch-all `location /`, future `^~ /portal`, `^~ /api/portal`, `^~ /_next`) — full forwarded set:
+
+```nginx
+proxy_pass http://portal_backend;
+proxy_http_version 1.1;
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header Connection "";
+```
+
+Missing header consequences:
+- `Host` → wrong hostname, routing fails.
+- `X-Real-IP` / `X-Forwarded-For` → audit logs record `127.0.0.1`.
+- `X-Forwarded-Proto` → backend can't detect HTTPS, may emit insecure URLs.
+- `Connection ""` → upstream keepalive breaks.
+
+**Cache-only proxy blocks** (current `^~ /_next/static`) — only keepalive headers needed; content-hashed immutable assets don't need forwarded headers:
+
+```nginx
+proxy_pass http://portal_backend;
+proxy_http_version 1.1;
+proxy_set_header Connection "";
+```
+
 ### Nginx Upstream Keepalive
 
-Use `upstream` block with `keepalive` for persistent connections to Node.js (saves 20-50ms TCP handshake per request):
+Upstream uses `keepalive` for persistent connections to Node.js (saves 20–50 ms/request):
 
 ```nginx
 upstream portal_backend {
@@ -486,61 +404,77 @@ upstream portal_backend {
 }
 ```
 
-**Required proxy headers for keepalive:**
+Required in proxy blocks for keepalive:
 - `proxy_http_version 1.1;`
-- `proxy_set_header Connection "";` (NOT `"upgrade"` -- that forces per-request upgrade and defeats keepalive)
+- `proxy_set_header Connection "";` (empty — NOT `'upgrade'`, which forces per-request upgrade and defeats keepalive).
 
-### Nginx try_files Ordering and Trailing Slash Rewrite
+### Nginx `try_files` Ordering and Trailing Slash Rewrite
 
-**Problem:** Static pages that share a name with a directory (e.g., `results.html` and `results/` containing PDFs) return 403 Forbidden. Nginx finds the directory before the `.html` file and tries to serve a directory listing, which is denied.
+**Problem:** A page sharing a name with a directory (e.g. `results.html` + `results/` containing PDFs) returns 403 if nginx finds the directory first and attempts a listing.
 
-**Fix (in `backend/config/vhost.txt`):**
+**Fix in `backend/config/vhost.txt`:**
+
 ```nginx
 location / {
-    # Strip trailing slash — /results/ becomes /results, preventing 403
-    # on directories that collide with static page names
-    rewrite ^/(.+)/$ /$1 permanent;
-
-    # Check .html BEFORE directory to serve results.html instead of results/
-    try_files $uri $uri.html $uri/ /index.html;
+    rewrite ^/(.+)/$ /$1 permanent;             # /results/ → /results
+    try_files $uri $uri.html $uri/ /index.html; # .html before directory
 }
 ```
 
-**Two rules work together:**
+Rewrite strips trailing slashes so `.html` check matches; try_files order serves `results.html` instead of listing. Direct file requests like `/results/2024/team.pdf` still match `$uri` as a regular file.
 
-| Rule | Purpose |
-|---|---|
-| `rewrite ^/(.+)/$ /$1 permanent` | Strips trailing slash (`/results/` → `/results`) so the `.html` check can match |
-| `$uri.html` before `$uri/` in try_files | Serves `results.html` instead of attempting directory listing on `results/` |
+### Nginx Gzip + `next.config.js`
 
-**Why both are needed:** Without the rewrite, a cached or manually-typed `/results/` bypasses the try_files `.html` check (there's no `/results/.html`). Without the try_files reorder, `/results` without trailing slash would still try the directory first.
+Nginx handles gzip → `compress: false` in `next.config.js`. Already configured. Do not re-enable Node compression.
 
-**Safe for PDFs:** Direct file requests like `/results/2024/team.pdf` match `$uri` as a regular file and are served immediately.
+### When Suggesting Nginx Changes
 
-### Nginx Gzip and next.config.js
+1. Provide exact text for `backend/config/vhost.txt`.
+2. Highlight changed lines.
+3. Remind user of clipboard-paste workflow (no SSH nginx commands).
 
-When nginx handles gzip compression, set `compress: false` in `next.config.js` to avoid double-compression. Current config already does this -- do not re-enable.
+## Troubleshooting
 
-**When suggesting nginx changes:**
-1. Provide exact text for `backend/config/vhost.txt`
-2. Highlight changed lines
-3. Explain what to copy/paste in control panel
+**Diagnostic checklist:**
+1. First-time or subsequent? First-time prompts credentials; subsequent skips.
+2. Interactive or CI/CD? CI/CD requires env vars.
+3. Used `--setup`? Forces credential re-entry; otherwise preserves `.env.local`.
+4. Portal serving traffic? If not, start with `.env.local` and PM2 logs.
+5. "Deployed but site shows old content"? Run build-ID fingerprint check before anything else — see gotcha #8.
+
+**Portal fails after deploy:**
+
+```bash
+ssh sfggc "cat $DEPLOY_APP_PATH/.env.local | grep -E '(DATABASE_URL|SMTP)'"
+ssh sfggc "pm2 logs sfggc-portal --lines 100"
+```
+
+Missing/wrong credentials:
+
+```bash
+./deploy_scripts/deploy.sh --setup                          # interactive
+export DEPLOY_DB_PASSWORD="..."; export DEPLOY_SMTP_PASSWORD="..."
+./deploy_scripts/deploy.sh --setup --yes                    # CI/CD
+```
+
+**Build fails on server:**
+
+```bash
+ssh sfggc "cd $DEPLOY_APP_PATH && npm run build 2>&1 | tail -50"
+```
+
+Common causes: stale `next.config.js` with `output: 'export'` (deploy script auto-rewrites), missing deps, build-time errors.
 
 ## Key Files Reference
 
-- `deploy_scripts/deploy.sh` - Main deployment script
-- `deploy_scripts/lib/build.sh` - Build orchestration, `write_server_mode_config()` template
-- `deploy_scripts/lib/optimize-images.sh` - Pre-build image resizing
-- `deploy_scripts/lib/deploy-portal.sh` - Portal-specific logic, credential handling
-- `.deployrc.example` - Production configuration template
-- `deploy_docs/DEPLOYMENT.md` - User-facing deployment guide
-- `deploy_docs/UNIFIED_DEPLOYMENT.md` - Complete technical documentation
-- `backend/config/vhost.txt` - Nginx configuration (deployed via ISP control panel)
-
-## Token Count Optimization
-
-This file: ~2200 tokens (before/after: N/A - new file)
-
-**Placement rationale:** Standalone deployment patterns file (CLAUDE-DEPLOYMENT.md) keeps deployment-specific knowledge separate from main CLAUDE.md, reducing token load for non-deployment tasks.
-
-**Cross-reference:** Added reference in CLAUDE.md deployment section.
+- `deploy_scripts/deploy.sh` — main entry point
+- `deploy_scripts/lib/build.sh` — `write_server_mode_config()` template
+- `deploy_scripts/lib/deploy-app.sh` — unified application deployment, credential handling
+- `deploy_scripts/lib/deploy-migrations.sh` — migration runner
+- `deploy_scripts/lib/ssh.sh` — SSH helpers (note the `ssh -n` invariant)
+- `.deployrc.example` — production configuration template
+- `deploy_docs/DEPLOYMENT.md` — quick-start guide
+- `deploy_docs/UNIFIED_DEPLOYMENT.md` — full reference
+- `deploy_docs/MIGRATIONS.md` — database migration system
+- `backend/config/vhost.txt` — nginx configuration (deployed via CloudPanel ISP portal)
+- `SERVER_SETUP.md` — server-side setup and troubleshooting

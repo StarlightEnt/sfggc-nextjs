@@ -40,14 +40,16 @@ ssh goldengateclassic@54.70.1.215 "sudo chown -R goldengateclassic:goldengatecla
 
 ### Option 3: Deploy to a Different Directory
 
-If you can't fix permissions on the current directory, deploy to a temporary location and then move files:
+If you can't fix permissions on the current directory, set `DEPLOY_APP_PATH` in `.deployrc` to a writable path, deploy there, then move files into the final location:
 
 ```bash
-# Deploy to a temporary directory first
-./deploy_scripts/deploy.sh goldengateclassic@54.70.1.215 /tmp/sfggc_deploy www.goldengateclassic.org
+# In .deployrc:
+# DEPLOY_APP_PATH="/tmp/sfggc_deploy"
+
+./deploy_scripts/deploy.sh
 
 # Then manually move files (requires sudo)
-ssh goldengateclassic@54.70.1.215 "sudo cp -r /tmp/sfggc_deploy/* /home/goldengateclassic/htdocs/www.goldengateclassic.org/"
+ssh sfggc "sudo cp -r /tmp/sfggc_deploy/* /home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app/"
 ```
 
 ### Option 4: Use CloudPanel File Manager
@@ -64,35 +66,12 @@ ssh goldengateclassic@54.70.1.215 "sudo cp -r /tmp/sfggc_deploy/* /home/goldenga
 After applying one of the above solutions, test the deployment:
 
 ```bash
-# Use the deployment script (run from project root)
-./deploy_scripts/deploy.sh goldengateclassic@54.70.1.215 /home/goldengateclassic/htdocs/www.goldengateclassic.org www.goldengateclassic.org
+# Run from project root
+./deploy_scripts/deploy.sh --dry-run --verbose
+./deploy_scripts/deploy.sh
 ```
 
-## Alternative: Manual Upload
-
-If automated deployment continues to fail, you can manually upload the files:
-
-1. **Build the site locally:**
-   ```bash
-   npm run build
-   ```
-
-2. **Create a zip file:**
-   ```bash
-   cd out
-   zip -r ../sfggc-website.zip .
-   cd ..
-   ```
-
-3. **Upload via CloudPanel:**
-   - Log into CloudPanel
-   - Go to File Manager
-   - Navigate to `/home/goldengateclassic/htdocs/www.goldengateclassic.org`
-   - Upload the zip file
-   - Extract it in the directory
-
-4. **Set up .htaccess:**
-   - Create a `.htaccess` file in the root directory with the content from the deployment script
+If the dry-run reports the target path is accessible and the real deploy completes through PM2 restart and the HTTP verification step, permissions are good.
 
 ## Troubleshooting
 
@@ -118,7 +97,7 @@ ssh goldengateclassic@54.70.1.215 "whoami && pwd"
 
 ## Nginx Configuration Management
 
-This project uses nginx for serving the static site and proxying requests to the portal application. However, you may not have direct SSH access to nginx configuration files.
+This project uses nginx to terminate TLS and proxy all traffic (both the public marketing pages and the portal) to a single Next.js server on `127.0.0.1:3000`. You do not have direct SSH access to nginx configuration files; the vhost is managed in version control and pushed via the CloudPanel ISP portal.
 
 ### Configuration File Location
 
@@ -128,13 +107,11 @@ The nginx vhost configuration is maintained in version control:
 
 This file contains:
 - **Upstream block** with `keepalive 16` for persistent nginx-to-Node.js connections
-- Portal proxy configuration (4 location blocks, all using `^~` modifier):
-  - `location ^~ /portal` -- portal pages, proxied to Node.js
-  - `location ^~ /api/portal` -- portal API routes, proxied to Node.js
-  - `location ^~ /_next/static` -- build artifacts served directly from disk (bypasses Node.js)
-  - `location ^~ /_next` -- dynamic Next.js requests, proxied to Node.js
-- Static site serving configuration
-- SSL and caching settings
+- **SSL and server settings** (CloudPanel placeholders: `{{ssl_certificate}}`, `{{root}}`, etc.)
+- **`location ^~ /_next/static`** — proxies to Node.js with one-year immutable cache headers. The `^~` is defensive (see Key Configuration Rules in [NGINX_SETUP.md](deploy_docs/NGINX_SETUP.md)).
+- **`location /`** — catch-all that proxies every other request (public pages, `/portal`, `/api/portal`, dynamic `/_next`) to the same upstream. Next.js handles all internal routing.
+
+The vhost is intentionally minimal — there are no on-disk serving blocks, no `try_files`, and no static-asset regex. Everything goes through the unified Next.js server.
 
 ### Configuration Workflow
 
@@ -163,11 +140,8 @@ Since you cannot run nginx commands directly (no `nginx -t`, `systemctl reload n
 
 4. **Verify changes:**
    ```bash
-   # Test static site
-   curl -I https://www.goldengateclassic.org/
-
-   # Test portal proxy
-   curl -I https://www.goldengateclassic.org/portal
+   curl -I https://www.goldengateclassic.org/         # public site
+   curl -I https://www.goldengateclassic.org/portal/  # portal proxy
    ```
 
 5. **Commit changes:**
@@ -179,19 +153,16 @@ Since you cannot run nginx commands directly (no `nginx -t`, `systemctl reload n
 
 ### Critical Nginx Configuration Requirements
 
-**1. The `^~` modifier is mandatory on all portal location blocks.**
+**1. Keep `^~` on `/_next/static`, and add it to any future prefix block that needs to defend `.js`/`.css`.**
 
-Without `^~`, the static site's regex location (`~* \.(js|css|...)$`) overrides portal prefix locations for any URL ending in `.js` or `.css`. This causes ALL Next.js JavaScript bundles to return 404, breaking React hydration and rendering the portal non-functional (pages load but interactive elements are invisible).
+The current vhost has one `^~` block (`/_next/static`) and one catch-all. The `^~` is defensive: it stops any regex location (e.g. `~* \.(js|css|...)$`) from hijacking JavaScript requests.
 
 ```nginx
-# CORRECT - ^~ stops nginx from checking regex locations
-location ^~ /portal { ... }
-location ^~ /api/portal { ... }
-location ^~ /_next/static { ... }
-location ^~ /_next { ... }
+location ^~ /_next/static { proxy_pass http://portal_backend; ... }
+location /                { proxy_pass http://portal_backend; ... }
 ```
 
-If you ever edit the nginx config and the portal stops working (menus/forms disappear), check that `^~` is present on all four blocks.
+If anyone reintroduces a static-asset regex, or adds dedicated `/portal`, `/api/portal`, or `/_next` blocks, those new prefix blocks MUST also use `^~`. Otherwise the regex steals `.js`/`.css` requests, returning 404 for every Next.js JavaScript bundle and breaking React hydration entirely (pages load but interactive elements are invisible).
 
 **2. Use `upstream` block with `keepalive`, not direct `proxy_pass` to IP.**
 
@@ -247,21 +218,20 @@ This affects any page using `getServerSideProps` that fetches data from internal
 3. Verify proxy port matches app port (default: 3000)
 4. Check app logs: `pm2 logs sfggc-portal`
 
-**Static site works but portal doesn't:**
-1. Check portal proxy configuration exists in `backend/config/vhost.txt`
-2. Verify Node.js app is running
-3. Test portal URL: `curl -v https://domain/portal`
+**Some routes work but `/portal/` doesn't:**
+1. Verify the catch-all `location /` block in `backend/config/vhost.txt` proxies to `portal_backend`.
+2. Verify Node.js app is running: `pm2 status sfggc-portal`.
+3. Test directly: `curl -v https://www.goldengateclassic.org/portal/`.
+4. Public pages and the portal go through the same upstream — if `/portal/` is broken but `/` works, the issue is in the Next.js app itself, not nginx.
 
 **Portal loads but menus/forms/interactive elements are missing:**
-1. Open browser DevTools Network tab and look for 404 errors on `/_next/static/chunks/*.js`
-2. If JS files return 404, the `^~` modifier is missing from portal location blocks
-3. See [Critical Nginx Configuration Requirements](#critical-nginx-configuration-requirements) above
+1. Open browser DevTools Network tab and look for 404 errors on `/_next/static/chunks/*.js`.
+2. If JS files return 404, a regex location (like `~* \.(js|css)$`) is intercepting them. The current vhost has no such regex — if one was added, every prefix block that needs to serve JS/CSS must use `^~`.
+3. See [Critical Nginx Configuration Requirements](#critical-nginx-configuration-requirements) above.
 
-**Static page returns 403 Forbidden (e.g., `/results`):**
+**Page returns 403 Forbidden (legacy):**
 
-This happens when a static page name collides with a directory — for example, `results.html` (the Next.js page) and `results/` (a folder containing result PDFs). Nginx finds the directory first and tries to list it, which is denied.
-
-**Fix (in `backend/config/vhost.txt`):**
+The current vhost proxies everything to Next.js, so 403 from a directory/file collision can't happen — Next.js routes internally. If you encounter this, it means someone added a disk-serving block. The fix is to either drop the disk-serving block (everything goes through Next.js) or, if disk-serving is required, use both a trailing-slash rewrite and `.html` before directory in `try_files`:
 1. Add trailing slash rewrite inside `location /`: `rewrite ^/(.+)/$ /$1 permanent;`
 2. Ensure `try_files` checks `$uri.html` before `$uri/`: `try_files $uri $uri.html $uri/ /index.html;`
 
@@ -287,11 +257,11 @@ For complete nginx configuration management documentation, see:
 2. **"Permission denied"**: User doesn't have write access
 3. **"No space left on device"**: Server is out of disk space
 4. **"Connection refused"**: SSH service not running or firewall blocking
-5. **Nginx errors (502/503)**: Nginx may be configured to proxy instead of serving static files
+5. **Nginx errors (502/503)**: Node.js upstream (`sfggc-portal` on port 3000) is down or unreachable
    - See `backend/config/vhost.txt` for current configuration
-   - See `deploy_docs/DEPLOYMENT.md#nginx-configuration-management` for ISP-controlled nginx
-   - See `deploy_docs/NGINX_SETUP.md` for direct nginx access
-   - See `deploy_docs/CLOUDPANEL_STATIC_NGINX.md` for CloudPanel-specific fixes
+   - See `deploy_docs/DEPLOYMENT.md#nginx-configuration-management` for the vhost workflow
+   - See `deploy_docs/NGINX_SETUP.md` for nginx reference
+   - See `deploy_docs/CLOUDPANEL_NGINX_GUIDE.md` for CloudPanel UI navigation
 
 ## Next Steps
 

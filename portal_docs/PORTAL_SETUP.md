@@ -143,21 +143,15 @@ Test environment notes:
 
 ## Deployment
 
-### Portal UI (same as main site)
-
-Portal UI deploys with the main Next.js site using the same scripts in `deploy_scripts/`.
+The portal UI and backend deploy together with the public site — one unified Next.js server, one command:
 
 ```bash
-npm run build
-./deploy_scripts/deploy.sh <ssh_user@server> <domain_path> <domain_name>
+./deploy_scripts/deploy.sh
 ```
 
-If you encounter server permission issues, follow the steps in:
-- [`SERVER_SETUP.md`](../SERVER_SETUP.md)
+The deploy script syncs code, installs dependencies on the server, runs database migrations (idempotent), builds in server mode, and restarts the PM2 process. See [DEPLOYMENT.md](../deploy_docs/DEPLOYMENT.md) for the quick-start guide and [PORTAL_DEPLOYMENT.md](../deploy_docs/PORTAL_DEPLOYMENT.md) for portal-specific concerns (database, SMTP, super admin).
 
-### Portal backend
-
-The portal backend runs as part of the Next.js application. See [PORTAL_DEPLOYMENT.md](../deploy_docs/PORTAL_DEPLOYMENT.md) for production deployment steps including database setup, SMTP configuration, and process management.
+If you encounter server permission issues, see [`SERVER_SETUP.md`](../SERVER_SETUP.md).
 
 Production deploy runs migrations automatically (unless `--skip-migrations` is used).
 

@@ -370,47 +370,45 @@ When reviewing changes that could impact performance:
 
 ### The ^~ Modifier Requirement
 
-All portal-related nginx `location` blocks MUST use the `^~` prefix modifier. Without it, the portal is completely broken in production.
+The current vhost has one `^~` block (`/_next/static`) and one catch-all `location /`. The `^~` is **defensive** — if any future change reintroduces a regex location like `~* \.(js|css|...)$`, every prefix block that needs to serve `.js`/`.css` (especially anything under `/_next/`) MUST use `^~` to keep the regex from hijacking it. Without that defense, the portal breaks completely in production.
 
-**The problem**: Nginx evaluates regex locations (`~*`) after prefix locations, regardless of match length. The static site's regex block `location ~* \.(js|css|...)$` matches any URL ending in `.js` or `.css`. This means `/_next/static/chunks/page-abc123.js` is caught by the static asset regex instead of the `/_next` prefix block, returning a 404 because those files do not exist in the static site directory.
+**Why the defense matters**: Nginx evaluates regex locations (`~*`) after prefix locations, regardless of match length. A regex block `location ~* \.(js|css|...)$` matches any URL ending in `.js` or `.css`, so `/_next/static/chunks/page-abc123.js` would be caught by the regex instead of the `/_next/static` prefix block — returning 404 if the regex has no proxy_pass and no on-disk fallback.
 
-**The consequence**: Without `^~`, ALL Next.js JavaScript bundles return 404. React cannot hydrate, `useEffect` hooks never run, and interactive features (admin menus, change log, participant edit forms) are invisible. The pages appear to load but are non-functional.
+**The consequence of forgetting `^~`**: ALL Next.js JavaScript bundles return 404. React cannot hydrate, `useEffect` hooks never run, and interactive features (admin menus, change log, participant edit forms) are invisible. Pages appear to load but are non-functional.
 
-**The fix**: The `^~` modifier tells nginx "if this prefix matches, stop looking at regex locations."
+**The fix**: `^~` tells nginx "if this prefix matches, stop looking at regex locations."
 
 ```nginx
-# CORRECT - ^~ prevents regex override
-location ^~ /portal { ... }
-location ^~ /api/portal { ... }
-location ^~ /_next/static { ... }
-location ^~ /_next { ... }
+# Current vhost
+location ^~ /_next/static { proxy_pass http://portal_backend; ... }
+location /                { proxy_pass http://portal_backend; ... }
 
-# WRONG - regex location will override these for .js/.css URLs
-location /portal { ... }
-location /_next { ... }
+# If a future change adds a static-asset regex, also add ^~ to any new
+# prefix block that needs to serve .js/.css:
+#   location ^~ /portal      { ... }
+#   location ^~ /api/portal  { ... }
+#   location ^~ /_next       { ... }
 ```
-
-**All four portal location blocks require ^~:**
-1. `location ^~ /portal` -- portal pages
-2. `location ^~ /api/portal` -- portal API routes
-3. `location ^~ /_next/static` -- build artifacts served from disk
-4. `location ^~ /_next` -- dynamic Next.js requests proxied to Node.js
 
 ### Upstream Keepalive
 
 The `upstream portal_backend` block uses `keepalive 16` for persistent connections between nginx and Node.js, saving 20-50ms per request by avoiding TCP handshake overhead. This requires `proxy_set_header Connection ""` (empty string) instead of `Connection 'upgrade'` in all proxied location blocks.
 
-### Direct Disk Serving for /_next/static
+### Caching /_next/static via Proxy
 
-The `location ^~ /_next/static` block uses `alias` to serve Next.js build artifacts directly from disk, bypassing Node.js entirely. These files have content hashes in their filenames, so they are cached with `expires 1y` and `Cache-Control: public, immutable`.
+The `location ^~ /_next/static` block proxies to Node.js but adds long-lived cache headers, since Next.js content-hashes the filenames:
 
 ```nginx
 location ^~ /_next/static {
-  alias /home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app/.next/static;
+  proxy_pass http://portal_backend;
+  proxy_http_version 1.1;
+  proxy_set_header Connection "";
   expires 1y;
   add_header Cache-Control "public, immutable";
 }
 ```
+
+**Never use a fixed `alias`** for this block. The Next.js build ID changes on every deploy, and a stale alias path would return 404 for the new IDs. If on-disk serving is ever desired again, use `try_files $uri @portal_next` with a proxy fallback rather than a fixed `alias`.
 
 ### Reference Configuration
 

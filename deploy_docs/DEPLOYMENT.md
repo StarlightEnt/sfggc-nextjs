@@ -1,667 +1,424 @@
 # SFGGC Website Deployment Guide
 
-This guide will help you deploy your SFGGC Next.js static website to a CloudPanel server.
+This guide covers deploying the SFGGC Next.js application to the production server.
+
+The site runs as a **unified Next.js server** behind nginx. There is no static export: both the public marketing pages and the portal are served by a single PM2-managed Node.js process (`sfggc-portal`, port 3000). One command handles the entire deploy.
+
+For deeper detail on flags, dry-run modes, and CI/CD, see [UNIFIED_DEPLOYMENT.md](UNIFIED_DEPLOYMENT.md). For nginx configuration management see the [Nginx Configuration Management](#nginx-configuration-management) section below.
 
 ## Prerequisites
 
-- SSH access to your CloudPanel server
-- Domain name configured in CloudPanel
-- Basic knowledge of command line
+- SSH access to the production server (CloudPanel-managed)
+- Node.js and npm installed locally
+- For first-time setup: database password, SMTP (AWS SES) password, and a super admin email/name/password
 
 ## SSH Key Setup (Recommended)
 
-For passwordless deployment, set up SSH key authentication. This allows the deployment script to run without prompting for a password each time.
+For passwordless deployment, set up SSH key authentication once.
 
-### Option 1: Automated Setup (Recommended)
-
-Use the provided SSH setup script:
+### Automated Setup
 
 ```bash
 ./deploy_scripts/setup-ssh.sh <ssh_user@server> <server_alias>
 ```
 
-**Example:**
-```bash
-./deploy_scripts/setup-ssh.sh jfuggc@54.70.1.215 sfggc-server
-```
+The script generates an SSH key pair, configures `~/.ssh/config` with a friendly alias, helps you add the public key to the server, and tests the passwordless connection.
 
-The script will:
-1. Generate an SSH key pair (if one doesn't exist)
-2. Configure your SSH config file with a friendly alias
-3. Help you add the public key to the server
-4. Test the passwordless connection
-
-**After running the script**, you'll need to add the public key to your server. The script will display your public key and provide instructions.
-
-### Option 2: Manual SSH Key Setup
-
-If you prefer to set up SSH keys manually:
-
-#### Step 1: Generate SSH Key
+### Manual SSH Key Setup
 
 ```bash
-# Generate a new SSH key
+# 1. Generate a key
 ssh-keygen -t ed25519 -C "sfggc-deployment" -f ~/.ssh/id_ed25519_sfggc -N ""
-```
 
-#### Step 2: Add to SSH Config
-
-Create or edit `~/.ssh/config`:
-
-```bash
-Host sfggc-server
-    HostName 54.70.1.215
-    User jfuggc
+# 2. Add to ~/.ssh/config
+Host sfggc
+    HostName <server-ip-or-hostname>
+    User goldengateclassic
     IdentityFile ~/.ssh/id_ed25519_sfggc
     IdentitiesOnly yes
+
+# 3. Push your public key
+ssh-copy-id -i ~/.ssh/id_ed25519_sfggc.pub goldengateclassic@<server>
+
+# 4. Test
+ssh sfggc "echo Connection successful"
 ```
 
-Set proper permissions:
-```bash
-chmod 600 ~/.ssh/config
-```
+After SSH keys are set up, the deploy script picks up the alias automatically when `.deployrc` is configured. The provided [.deployrc.example](../.deployrc.example) ships with an IP address in `DEPLOY_SSH_HOST` so it works without local SSH config; switch it to your SSH alias (e.g. `DEPLOY_SSH_HOST="sfggc"`) in your `.deployrc` for cleaner output and passwordless deploys.
 
-#### Step 3: Add Public Key to Server
+## Deploying
 
-Display your public key:
-```bash
-cat ~/.ssh/id_ed25519_sfggc.pub
-```
+### Quick Start
 
-Add it to the server (you'll be prompted for your password once):
-```bash
-ssh jfuggc@54.70.1.215 'mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo "YOUR_PUBLIC_KEY_HERE" >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys'
-```
-
-Replace `YOUR_PUBLIC_KEY_HERE` with the output from `cat ~/.ssh/id_ed25519_sfggc.pub`.
-
-#### Step 4: Test Connection
-
-Test passwordless SSH:
-```bash
-ssh sfggc-server "echo 'Connection successful'"
-```
-
-If successful, you won't be prompted for a password.
-
-### Using SSH Keys with Deployment
-
-Once SSH keys are set up, you can use the server alias in the deployment script:
+From the project root:
 
 ```bash
-./deploy_scripts/deploy.sh sfggc-server /home/jfuggc/htdocs/www.goldengateclassic.org www.goldengateclassic.org
-```
+# Preview what will happen (recommended first time)
+./deploy_scripts/deploy.sh --dry-run --verbose
 
-Or use the full SSH connection string:
-```bash
-./deploy_scripts/deploy.sh jfuggc@54.70.1.215 /home/jfuggc/htdocs/www.goldengateclassic.org www.goldengateclassic.org
-```
+# Deploy
+./deploy_scripts/deploy.sh
 
-## Step-by-Step Deployment
-
-### 1. Gather Required Information
-
-Before deploying, you need:
-
-- **SSH Connection**: Your SSH login (e.g., `user@your-server.com`)
-- **Domain Path**: The path to your website's public_html directory (usually `/home/username/domains/yourdomain.com/public_html`)
-- **Domain Name**: Your website's domain name
-
-### 2. Prepare Your Local Environment
-
-Make sure you have the latest code and dependencies:
-
-**Option 1: Use the build script (Recommended)**
-
-The build script automatically checks dependencies and builds the site:
-
-```bash
-./deploy_scripts/build.sh
-```
-
-The script will:
-- Check for Node.js and npm
-- Install dependencies if needed (`npm install`)
-- Validate `next.config.js` configuration
-- Resize oversized source images (wider than 800px) using macOS `sips`
-- Build the static site (`npm run build`)
-- Validate the build output
-- Display build statistics
-
-**Option 2: Manual build**
-
-```bash
-# Install dependencies (if not already done)
-npm install
-
-# Build the static site
-npm run build
-```
-
-**Verify the build:**
-
-After building, check that the `out` directory was created:
-
-```bash
-ls -la out/
-```
-
-You should see:
-- `index.html` - Homepage
-- `404.html` - 404 error page
-- `_next/` - Next.js static assets
-- Other HTML pages (committee.html, results.html, etc.)
-
-### 3. Deploy Using the Deployment Script
-
-Use the provided deployment script:
-
-```bash
-./deploy_scripts/deploy.sh <ssh_user@server> <domain_path> <domain_name>
-```
-
-**Example:**
-```bash
-./deploy_scripts/deploy.sh user@myserver.com /home/user/domains/sfggc.com/public_html sfggc.com
-```
-
-**Options:**
-
-```bash
-# Skip confirmation prompt (useful for CI/CD)
+# Deploy non-interactively (skip "Do you want to deploy?" prompt)
 ./deploy_scripts/deploy.sh --yes
-
-# Alternative syntax
-./deploy_scripts/deploy.sh -y
 ```
 
-The `--yes` (or `-y`) flag skips the "Do you want to deploy?" confirmation prompt, making the script suitable for automated deployments.
+That's it. The script syncs code, installs dependencies on the server, runs database migrations, builds on the server (`npm run build` producing `.next/`), and restarts the PM2 process.
 
-### 4. Manual Deployment (Alternative)
+> **Important:** Always run deploy scripts from the project root, not from inside `deploy_scripts/` — they use repo-relative paths.
 
-If you prefer to deploy manually:
+### What the Deploy Does
 
-#### Step 4a: Connect to Your Server
+1. **Pre-flight checks** — verifies Node.js, npm, git, SSH connectivity, server Node.js, disk space.
+2. **Sync files** — rsyncs the project to `DEPLOY_APP_PATH` on the server (excludes `node_modules/`, `.git/`, `.next/`, `out/`, `.env*`).
+3. **Install dependencies** — runs `npm install --production` on the server.
+4. **Set up environment** — creates `.env.local` on the server interactively (first deploy only, unless `--setup` is passed).
+5. **Initialize database** — runs `bash scripts/dev/init-portal-db.sh` (idempotent).
+6. **Run migrations** — executes every `*.sh` in `backend/scripts/migrations/` in alphabetical order (each script is idempotent and checks state before applying changes).
+7. **Create super admin** — first deploy only, if no admins exist.
+8. **Build on server** — validates `next.config.js` is in server mode (rewrites it if a stale `output: 'export'` is present), removes old `.next/`, runs `npm run build`.
+9. **Manage PM2** — installs PM2 if missing, starts or restarts `sfggc-portal`, saves the process list, configures `@reboot pm2 resurrect` in crontab.
+10. **Verify** — checks PM2 status, curls the homepage and `/portal/` for HTTP 200, and **fingerprints the public response** by comparing the server's `.next/BUILD_ID` against the `buildId` in the public homepage's `__NEXT_DATA__`. If they don't match (or the response isn't from Next.js at all), the deploy fails loudly with the exact remediation — usually "push `backend/config/vhost.txt` to CloudPanel." See [Build-ID Fingerprint Check](#build-id-fingerprint-check) below.
+
+### Common Flags
+
+| Flag | Purpose |
+|---|---|
+| `--dry-run` | Print what would happen without executing anything |
+| `--verbose` | More detail in dry-run output |
+| `--yes` / `-y` | Skip the deployment confirmation prompt |
+| `--setup` | Force `.env.local` recreation (recover from broken credentials) |
+| `--skip-migrations` | Skip migrations (not recommended) |
+| `--config FILE` | Use an alternate config file instead of `.deployrc` |
+| `--server HOST` | Override SSH host |
+| `--user USER` | Override SSH user |
+
+Run `./deploy_scripts/deploy.sh --help` for the full list.
+
+> **Note:** The old `--static`, `--all`, and (silently) `--portal` flags are no longer supported. The script now hard-errors on `--static` / `--all` with a message pointing to the unified command. `--portal` is silently accepted for backwards compatibility.
+
+### Configuration
+
+Production defaults live in [.deployrc.example](../.deployrc.example) and are used automatically. Only create a custom `.deployrc` if you need different values (staging, alternate server, etc.). All secrets (database password, SMTP password, session secret) are prompted interactively on first deploy and stored on the server in `.env.local` — never in any local config file.
+
+The required keys are:
+
 ```bash
-ssh user@your-server.com
+DEPLOY_SSH_USER="goldengateclassic"
+DEPLOY_SSH_HOST="sfggc"   # SSH alias preferred
+DEPLOY_DOMAIN="www.goldengateclassic.org"
+DEPLOY_APP_PATH="/home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app"
+DEPLOY_PM2_APP_NAME="sfggc-portal"
+
+# Non-secret database / SMTP infrastructure (passwords prompted, not stored here)
+DEPLOY_DB_HOST="..."
+DEPLOY_DB_PORT="3306"
+DEPLOY_DB_NAME="goldengate"
+DEPLOY_DB_USER="goldengate"
+DEPLOY_SMTP_HOST="..."
+DEPLOY_SMTP_PORT="587"
+DEPLOY_SMTP_USER="..."
+DEPLOY_SMTP_FROM="Golden Gate Classic <noreply@goldengateclassic.org>"
 ```
 
-#### Step 4b: Navigate to Your Domain Directory
+Always use full absolute paths in `DEPLOY_APP_PATH` (never `~/...`) — tildes are not reliably expanded in non-interactive SSH commands.
+
+## Verifying the Deploy
+
+After a successful deploy:
+
 ```bash
-cd /home/username/domains/yourdomain.com/public_html
+# Public homepage and portal should both return 200
+curl -I https://www.goldengateclassic.org/
+curl -I https://www.goldengateclassic.org/portal/
+
+# PM2 status on the server
+ssh sfggc "pm2 status sfggc-portal"
+
+# Application logs
+ssh sfggc "pm2 logs sfggc-portal --lines 50"
 ```
 
-#### Step 4c: Create Backup (Optional but Recommended)
+### Build-ID Fingerprint Check
+
+The deploy script's final verification step is a build-ID fingerprint match. It reads `${DEPLOY_APP_PATH}/.next/BUILD_ID` on the server (Next.js writes this for every build) and extracts `"buildId":"..."` from the public homepage's `__NEXT_DATA__` JSON. The two must match.
+
+This catches every kind of routing drift that an HTTP 200 check would miss:
+
+- nginx vhost serving a stale static file from disk instead of proxying to Node.js
+- CDN or proxy in front holding an old response
+- The domain pointed at the wrong server
+- An Apache `.htaccess` intercepting before nginx
+
+The check has three outcomes:
+
+| Outcome | What it means | Action |
+|---|---|---|
+| ✓ Match (`Public site serves the deployed build`) | nginx is proxying to the Next.js server you just deployed | None — deploy is fully verified |
+| ✗ No `buildId` in public response | nginx is returning a non-Next.js response (usually a static file from disk) | Push `backend/config/vhost.txt` to CloudPanel (see [Nginx Configuration Management](#nginx-configuration-management)) |
+| ✗ buildId mismatch | Public site is serving an older build than the one on the server | Likely vhost drift; could also be CDN cache or wrong server. Push vhost.txt; if mismatch persists, investigate the CDN/DNS path |
+
+You can run the same fingerprint comparison manually any time:
+
 ```bash
-cp -r public_html public_html_backup_$(date +%s)
+SERVER_BID=$(ssh sfggc "cat /home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app/.next/BUILD_ID")
+PUBLIC_BID=$(curl -fsSL https://www.goldengateclassic.org/ | grep -oE '"buildId":"[^"]+"' | head -1 | sed 's/.*"buildId":"\([^"]*\)".*/\1/')
+echo "Server:  $SERVER_BID"
+echo "Public:  $PUBLIC_BID"
+[ "$SERVER_BID" = "$PUBLIC_BID" ] && echo "✓ MATCH" || echo "✗ MISMATCH"
 ```
 
-#### Step 4d: Upload Files from Your Local Machine
-From your local project directory:
+The deploy script also runs these checks automatically and prints the results at the end.
+
+## Updating the Site
+
+There is no separate build/deploy split anymore — just run the deploy:
+
 ```bash
-# Upload all files from the 'out' directory
-rsync -avz --delete out/ user@your-server.com:/home/username/domains/yourdomain.com/public_html/
+./deploy_scripts/deploy.sh
 ```
 
-### 5. Configure Web Server (if needed)
+The build happens on the server, so you do not need to run `npm run build` locally.
 
-#### For Apache (most common with CloudPanel):
+## Troubleshooting
 
-The deployment script automatically creates a `.htaccess` file, but if you need to create or modify it manually, add this to your domain's public_html directory:
+Most deployment issues are covered in [UNIFIED_DEPLOYMENT.md#troubleshooting](UNIFIED_DEPLOYMENT.md#troubleshooting). Server-side issues (PM2, nginx, SSL) are covered in [SERVER_SETUP.md](../SERVER_SETUP.md).
 
-```apache
-# Enable compression
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/plain
-    AddOutputFilterByType DEFLATE text/html
-    AddOutputFilterByType DEFLATE text/xml
-    AddOutputFilterByType DEFLATE text/css
-    AddOutputFilterByType DEFLATE application/xml
-    AddOutputFilterByType DEFLATE application/xhtml+xml
-    AddOutputFilterByType DEFLATE application/rss+xml
-    AddOutputFilterByType DEFLATE application/javascript
-    AddOutputFilterByType DEFLATE application/x-javascript
-</IfModule>
+A few quick checks if things go wrong:
 
-# Cache static assets
-<IfModule mod_expires.c>
-    ExpiresActive on
-    ExpiresByType text/css "access plus 1 year"
-    ExpiresByType application/javascript "access plus 1 year"
-    ExpiresByType image/png "access plus 1 year"
-    ExpiresByType image/jpg "access plus 1 year"
-    ExpiresByType image/jpeg "access plus 1 year"
-    ExpiresByType image/gif "access plus 1 year"
-    ExpiresByType image/svg+xml "access plus 1 year"
-</IfModule>
-
-# Security headers
-<IfModule mod_headers.c>
-    Header always set X-Content-Type-Options nosniff
-    Header always set X-Frame-Options DENY
-    Header always set X-XSS-Protection "1; mode=block"
-</IfModule>
-```
-
-#### For Nginx:
-
-If you're using Nginx instead of Apache, you'll need to configure nginx to serve the static files. Unlike Apache, nginx doesn't use `.htaccess` files and requires server configuration.
-
-**If you're using CloudPanel:**
-- See [CLOUDPANEL_NGINX_GUIDE.md](CLOUDPANEL_NGINX_GUIDE.md) for step-by-step instructions on updating nginx configuration in CloudPanel
-- See [CLOUDPANEL_STATIC_NGINX.md](CLOUDPANEL_STATIC_NGINX.md) if you need to convert from proxy configuration to static file serving
-
-**For manual nginx configuration:**
-- See [NGINX_SETUP.md](NGINX_SETUP.md) for complete nginx configuration instructions
-
-**For ISP-controlled nginx (no direct SSH access to nginx):**
-- See the [Nginx Configuration Management](#nginx-configuration-management) section below for the copy/paste workflow
-
-### 6. Test Your Deployment
-
-1. **Visit your website**: Open your domain in a browser
-2. **Check all pages**: Navigate through all sections
-3. **Test responsiveness**: Check on mobile and desktop
-4. **Verify theme switching**: Test the dark/light theme toggle
-5. **Check images**: Ensure all images load correctly
-6. **Test PDF downloads**: Verify results PDFs are accessible
-
-### 7. Troubleshooting
-
-#### Common Issues:
-
-**Build failures:**
-- Ensure Node.js is installed: `node --version`
-- Ensure npm is installed: `npm --version`
-- Try cleaning and rebuilding: `rm -rf out node_modules && npm install && ./deploy_scripts/build.sh`
-- Check for syntax errors in your code
-- Verify `next.config.js` has `output: 'export'` configured
-- Check build logs for specific error messages
-
-**Build output missing files:**
-- Verify the build completed successfully (check for errors)
-- Ensure all pages are properly exported
-- Check that images are in the `public/` directory
-- Verify `next.config.js` configuration
-
-**SSH Authentication Issues:**
-- If prompted for password, SSH keys may not be set up correctly
-- Run `./deploy_scripts/setup-ssh.sh` to set up SSH keys
-- Test connection: `ssh <server_alias> "echo Connection successful"`
-- Verify key is in server's `~/.ssh/authorized_keys` file
-
-**Files not uploading:**
-- Check SSH connection: `ssh user@your-server.com` or `ssh <server_alias>`
-- Verify domain path exists
-- Ensure you have write permissions
-
-**Website not loading:**
-- Check if files are in the correct directory
-- Verify domain DNS settings
-- Check CloudPanel domain configuration
-
-**Images not loading:**
-- Verify image paths in the uploaded files
-- Check file permissions
-- Ensure images are in the correct directories
-
-**CSS/JS not loading:**
-- Check if static files are in the `_next/static/` directory
-- Verify file permissions
-- Check browser console for errors
-
-**Nginx errors or 502/503 errors:**
-- If using nginx, check nginx configuration (see [NGINX_SETUP.md](NGINX_SETUP.md))
-- Verify nginx is configured to serve static files, not proxy to a Node.js app
-- Check nginx error logs: `sudo tail -f /var/log/nginx/error.log`
-- For ISP-controlled nginx, see [Nginx Configuration Management](#nginx-configuration-management)
-
-### 8. Updating Your Website
-
-To update your website:
-
-1. **Make changes locally**
-2. **Build the site**: 
-   - Use the build script: `./deploy_scripts/build.sh`
-   - Or manually: `npm run build`
-3. **Deploy again**: Run the deployment script or manual process
-4. **Test the changes**
-
-### 9. Backup Strategy
-
-- The deployment script automatically creates backups
-- Manual backups are stored in `public_html_backup_TIMESTAMP`
-- Consider setting up automated backups in CloudPanel
-
-## File Structure After Deployment
-
-Your server's public_html directory should contain:
-
-```
-public_html/
-├── index.html              # Homepage
-├── 404.html               # 404 error page
-├── committee/             # Committee page
-├── results/               # Results page
-├── rules/                 # Rules page
-├── san-francisco/         # San Francisco page
-├── images/                # Static images
-├── results/               # PDF files
-├── _next/                 # Next.js static assets
-│   ├── static/
-│   │   ├── css/           # CSS files
-│   │   ├── chunks/        # JavaScript chunks
-│   │   └── media/         # Optimized images
-│   └── ...
-└── .htaccess              # Apache configuration
-```
-
-## Support
-
-If you encounter issues:
-
-1. Check the CloudPanel logs
-2. Verify file permissions
-3. Test with a simple HTML file first
-4. Contact your hosting provider if needed
+- **Pre-flight check fails on SSH** — re-run `setup-ssh.sh`, then `ssh sfggc "echo OK"`.
+- **PM2 not online after deploy** — `ssh sfggc "pm2 logs sfggc-portal --lines 100"`. Common cause: bad credentials in `.env.local` (recover with `./deploy_scripts/deploy.sh --setup`).
+- **Deploy fails at "Verifying public site serves the build we just deployed"** — nginx isn't proxying to your fresh build. Either the vhost in CloudPanel is out of sync with `backend/config/vhost.txt`, or there's a CDN/proxy holding stale content. Push the vhost via CloudPanel (see [Nginx Configuration Management](#nginx-configuration-management)).
+- **Portal returns 502** — Node.js is down; check PM2 logs. See [Portal Returns 502 Bad Gateway](#troubleshooting) below.
+- **Portal pages render but menus/forms are invisible** — `/_next/static/*.js` is 404'ing. Check that `^~ /_next/static` is present in `backend/config/vhost.txt`, and that no regex location is intercepting JS/CSS. See [Configuration File Structure](#configuration-file-structure).
 
 ## Nginx Configuration Management
 
-This section applies when you do NOT have direct SSH access to nginx (ISP-controlled hosting with web-based control panel).
-
-### Overview
-
-**Configuration File Location:** `/Volumes/Keiki/Users/jfunson/source/Cursor/sfggc/sfggc-nextjs/backend/config/vhost.txt`
-
-This file contains the complete nginx vhost configuration for the SFGGC website, including both the static site and portal application proxy settings.
+The production server is ISP-controlled: you do NOT have direct SSH access to nginx (no `nginx -t`, no `systemctl reload nginx`, no editing `/etc/nginx/`). Nginx configuration lives in version control at [backend/config/vhost.txt](../backend/config/vhost.txt) and is deployed by copy-pasting into the CloudPanel ISP portal.
 
 ### When to Update Nginx Configuration
 
-You need to update nginx configuration when:
-- Adding new portal routes or API endpoints
+You need to update nginx when:
+
 - Changing proxy settings (port, headers, timeouts)
-- Modifying caching rules for static assets
-- Adding new location blocks or redirects
-- Troubleshooting 502/503 errors on the portal
+- Modifying caching rules for build artifacts
+- Adding dedicated location blocks for new routes (rare — the catch-all `location /` already forwards everything to Next.js, including `/portal` and `/api/portal`)
+- Troubleshooting 502/503 errors
 
 ### Configuration Management Workflow
 
-Since you cannot run nginx commands directly (no `nginx -t`, `systemctl reload nginx`, etc.), use this workflow:
+**1. Edit `backend/config/vhost.txt` locally and commit the change.**
 
-**1. Edit Configuration Locally**
-
-```bash
-# Navigate to the config directory
-cd /Volumes/Keiki/Users/jfunson/source/Cursor/sfggc/sfggc-nextjs/backend/config
-
-# Edit the vhost configuration file
-nano vhost.txt  # or vim, code, etc.
-```
-
-**2. Copy Configuration to Clipboard**
+**2. Copy the file contents to your clipboard:**
 
 ```bash
 # macOS
-cat vhost.txt | pbcopy
+cat backend/config/vhost.txt | pbcopy
 
 # Linux (requires xclip)
-cat vhost.txt | xclip -selection clipboard
+cat backend/config/vhost.txt | xclip -selection clipboard
 
 # Windows (WSL)
-cat vhost.txt | clip.exe
-
-# Manual alternative: Select all text in editor and copy
+cat backend/config/vhost.txt | clip.exe
 ```
 
-**3. Paste in ISP Control Panel**
+**3. Paste into the CloudPanel ISP portal:**
 
-1. Log into your ISP's web-based control panel
-2. Navigate to the nginx/vhost configuration section for your domain
-3. Clear the existing configuration
-4. Paste the clipboard contents
-5. Save the configuration
+1. Log into CloudPanel.
+2. Navigate to **Sites** → your domain → **Vhost** (or **Nginx** / **Web Server**).
+3. Clear the existing configuration and paste.
+4. Save. CloudPanel validates the syntax and reloads nginx automatically; errors are shown in the panel.
 
-The ISP control panel will automatically:
-- Validate the nginx syntax
-- Reload nginx if valid
-- Display errors if invalid
-
-**4. Test the Changes**
+**4. Verify:**
 
 ```bash
-# Test static site
-curl -I https://www.goldengateclassic.org/
-
-# Test portal (should proxy to Node.js on port 3000)
-curl -I https://www.goldengateclassic.org/portal
-
-# Test portal API
-curl -I https://www.goldengateclassic.org/api/portal/health
+curl -s -o /dev/null -w "%{http_code}\n" https://www.goldengateclassic.org/
+curl -s -o /dev/null -w "%{http_code}\n" https://www.goldengateclassic.org/portal/
+curl -s -o /dev/null -w "%{http_code}\n" https://www.goldengateclassic.org/api/portal/admin/session
 ```
 
-**5. Commit Configuration Changes**
-
-```bash
-# Stage the vhost.txt file
-git add backend/config/vhost.txt
-
-# Commit with descriptive message
-git commit -m "Update nginx config: [describe changes]"
-
-# Push to repository
-git push origin main
-```
+Expected: `200`, `200`, `401`. The `401` is correct — `/api/portal/admin/session` is auth-protected, so an unauthenticated check returning 401 proves the proxy is reaching the Next.js app. A `502` from any URL means the proxy is broken; a `404` from the session endpoint means nginx isn't proxying API routes to Node.js.
 
 ### Configuration File Structure
 
-The `backend/config/vhost.txt` file contains four main sections:
+The current vhost is intentionally minimal: nginx terminates TLS, adds caching headers on `/_next/static`, and proxies everything to the Next.js upstream. There are no static-files-from-disk blocks, no `try_files`, and no static-asset regex.
 
-**Upstream Block (before `server {}`):**
+**Upstream block (before `server {}`):**
+
 ```nginx
 upstream portal_backend {
   server 127.0.0.1:3000;
-  keepalive 16;   # persistent connections, saves 20-50ms/request
-}
-```
-
-The `keepalive 16` directive maintains persistent connections between nginx and Node.js, avoiding TCP handshake overhead on every request. This requires `proxy_set_header Connection ""` (empty string, not `'upgrade'`) in all proxied location blocks.
-
-**SSL and Server Configuration:**
-- SSL certificates (CloudPanel placeholders)
-- HTTP to HTTPS redirect
-- Basic server settings
-
-**Portal Application (CRITICAL -- read the warning below):**
-
-> **WARNING:** All four portal location blocks MUST use the `^~` modifier. Without it, the regex location `~* \.(js|css|...)$` overrides the prefix locations for any URL ending in `.js` or `.css`. This causes ALL Next.js JavaScript bundles to return 404, breaking React hydration and rendering the entire portal non-functional (pages load but interactive elements are invisible).
-
-```nginx
-# Portal pages -- ^~ prevents regex override
-location ^~ /portal {
-  proxy_pass http://portal_backend;
-  # ... proxy headers ...
-}
-
-# Portal API routes
-location ^~ /api/portal {
-  proxy_pass http://portal_backend;
-  # ... proxy headers ...
-}
-
-# Next.js static assets -- served directly from disk (bypasses Node.js)
-location ^~ /_next/static {
-  alias /home/.../portal-app/.next/static;
-  expires 1y;
-  add_header Cache-Control "public, immutable";
-}
-
-# Next.js dynamic requests
-location ^~ /_next {
-  proxy_pass http://portal_backend;
-  # ... proxy headers ...
-}
-```
-
-**Static Site Configuration:**
-- `location /` with `try_files` for static pages
-- `location ~*` regex for caching images, CSS, JS (this is the regex that conflicts without `^~`)
-- 404 error handling
-
-### Common Configuration Tasks
-
-**Add a New Portal Route:**
-No changes needed. The existing `/portal` location block catches all portal routes.
-
-**Change Portal Port:**
-If the Node.js app runs on a different port, update the `upstream` block (not individual location blocks):
-```nginx
-upstream portal_backend {
-  server 127.0.0.1:3001;  # Changed from 3000
   keepalive 16;
 }
 ```
 
-**Add Custom Headers:**
+The `keepalive 16` directive maintains persistent connections between nginx and Node.js, saving 20–50 ms per request. It requires `proxy_set_header Connection ""` (empty string) in every proxied location block — never `'upgrade'`.
+
+**Server / SSL configuration:** CloudPanel placeholders (`{{ssl_certificate}}`, `{{ssl_certificate_key}}`, `{{root}}`, etc.), HTTPS redirect, Let's Encrypt validation, and the standard `include /etc/nginx/global_settings`.
+
+**Application proxy blocks:**
+
 ```nginx
-location ^~ /portal {
+# Next.js build artifacts — long-lived cache (filenames are content-hashed)
+location ^~ /_next/static {
   proxy_pass http://portal_backend;
-  # ... existing headers ...
-  proxy_set_header X-Custom-Header "value";
+  proxy_http_version 1.1;
+  proxy_set_header Connection "";
+  expires 1y;
+  add_header Cache-Control "public, immutable";
+}
+
+# Everything else (public pages, /portal, /api/portal, /_next dynamic) → Next.js
+location / {
+  proxy_pass http://portal_backend;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection "";
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_cache_bypass $http_upgrade;
 }
 ```
 
-**Increase Timeout for Long Requests:**
+That's the entire application section. Next.js handles all routing (including the portal under `/portal` and API under `/api/portal`); nginx only proxies and adds cache headers on build artifacts.
+
+> **WARNING — historical lesson, still load-bearing:** The `^~` modifier on `/_next/static` is deliberate. If anyone reintroduces a regex location like `~* \.(js|css|...)$` (for serving static assets from disk or adding cache headers), the regex would override a plain `/_next/static` prefix and break every Next.js JavaScript bundle, killing React hydration. Keep `^~` on `/_next/static` even though there is currently no regex competing with it — it's defensive.
+>
+> Similarly, if a future change adds dedicated proxy blocks for `/portal`, `/api/portal`, or `/_next`, those must also use `^~`.
+
+> **Never use a fixed `alias`** for `/_next/static` pointing at a specific `.next/static` directory. Build IDs change every deploy. The current config proxies to Node.js (which serves the right build ID automatically) — keep it that way, or use `try_files $uri @portal_next` with a proxy fallback if you ever want disk-served assets.
+
+### Common Configuration Tasks
+
+**Change the portal port** — update the `upstream` block, not the individual location blocks:
+
+```nginx
+upstream portal_backend {
+  server 127.0.0.1:3001;  # changed from 3000
+  keepalive 16;
+}
+```
+
+You also need to set `PORT=3001` in `.env.local` on the server.
+
+**Add a custom header to portal proxy:**
+
+```nginx
+location ^~ /portal {
+  proxy_pass http://portal_backend;
+  proxy_set_header Host $host;
+  proxy_set_header X-Real-IP $remote_addr;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header Connection "";
+  proxy_set_header X-Custom-Header "value";   # ← new header
+}
+```
+
+**Increase timeouts for long-running endpoints:**
+
 ```nginx
 location ^~ /api/portal {
   proxy_pass http://portal_backend;
-  # ... existing headers ...
+  # ... standard headers ...
   proxy_read_timeout 300s;
   proxy_connect_timeout 300s;
 }
 ```
 
-**IMPORTANT:** When editing location blocks, always preserve the `^~` modifier. Removing it will break the portal. See the warning in [Configuration File Structure](#configuration-file-structure) above.
+**IMPORTANT:** Always preserve the `^~` modifier when editing portal location blocks. Removing it will break the portal — see the warning above.
 
 ### Nginx Proxy Header Inheritance
 
-**Critical Rule:** When you add any `proxy_set_header` directive inside a `location` block, ALL `proxy_set_header` directives inherited from the parent `server` block are lost. Nginx does not merge headers between scopes -- the child block completely replaces the parent's headers.
+**Critical rule:** When you add ANY `proxy_set_header` directive inside a `location` block, ALL `proxy_set_header` directives inherited from the parent `server` block are silently dropped. Nginx does not merge headers between scopes — the child block completely replaces the parent's headers.
 
-**What this means in practice:** Every proxy `location` block must explicitly define ALL required headers, even if the parent scope already defines them. You cannot rely on headers "flowing down" from the server-level configuration.
+In practice: every proxy `location` block must explicitly include every header it depends on. Don't rely on inheritance from the server-level scope.
 
-**Required headers for every proxy location:**
+**Required headers depend on what the block does.**
+
+**Application/dynamic proxy blocks** (the catch-all `location /`, or any future `^~ /portal`, `^~ /api/portal`, `^~ /_next` blocks) need the full forwarded-headers set because Next.js relies on them for routing, audit logging, and HTTPS detection:
+
 ```nginx
-location ^~ /portal {
-    proxy_pass http://portal_backend;
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header Connection "";
-}
+proxy_pass http://portal_backend;
+proxy_http_version 1.1;
+proxy_set_header Host $host;
+proxy_set_header X-Real-IP $remote_addr;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header Connection "";
 ```
 
-**If you forget even one header:**
-- Missing `Host`: Backend receives wrong hostname, routing fails
-- Missing `X-Real-IP` / `X-Forwarded-For`: Audit logs record `127.0.0.1` instead of the real client IP
-- Missing `X-Forwarded-Proto`: Backend cannot detect HTTPS, may generate insecure URLs
-- Missing `Connection ""`: Keepalive connections to the upstream break
+If you forget one:
+- Missing `Host` → backend receives wrong hostname, routing fails.
+- Missing `X-Real-IP` / `X-Forwarded-For` → audit logs record `127.0.0.1` instead of the real client IP.
+- Missing `X-Forwarded-Proto` → backend cannot detect HTTPS, may generate insecure URLs.
+- Missing `Connection ""` → keepalive to the upstream breaks (TCP handshake per request).
 
-**When adding a new proxy location block,** always copy the full set of `proxy_set_header` directives from an existing working block. Do not assume any headers are inherited.
+**Cache-only proxy blocks** (the current `^~ /_next/static` block) only need `proxy_http_version 1.1` and `Connection ""` for upstream keepalive — Next.js serves immutable, content-hashed assets here and doesn't care about the request's `Host` or `X-Forwarded-*` headers. Adding the full set is harmless but unnecessary.
+
+When adding a new dynamic proxy block, copy the full header set from `location /` in the current vhost. When adding a new cache block, the two-line header set from `location ^~ /_next/static` is sufficient.
 
 ### What NOT to Do
 
-**Do not attempt these commands** (they require direct SSH access to nginx):
+These commands all require direct nginx access that you do not have:
+
 ```bash
-# These will fail without nginx permissions:
-nginx -t                    # Test configuration syntax
-systemctl reload nginx      # Reload nginx
-systemctl restart nginx     # Restart nginx
-sudo vim /etc/nginx/...     # Edit nginx files directly
+nginx -t                    # No
+systemctl reload nginx      # No
+systemctl restart nginx     # No
+sudo vim /etc/nginx/...     # No
 ```
+
+CloudPanel handles validation and reload automatically when you save the vhost config in the portal.
 
 ### Troubleshooting
 
-**Configuration Rejected by ISP Panel:**
-- Check for syntax errors (missing semicolons, braces)
-- Verify CloudPanel placeholders are preserved: `{{root}}`, `{{ssl_certificate}}`, etc.
-- Test locally if you have nginx installed: `nginx -t -c vhost.txt` (optional, won't catch placeholder issues)
+**Configuration rejected by ISP panel:**
+- Check for syntax errors (missing semicolons, unclosed braces).
+- Verify CloudPanel placeholders are preserved: `{{root}}`, `{{ssl_certificate}}`, `{{ssl_certificate_key}}`.
 
-**Portal Returns 502 Bad Gateway:**
-1. Check that Node.js app is running: `ssh server "pm2 status sfggc-portal"`
-2. Verify proxy_pass port matches app port (default: 3000)
-3. Check app logs: `ssh server "pm2 logs sfggc-portal"`
+**Portal returns 502 Bad Gateway:**
+1. Check Node.js is running: `ssh sfggc "pm2 status sfggc-portal"`.
+2. Verify `proxy_pass` port in `upstream portal_backend` matches the app port (default 3000).
+3. Check logs: `ssh sfggc "pm2 logs sfggc-portal --lines 100"`.
 
-**Static Site Works But Portal Doesn't:**
-1. Verify the portal proxy configuration is present in `backend/config/vhost.txt`
-2. Check that Node.js app is running (see above)
-3. Test portal URL directly: `curl -v https://domain/portal`
+**Public pages work but portal does not (or vice versa):**
 
-**Portal Pages Load But Menus/Forms Are Missing (No Interactivity):**
-1. Open browser DevTools Network tab and check for 404 errors on `/_next/static/chunks/*.js` files
-2. If JS files return 404, the `^~` modifier is likely missing from the nginx location blocks
-3. Verify all portal location blocks use `^~`: `location ^~ /portal`, `location ^~ /_next/static`, etc.
-4. This is the most common nginx misconfiguration -- see the WARNING in [Configuration File Structure](#configuration-file-structure)
+The current vhost proxies everything to the same Next.js upstream — there are no separate portal blocks. If only one path is broken, the issue is in the Node.js app, not nginx.
+1. Test the upstream directly: `ssh sfggc "curl -I http://127.0.0.1:3000/portal/"`.
+2. If localhost works but the public URL doesn't, the catch-all `location /` block is missing or misconfigured in `backend/config/vhost.txt`.
+3. Check PM2 logs for app-side errors: `ssh sfggc "pm2 logs sfggc-portal --lines 100"`.
 
-**Changes Not Taking Effect:**
-1. Verify you saved changes in ISP control panel
-2. Check if ISP panel reported errors during save
-3. Wait 30-60 seconds for nginx reload to complete
-4. Clear browser cache and test again
+**Portal pages load but menus, forms, or the change log are missing (no interactivity):**
+1. Open browser DevTools → Network → check for 404s on `/_next/static/chunks/*.js`.
+2. If JS files 404, a regex location (`~* \.(js|css|...)$`) is intercepting them. The current vhost has no such regex — if one was added, every prefix block that needs to serve JS/CSS must use `^~`. At minimum `^~ /_next/static` must remain present (currently the only prefix needing it).
+3. The fix is to either remove the regex location or add `^~` to every competing prefix block.
+
+**Static assets break after a build (`/_next/static/*` 404):**
+- The current vhost proxies `/_next/static` to Node.js, which always serves the current build ID. If you see 404s, check that `proxy_pass http://portal_backend` is still inside the `^~ /_next/static` block and that PM2 is running.
+- **Never** replace the proxy with a fixed `alias` pointing at a specific `.next/static` directory — build IDs change every deploy and the alias path would go stale.
+
+**Changes not taking effect:**
+1. Verify you saved in the ISP control panel.
+2. Check the panel for error messages reported during save.
+3. Wait 30–60 seconds for nginx reload.
+4. Clear browser cache.
 
 ### Version Control Best Practices
 
-**Always commit configuration changes:**
-```bash
-# Good commit messages:
-git commit -m "Add timeout settings for portal API routes"
-git commit -m "Update proxy port from 3000 to 3001"
-git commit -m "Add caching headers for portal assets"
+Always commit vhost changes alongside the change that requires them. Good commit messages name the specific thing changing (the port, the timeout, the location block) rather than just "Update nginx".
 
-# Bad commit messages:
-git commit -m "Update config"
-git commit -m "Fix nginx"
-```
+If a nginx change requires a corresponding code change, document the coupling in the commit body so reviewers understand they must land together.
 
-**Document breaking changes:**
-If your nginx config change requires a corresponding code change, document it in the commit message:
-```bash
-git commit -m "Change portal API prefix from /api/portal to /api/v1
+## Portal Application Details
 
-BREAKING CHANGE: Requires updating API route files:
-- src/pages/api/portal/*.js -> src/pages/api/v1/*.js
-- Update all fetch() calls in frontend components"
-```
-
-### Reference Configuration
-
-The current production configuration is maintained in:
-- **File:** `/Volumes/Keiki/Users/jfunson/source/Cursor/sfggc/sfggc-nextjs/backend/config/vhost.txt`
-- **Repository:** `sfggc-nextjs`
-- **Branch:** `main`
-
-Always pull the latest version before making changes:
-```bash
-git pull origin main
-```
-
-## Portal Backend
-
-The portal (admin dashboard + participant login) runs as a **Next.js server application**, not a static site. It requires Node.js, MariaDB, and SMTP access on the server.
-
-For complete portal deployment instructions, see [PORTAL_DEPLOYMENT.md](PORTAL_DEPLOYMENT.md).
+For the portal-specific environment variables, database schema, migrations, and admin account flow, see [PORTAL_DEPLOYMENT.md](PORTAL_DEPLOYMENT.md). For the migration system itself, see [MIGRATIONS.md](MIGRATIONS.md).
 
 ## Security Notes
 
-- Keep your SSH keys secure
-- Regularly update your server
-- Monitor your website for issues
-- Consider setting up SSL certificates through CloudPanel
-
-
-
-
-
-
-
-
+- Keep SSH keys secure and use SSH alias + keys (no password auth).
+- Secrets live only in `.env.local` on the server and in the database (bcrypt-hashed admin passwords). Never check secrets into the repo or `.deployrc`.
+- SSL certificates are managed by CloudPanel.
+- Migrations are idempotent and audit logs capture all admin actions.

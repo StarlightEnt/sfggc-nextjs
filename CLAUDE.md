@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Next.js 14 static website for the San Francisco Golden Gate Classic, an IGBO-affiliated bowling tournament. The project combines a public-facing marketing site with an authenticated tournament management portal backed by MariaDB.
+Next.js 14 server application for the San Francisco Golden Gate Classic (IGBO-affiliated bowling tournament). Serves public marketing pages and an authenticated tournament management portal from a single Node.js process behind nginx, backed by MariaDB.
 
 **Key Technologies:**
-- Next.js 14 with React 18 (static site generation)
+- Next.js 14 / React 18 (server mode, no static export)
 - Bootstrap 5 with custom SCSS modules
-- MariaDB/MySQL database
-- Custom authentication (cookie-based sessions)
+- MariaDB/MySQL
+- Custom cookie-based session auth
 
 ## Development Commands
 
@@ -23,7 +23,7 @@ npm install
 # Run development server
 npm run dev
 
-# Build static site for production
+# Build for production (produces .next/, not a static export)
 npm run build
 
 # Start production server
@@ -78,61 +78,51 @@ bash backend/scripts/admin/create-super-admin.sh
 
 ### Deployment
 
-**CRITICAL:** All deployment scripts must be run from the project root directory (not from within `deploy_scripts/`) because they use relative paths to the `out` directory.
+**CRITICAL:** Run deploy scripts from project root, not from inside `deploy_scripts/` (repo-relative paths).
 
-#### Unified Deployment System
+#### Unified Deployment
 
-The project uses a unified deployment script that supports static site, portal application, or both:
+Single command: sync, install, migrate, build on server, restart PM2.
 
 ```bash
-# Deploy static site (default)
-./deploy_scripts/deploy.sh
-
-# Deploy portal application
-./deploy_scripts/deploy.sh --portal
-
-# Deploy everything (static + portal)
-./deploy_scripts/deploy.sh --all
-
-# Preview deployment with dry-run
-./deploy_scripts/deploy.sh --portal --dry-run
-
-# Dry-run with verbose output
-./deploy_scripts/deploy.sh --all --dry-run --verbose
+./deploy_scripts/deploy.sh                       # deploy
+./deploy_scripts/deploy.sh --dry-run --verbose   # preview
+./deploy_scripts/deploy.sh --yes                 # skip confirmation
+./deploy_scripts/deploy.sh --setup               # force .env.local reconfiguration
 ```
 
+Build runs on server, produces `.next/`. No static export, no `out/`. Legacy flags: `--static` and `--all` hard-error; `--portal` is a no-op.
+
 **Configuration:**
-- Production defaults are already configured in `.deployrc.example` (used automatically)
-- Only create custom `.deployrc` if deploying to staging/test environments
-- All secrets (passwords) are prompted interactively during deployment, never stored locally
+- Production defaults in `.deployrc.example` (used automatically).
+- Custom `.deployrc` only for non-prod environments.
+- Secrets prompted on first deploy, stored in server's `.env.local`, never locally.
 
-**First-time portal deployment:**
-- Use `--portal` flag for interactive setup
-- Script will prompt for:
-  - Database password (username pre-configured as "goldengate") → stored in server's `.env.local`
-  - SMTP password (username pre-configured) → stored in server's `.env.local`
-  - Super admin account (email, name, password) → stored in database
-  - Session secret → auto-generated, stored in server's `.env.local`
-- Database schema will be initialized automatically
-- All secrets remain on the server only
+**First-time deployment prompts for:**
+- Database password, SMTP password → `.env.local`
+- Super admin (email, name, password) → bcrypt-hashed in DB
+- Session secret → auto-generated, written to `.env.local`
 
-**Subsequent deployments:** Skip prompts (configuration already exists on server), just sync code and restart.
+Schema and migrations run automatically (idempotent).
 
-**Critical deployment patterns:** See `CLAUDE-DEPLOYMENT.md` for credential handling, flag behavior, CI/CD patterns, and common gotchas.
+**Subsequent deployments:** No credential prompts — sync, migrate, build, restart PM2.
 
-See `deploy_docs/UNIFIED_DEPLOYMENT.md` for complete deployment guide and `SERVER_SETUP.md` for server configuration and troubleshooting.
+**Deploy verification:** Final step is a build-ID fingerprint check (server `.next/BUILD_ID` vs public homepage `buildId`). Mismatch or missing `buildId` in response means nginx vhost drift — push `backend/config/vhost.txt` to CloudPanel. See `CLAUDE-DEPLOYMENT.md#8-stale-content-after-successful-deploy-vhost-drift` and `deploy_docs/DEPLOYMENT.md#build-id-fingerprint-check`.
+
+See `CLAUDE-DEPLOYMENT.md` for credential handling, flags, CI/CD, gotchas.
+
+See `deploy_docs/DEPLOYMENT.md` (quick start), `deploy_docs/UNIFIED_DEPLOYMENT.md` (full reference), `SERVER_SETUP.md` (server config + troubleshooting).
 
 ## Architecture
 
 ### Dual-Purpose Application
 
-This is a monorepo combining two distinct applications in one Next.js project:
+Monorepo combining two applications in one Next.js project:
 
 1. **Public Website** (`src/pages/index.js`, `results.js`, `rules.js`, etc.)
-   - Static marketing pages
-   - Tournament information and rules
-   - No authentication required
-   - Results page fetches visibility flags client-side (cannot use SSR in static export). See `CLAUDE-PATTERNS.md#Client-Side Visibility Fetching on Static Pages`
+   - Marketing pages, tournament info, rules
+   - No auth required
+   - Results page fetches visibility flags client-side (deliberate — keeps pages CDN-cacheable). See `CLAUDE-PATTERNS.md#Client-Side Visibility Fetching on Public Pages`
 
 2. **Portal System** (`src/pages/portal/`, `src/pages/api/portal/`)
    - Authenticated tournament management
@@ -142,11 +132,11 @@ This is a monorepo combining two distinct applications in one Next.js project:
 
 ### Backend Architecture
 
-There is **no separate backend server**. The "backend" is implemented via:
+No separate backend server. "Backend" = :
 
-- **Next.js API Routes** in `src/pages/api/portal/` - handles all API requests
-- **Utility modules** in `src/utils/portal/` - database, sessions, auth guards
-- **Backend directory** (`backend/`) - contains test fixtures, sample data, and admin CLI scripts (NOT a separate server)
+- **Next.js API Routes** (`src/pages/api/portal/`) — all API requests
+- **Utility modules** (`src/utils/portal/`) — database, sessions, auth guards
+- **`backend/` directory** — test fixtures, sample data, admin CLI scripts (NOT a server)
 
 ### Portal System Components
 
@@ -259,26 +249,22 @@ PageComponent.getLayout = function getLayout(page) {
 ### Styling Architecture
 
 **SCSS Structure:**
-- `src/scss/sfggc-bootstrap.scss` - Custom Bootstrap variables and overrides
-- `src/scss/sfggc.scss` - Main stylesheet with global styles
-- Component-specific `.module.scss` files for scoped styles
+- `src/scss/sfggc-bootstrap.scss` — Bootstrap variables and overrides
+- `src/scss/sfggc.scss` — main stylesheet with global styles
+- Component `.module.scss` files for scoped styles
 
-**Mobile-First Design:**
-The project uses mobile-first responsive design (2/3 of visitors are on mobile). Always start with mobile viewport styles, then use Bootstrap breakpoints (576px, 768px, 992px, 1200px) to adapt for larger screens.
+**Mobile-First:** 2/3 of visitors are mobile. Start with mobile viewport styles; use Bootstrap breakpoints (576px, 768px, 992px, 1200px) for larger screens.
 
-**CSS Custom Properties:**
-Use CSS custom properties for theming:
-- `var(--sfggc-title-font-family)` for headings
-- `var(--sfggc-section-heading-color)` for section headings
-- `var(--sfggc-body-text-shadow-color)` for text shadows
+**CSS Custom Properties for theming:**
+- `var(--sfggc-title-font-family)` — headings
+- `var(--sfggc-section-heading-color)` — section headings
+- `var(--sfggc-body-text-shadow-color)` — text shadows
 
 **Section Pattern:**
-Most components are sections with:
 - Section wrapper with component-specific class
 - `.section-heading` for titles
-- `.section-image-background` for background images (z-index: -50)
-- `.section-background-shade` for overlays (z-index: -49)
-- Responsive margins and padding
+- `.section-image-background` background images (z-index: -50)
+- `.section-background-shade` overlays (z-index: -49)
 
 ### Key Files Reference
 
@@ -320,8 +306,10 @@ Most components are sections with:
 - See `deploy_docs/MIGRATIONS.md` for migration system details
 
 **Deploy Pipeline:**
-- `deploy_scripts/lib/optimize-images.sh` - Pre-build image resizing (macOS `sips`, `MAX_IMAGE_WIDTH=800`). Required because `images: { unoptimized: true }` is set for static export. See `CLAUDE-DEPLOYMENT.md#Image Optimization in Deploy Pipeline`
-- `deploy_scripts/lib/build.sh` - Build orchestration; `write_server_mode_config()` prevents template drift. See `CLAUDE-DEPLOYMENT.md#Server-Mode Config Template`
+- `deploy_scripts/deploy.sh` - Unified entry point; one command does sync + install + migrate + build on server + PM2 restart
+- `deploy_scripts/lib/deploy-app.sh` - Application deployment orchestration (sync, install, env setup, build, PM2)
+- `deploy_scripts/lib/deploy-migrations.sh` - Migration runner (executes every `*.sh` in `backend/scripts/migrations/`)
+- `deploy_scripts/lib/build.sh` - Build helpers; `write_server_mode_config()` prevents template drift. See `CLAUDE-DEPLOYMENT.md#Server-Mode Config Template`
 
 **Server Configuration:**
 - `backend/config/vhost.txt` - Nginx vhost config (deployed via CloudPanel ISP portal, NOT direct SSH). See `CLAUDE-DEPLOYMENT.md#Nginx Configuration Workflow`
@@ -341,22 +329,22 @@ Most components are sections with:
 
 ### Component Organization
 
-Each component lives in its own directory:
+Each component in its own directory:
 ```
 src/components/Hero/
   ├── Hero.js
   └── Hero.module.scss
 ```
 
-Combine Bootstrap utility classes with custom SCSS modules for styling.
+Combine Bootstrap utility classes with custom SCSS modules.
 
 ### Database Connection
 
-The database connection automatically handles:
+Auto-handles:
 - Unix socket detection for localhost (macOS Homebrew: `/tmp/mysql.sock`)
-- Fallback to TCP connection for remote databases
-- Connection pooling for performance
-- Environment-driven configuration via `PORTAL_DATABASE_URL`
+- TCP fallback for remote databases
+- Connection pooling
+- Config via `PORTAL_DATABASE_URL`
 
 ### XML Import Flow
 
@@ -409,15 +397,15 @@ The database connection automatically handles:
 
 ### Bootstrap and Theme Management
 
-The project uses Bootstrap 5 with custom color mode support (dark/light/auto). Theme state is managed via `ThemeContext` and persisted to localStorage. The theme switcher is in the navigation component.
+Bootstrap 5 with dark/light/auto color mode. Theme state in `ThemeContext`, persisted to localStorage. Theme switcher in nav component.
 
 ### Image Organization
 
-Images are organized by category in `src/images/`:
+Images in `src/images/` by category:
 - Use responsive images with multiple sizes
-- Store background images for sections here
-- Apply `.section-background-shade` overlays for text readability
-- Source images wider than 800px are auto-resized during deploy build (`deploy_scripts/lib/optimize-images.sh`). Next.js image optimization is disabled (`unoptimized: true`) for static export, so source images must be pre-optimized.
+- Store section background images here
+- Apply `.section-background-shade` overlay for text readability
+- Next.js image optimization disabled (`unoptimized: true` in `next.config.js`). Pre-optimize source images locally before committing if wider than ~800px — no resize step in the deploy pipeline.
 
 ### Testing Patterns
 
@@ -432,7 +420,7 @@ BDD workflow methodology is defined in the user-level `~/.claude/CLAUDE.md`. Thi
 
 **Test Types:**
 - **Static source analysis** -- read file contents, assert structural properties (imports, exports, naming, guard clauses). See `tests/unit/no-server-imports-frontend.test.js`, `tests/unit/refactoring-dry.test.js`.
-- **Behavioral tests** -- exercise functions/modules with inputs, assert outputs. See `backend/tests/api/audit.test.js`, `tests/unit/import-xml-no-clobber.test.js`, `tests/unit/import-lanes-csv.test.js`, `tests/unit/import-scores-csv.test.js`, `tests/unit/team-score-aggregation.test.js`, `tests/unit/doubles-pair-update.test.js`, `tests/unit/optimize-images.test.js`.
+- **Behavioral tests** -- exercise functions/modules with inputs, assert outputs. See `backend/tests/api/audit.test.js`, `tests/unit/import-xml-no-clobber.test.js`, `tests/unit/import-lanes-csv.test.js`, `tests/unit/import-scores-csv.test.js`, `tests/unit/team-score-aggregation.test.js`, `tests/unit/doubles-pair-update.test.js`.
 - **Route existence tests** -- verify expected files exist on disk. See `tests/frontend/portal-routes.test.js`.
 - **Page behavior tests** -- verify page source fetches correct APIs and passes correct props. See `tests/frontend/results-page-public-links.test.js`.
 
@@ -458,11 +446,11 @@ bash scripts/test/test-backend.sh  # Backend/API tests only
 
 **Note:** `test-all.sh` runs integration tests (`tests/integration/*.test.js`) as a separate step between frontend and backend tests.
 
-**Database prerequisite:** Backend and full-suite tests require MariaDB to be running. Start it with `bash scripts/dev/start-mariadb.sh` before running `test-backend.sh` or `test-all.sh`. The test scripts do not start the database themselves.
+**Database prerequisite:** Backend and full-suite tests require MariaDB running. Start with `bash scripts/dev/start-mariadb.sh` before `test-backend.sh` or `test-all.sh` — test scripts do not start the database themselves.
 
-**Database Tests:** Automatically create/drop `<database>_test` databases. On failure, the test database is preserved for debugging.
+**Database Tests:** Auto create/drop `<database>_test` databases. On failure, the test database is preserved for debugging.
 
-**Rule:** During development, run only the localized tests for files being changed. Run `bash scripts/test/test-all.sh` after all sprints are complete or before checking in code.
+**Rule:** During development, run only localized tests for files being changed. Run `bash scripts/test/test-all.sh` after all sprints complete or before check-in.
 
 ### Security Considerations
 
