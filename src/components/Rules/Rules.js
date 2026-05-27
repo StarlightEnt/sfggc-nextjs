@@ -40,14 +40,14 @@ const Rules = () => {
 * Handicap: 90% of the difference between average and 225.
 * Averages will be taken from the following sources.  
   * The Highest of Options A or B below:
-    * A.  Composite League Average 2024-2025 (with at least 21 games bowled)
-    * B.  IGBO Tournament Average (TAD) from 1/1/25 to 12/31/25 (minimum 9 games)
+    * A.  Composite League Average 2025-2026 (with at least 21 games bowled)
+    * B.  IGBO Tournament Average (TAD) from 1/1/26 to 12/31/26 (minimum 9 games)
   * If neither of the above applies, then Option C below applies
-    * C.  Composite League Average 2025-2026 as of 12/31/2025 (with at least 21 games bowled)
+    * C.  Composite League Average 2026-2027 as of 12/31/2026 (with at least 21 games bowled)
   * If NONE of the above applies, contact us as soon as possible (directors@goldengateclassic.org).
 * Averages must be verified via credible websites or documents.
 * Submitting an incorrect average will result in disqualification.
-* The Tournament Director reserves the right to determine and adjust a bowler's entering average.
+* The Tournament Director(s) reserve(s) the right to determine and adjust a bowler's entering average.
 `,
     },
     {
@@ -60,9 +60,9 @@ const Rules = () => {
     {
       header: 'Entry Requirements',
       markdown: `
-* Fees: **$119** on or before Jan 30, 2026, **$129** after Jan 30, 2026.
+* Fees: **$124** on or before May 31, 2027.
 * Registration will not be considered complete until Entry Fees and Memberships are PAID IN FULL. 
-* Deadline: January 31, 2026. No refunds except at director’s discretion.
+* Deadline: May 31, 2027. No refunds except at director’s discretion.
 `,
     },
     {
@@ -76,7 +76,7 @@ const Rules = () => {
       markdown: `
 * Optional events handled separately; errors capped at entry cost.
 * If you require special assistance, please contact us asap (directors@goldengateclassic.org).  
-* Tournament Director reserves the right to make decisions necessary that will ensure fair play and uphold the integrity of the competition and the tournament.
+* Tournament Director(s) reserve(s) the right to make decisions necessary that will ensure fair play and uphold the integrity of the competition and the tournament.
 `,
     },
   ];
@@ -92,9 +92,9 @@ The Scratch Masters is an optional, mixed competition with a separate entry fee,
     *  Division E: 0-149 ($35)
     *  Tournament Director(s) may adjust a bowler’s division before they bowl.
 1. **Qualification:** 
-Scratch scores from Doubles, Singles, and Team events determine the top 8 qualifiers and one alternate per division (no handicap). A tie for 8th is settled with a 9th-and-10th-frame roll-off.
+Scratch scores from Doubles, Singles, and Team events determine the top 6 qualifiers and one alternate per division (no handicap). A tie for 6th is settled with a 9th-and-10th-frame roll-off.
 1. **Competition Format:**
-    * Qualifiers bowl 3 games each on rotating lanes. The four (4) lowest scores are eliminated, and the remaining 4 advance. Ties are broken by a one-ball roll-off.
+    * Qualifiers bowl 3 games each on rotating lanes. The two (2) lowest scores are eliminated, and the remaining 4 advance. Ties are broken by a one-ball roll-off.
     * The top 4 bowlers compete in a head-to-head stepladder format, with previous scores discarded. Higher-seeded bowlers choose to finish first or last.
 1. **Practice & Timing:** 
 Qualifiers get 10 minutes of practice before competition. Bowlers must be checked in 30 minutes before the start or be replaced by the alternate.
@@ -103,9 +103,9 @@ Matches begins on the final day of the Tournament (Sunday) at 10am. Each divisio
 1.  **Errors & Protests:**
 Claims of error during a roll-off must be submitted before the next match begins. For the final match, any error must be reported within one (1) hour of its conclusion.
 1.  **Payouts:**
-100% of entry fees (less lineage) are paid out with a minimum 1:2 ratio and up to 8 places per division.
+100% of entry fees (less lineage) are paid out with a minimum 1:2 ratio and up to 6 places per division.
 1.  **Participation:**
-If fewer than 8 bowlers sign up in a division, all participants will bowl in the same format until the top 4 or less remain for stepladder.
+If fewer than 6 bowlers sign up in a division, all participants will bowl in the same format until the top 4 or less remain for stepladder.
 `;
 
   return (
@@ -116,7 +116,7 @@ If fewer than 8 bowlers sign up in a division, all participants will bowl in the
         </h3>
 
         <p className={`text-md-center`}>
-          (Finalized)
+          (Draft)
         </p>
 
         <p>
@@ -126,8 +126,8 @@ If fewer than 8 bowlers sign up in a division, all participants will bowl in the
         </p>
 
         <p>
-          The 2026 San Francisco Golden Gate Classic shall be held from Friday, February 13, through Sunday, February
-          15, 2026, at Classic Bowling Center, located at 900 King Dr., Daly City, CA 94015.
+          The 2027 San Francisco Golden Gate Classic shall be held from Friday, June 18, through Sunday, June
+          20, 2027, at Classic Bowling Center, located at 900 King Dr., Daly City, CA 94015.
         </p>
 
         <ol>
@@ -149,7 +149,7 @@ If fewer than 8 bowlers sign up in a division, all participants will bowl in the
         </h3>
 
         <p className={`text-md-center`}>
-          (Finalized)
+          (Draft)
         </p>
 
 {<div className={`${styles.Sponsor} row`}>
