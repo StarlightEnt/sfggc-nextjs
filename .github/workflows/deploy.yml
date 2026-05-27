@@ -1,0 +1,87 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+# Prevent concurrent deploys — if a deploy is in progress and another push
+# lands, cancel the in-progress run and start fresh with the latest code.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to goldengateclassic.org
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── 1. Check out code ──────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Set up SSH ──────────────────────────────────────────────────────
+      # Loads the private key from the GitHub secret and adds the server's
+      # host key to known_hosts so rsync/ssh don't prompt.
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          # Write the deploy private key
+          echo "${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519_sfggc
+          chmod 600 ~/.ssh/id_ed25519_sfggc
+
+          # Add the server's host key to avoid interactive prompt
+          # (generated with: ssh-keyscan -H 54.70.1.215)
+          echo "${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          # Create an SSH config alias so the deploy script finds it
+          cat >> ~/.ssh/config << 'EOF'
+          Host sfggc
+              HostName 54.70.1.215
+              User goldengateclassic
+              IdentityFile ~/.ssh/id_ed25519_sfggc
+              IdentitiesOnly yes
+              StrictHostKeyChecking yes
+              ServerAliveInterval 60
+              ServerAliveCountMax 5
+          EOF
+          chmod 600 ~/.ssh/config
+
+      # ── 3. Smoke-test SSH connection ───────────────────────────────────────
+      - name: Test SSH connection
+        run: ssh -o BatchMode=yes -o ConnectTimeout=15 sfggc "echo 'SSH OK'"
+
+      # ── 4. Run deploy script ───────────────────────────────────────────────
+      # The script rsyncs source, installs deps on server, runs migrations,
+      # builds on server, restarts PM2, and verifies the live buildId.
+      #
+      # On first deploy (no .env.local on server yet) you must also set:
+      #   DEPLOY_DB_PASSWORD, DEPLOY_SMTP_PASSWORD, DEPLOY_SESSION_SECRET,
+      #   DEPLOY_ADMIN_EMAIL, DEPLOY_ADMIN_NAME, DEPLOY_ADMIN_PASSWORD
+      # After the first deploy those are stored in .env.local on the server
+      # and these env vars are ignored.
+      - name: Deploy application
+        env:
+          # ── Subsequent-deploy secrets (always required) ──────────────────
+          # None needed after first deploy — .env.local already exists on
+          # server. Keep these set anyway; they are silently ignored when
+          # .env.local is present and --setup is not passed.
+
+          # ── First-deploy-only secrets (safe to leave set permanently) ────
+          DEPLOY_DB_PASSWORD:       ${{ secrets.DEPLOY_DB_PASSWORD }}
+          DEPLOY_SMTP_PASSWORD:     ${{ secrets.DEPLOY_SMTP_PASSWORD }}
+          DEPLOY_SESSION_SECRET:    ${{ secrets.DEPLOY_SESSION_SECRET }}
+          DEPLOY_ADMIN_EMAIL:       ${{ secrets.DEPLOY_ADMIN_EMAIL }}
+          DEPLOY_ADMIN_NAME:        ${{ secrets.DEPLOY_ADMIN_NAME }}
+          DEPLOY_ADMIN_PASSWORD:    ${{ secrets.DEPLOY_ADMIN_PASSWORD }}
+        run: |
+          # Override SSH host to use our alias defined in ~/.ssh/config
+          ./deploy_scripts/deploy.sh \
+            --yes \
+            --server sfggc \
+            --user goldengateclassic
