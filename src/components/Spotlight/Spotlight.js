@@ -55,18 +55,35 @@ const Spotlight = () => {
   //   </>
   // );
 
-  const thatsAWrap = (
+  const gearingUp = (
     <>
-      <h3>That&apos;s a wrap!</h3>
-      <p>We hope everyone had a fabulous tournament! Thank you to everyone who journeyed from near and far to be with us for the holiday weekend. Whether you were bowling, volunteering, working, or playing cheerleader, we are thrilled that you joined us.</p>
-      <p>We are already excited for next year! Got a suggestion for how we can make next year&apos;s tournament even better?{' '}
-        <a href={'mailto:directors@goldengateclassic.com?subject=SFGGC%202026'}>
-          Drop us a line!
-        </a>
+      <h3>Important Update - Change of Date</h3>
+      <p>
+        Please note above. We have changed our date! Due to the NFL having their Big Game on President&apos;s Day Weekend for the near future, we have elected to move our tournament to the summer. We have chosen the 3rd weekend of June.
       </p>
-      <p>Results are available <Link href={'/results'}>here</Link>.</p>
+      <p>
+        This also happens to be the weekend just before San Francisco&apos;s Annual Pride Weekend. So...
+      </p>
+      <h3>Come for Bowling. Stay for Pride!</h3>
+      <p>
+        Keep an eye on this space for further updates until we open Registration around the end of year holiday season.
+      </p>
+      {/*{scratchMastersResults}*/}
     </>
-   );
+  );
+
+  // const thatsAWrap = (
+  //   <>
+  //     <h3>That&apos;s a wrap!</h3>
+  //     <p>We hope everyone had a fabulous tournament! Thank you to everyone who journeyed from near and far to be with us for the holiday weekend. Whether you were bowling, volunteering, working, or playing cheerleader, we are thrilled that you joined us.</p>
+  //     <p>We are already excited for next year! Got a suggestion for how we can make next year&apos;s tournament even better?{' '}
+  //       <a href={'mailto:directors@goldengateclassic.com?subject=SFGGC%202026'}>
+  //         Drop us a line!
+  //       </a>
+  //     </p>
+  //     <p>Results are available <Link href={'/results'}>here</Link>.</p>
+  //   </>
+  //  );
 
   return (
     <section className={`${styles.Spotlight}`}>
@@ -77,8 +94,9 @@ const Spotlight = () => {
         {/*<RegisterCTA/>*/}
         {/*almostTime*/}
         {/*{itsTime}*/}
+        {gearingUp}
         {/*{scratchMastersResults}*/}
-        {thatsAWrap}
+        {/*thatsAWrap*/}
       </div>
     </section>
   );
