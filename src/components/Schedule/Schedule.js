@@ -4,7 +4,7 @@ const Schedule = () => {
 
   const days = [
     {
-      date: 'Friday, February 13, 2026',
+      date: 'Friday, June 18, 2027',
       events: [
         {
           name: 'Tournament Check-in',
@@ -21,7 +21,7 @@ const Schedule = () => {
       ]
     },
     {
-      date: 'Saturday, February 14, 2026',
+      date: 'Saturday, June 19, 2027',
       events: [
         {
           name: 'Tournament Check-in',
@@ -38,7 +38,7 @@ const Schedule = () => {
       ]
     },
     {
-      date: 'Sunday, February 15, 2026',
+      date: 'Sunday, June 20, 2027',
       events: [
         {
           name: 'Scratch Masters',
@@ -68,7 +68,7 @@ const Schedule = () => {
         Schedule of Events
       </h3>
       <p className={`${styles.Disclaimer}`}>
-        (Final Schedule)
+        (Proposed Preliminary Schedule)
       </p>
 
       {days.map((day, i) => (
