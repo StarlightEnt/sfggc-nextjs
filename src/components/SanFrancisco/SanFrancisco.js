@@ -83,18 +83,18 @@ const SanFrancisco = ({full = true}) => {
                   Francisco and the peninsula are wrapped in cool fog, with sunshine more the exception than the rule.
                 </p>
                 <p>
-                  You&apos;ll be visiting in February, so it&apos;s a safe bet that you&apos;ll want to pack for cool-to-pleasant
-                  weather. Fog is common, especially in the hills above Daly City where our bowling center is! High
+                  You&apos;ll be visiting in June, so it&apos;s a safe bet that you&apos;ll want to pack for cool-mild temperatures
+                  and breezy conditions "June Gloom". Fog is common, especially in the hills above Daly City where our bowling center is! High
                   temperatures are around{' '}
-                  <span className={`${styles.HighTemp}`}>60°F (15°C)</span>
+                  <span className={`${styles.HighTemp}`}>60/70°F (15.5/21°C)</span>
                   {' '}with lows around{' '}
-                  <span className={`${styles.LowTemp}`}>47°F (8°C)</span>
+                  <span className={`${styles.LowTemp}`}>mid-50s°F (12°C)</span>
                   {'.'}
                 </p>
-                <p>
-                  February is in the back half of our rainy season, so we recommend bringing an umbrella or
-                  rain-resistant jacket. Sure, we&apos;re usually in a drought, but that doesn&apos;t mean it never rains!
-                </p>
+                // <p>
+                //   February is in the back half of our rainy season, so we recommend bringing an umbrella or
+                //   rain-resistant jacket. Sure, we&apos;re usually in a drought, but that doesn&apos;t mean it never rains!
+                // </p>
               </div>
             </div>
 
