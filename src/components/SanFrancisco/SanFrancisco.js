@@ -91,10 +91,10 @@ const SanFrancisco = ({full = true}) => {
                   <span className={`${styles.LowTemp}`}>mid-50s°F (12°C)</span>
                   {'.'}
                 </p>
-                // <p>
-                //   February is in the back half of our rainy season, so we recommend bringing an umbrella or
-                //   rain-resistant jacket. Sure, we&apos;re usually in a drought, but that doesn&apos;t mean it never rains!
-                // </p>
+                {/*<p>
+                  February is in the back half of our rainy season, so we recommend bringing an umbrella or
+                  rain-resistant jacket. Sure, we&apos;re usually in a drought, but that doesn&apos;t mean it never rains!
+                </p>*/}
               </div>
             </div>
 
