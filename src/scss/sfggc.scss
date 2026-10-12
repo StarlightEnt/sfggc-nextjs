@@ -137,28 +137,6 @@ body {
       }
     }
 
-    .section-background-shade {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      z-index: -49;
-      margin-left: -0.5rem;
-      margin-right: -0.5rem;
-      background-color: var(--sfggc-night-mid);
-      border-radius: 0.875rem;
-      border: 1px solid var(--sfggc-hairline);
-
-      @media (min-width: 576px) {
-        margin-left: -1rem;
-        margin-right: -1rem;
-      }
-      @media (min-width: 992px) {
-        margin-left: -1.5rem;
-        margin-right: -1.5rem;
-      }
-    }
   }
 }
 
@@ -325,7 +303,3 @@ label,
 html, body {
   overflow-x: hidden;
 }
-
-
-
-

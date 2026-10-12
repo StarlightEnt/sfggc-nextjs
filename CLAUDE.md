@@ -259,16 +259,17 @@ PageComponent.getLayout = function getLayout(page) {
 
 **Mobile-First:** 2/3 of visitors are mobile. Start with mobile viewport styles; use Bootstrap breakpoints (576px, 768px, 992px, 1200px) for larger screens.
 
-**CSS Custom Properties for theming:**
-- `var(--sfggc-title-font-family)` — headings
-- `var(--sfggc-section-heading-color)` — section headings
-- `var(--sfggc-body-text-shadow-color)` — text shadows
+**CSS Custom Properties for theming** (all defined on `:root` in `sfggc.scss`):
+- `var(--sfggc-title-font-family)` — headings (Bungee)
+- `var(--sfggc-night)`, `--sfggc-night-mid`, `--sfggc-night-deep` — page, card and raised-panel surfaces
+- `var(--sfggc-ink)`, `--sfggc-ink-dim` — body and secondary text
+- `var(--sfggc-pride-red|orange|yellow|green|blue|purple)` — accents; `--sfggc-hairline` for borders
 
-**Section Pattern:**
-- Section wrapper with component-specific class
-- `.section-heading` for titles
-- `.section-image-background` background images (z-index: -50)
-- `.section-background-shade` overlays (z-index: -49)
+**Section Pattern** (content pages):
+- `<section className={`${styles.Name} my-5`}>` wrapper with a component-specific class
+- `<h3 className="section-heading mb-0">` for the title (a purple-topped panel header)
+- `<div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">` directly beneath it for the body
+  (`.glass-card` is a solid dark card despite the name; it is kept to avoid churn on content files)
 
 ### Key Files Reference
 
@@ -400,12 +401,13 @@ Auto-handles:
 
 ### Bootstrap and Theme Management
 
-Dark-only theme matching the sister site (sflgbtbowl.com). `<html data-bs-theme="dark">` is set in `_document.js`; there is no theme toggler or theme context. Palette tokens (`$night`, `$night-mid`, `$night-deep`, `$ink`, `$ink-dim`, `$pride-*`) live in `src/scss/_bootstrap-variables.scss` and are exposed as `--sfggc-*` CSS custom properties in `sfggc.scss`. Display type is Bungee (`.display`, h1-h3), body type is Inter. Shared styles: `.stripe-bar`, `.btn-glow-orange` (pill CTA), `.glass-card`, `.form-control`. Guarded by `tests/unit/dark-theme-tokens.test.js`.
+Dark-only theme matching the sister site (sflgbtbowl.com). `<html data-bs-theme="dark">` is set in `_document.js`; there is no theme toggler or theme context. Palette tokens (`$night`, `$night-mid`, `$night-deep`, `$ink`, `$ink-dim`, `$pride-*`) live in `src/scss/_bootstrap-variables.scss` and are exposed as `--sfggc-*` CSS custom properties in `sfggc.scss`. Display type is Bungee (`.display`, h1-h3), body type is Inter. Shared styles: `.stripe-bar`, `.btn-glow-orange` (pill CTA), `.glass-card`, `.form-control`. Guarded by `tests/unit/dark-theme-tokens.test.js` (which also computes WCAG contrast from the compiled tokens).
 
-**Conventions that the tests enforce** (`tests/unit/theme-cleanup.test.js`, `portal-dark-base.test.js`, `portal-dark-pages.test.js`):
+**Conventions that the tests enforce** (`tests/unit/theme-no-light-leftovers.test.js`, `theme-cleanup.test.js`, `portal-dark-base.test.js`, `portal-dark-pages.test.js`):
 - CSS variables use this project's `--sfggc-` prefix. Never write `--bs-*`; it does not exist here and fails silently.
 - Every `var(--sfggc-*)` must resolve to a defined variable. No `data-bs-theme` branching outside `_document.js` and `_bootstrap-color-modes.scss`.
-- No light utilities (`text-dark`, `bg-white`, `bg-light`) or hard-coded colors in components. Use the tokens. The email preview pane in `email-config.js` is the one intentional exception.
+- No light-surface utilities (`bg-white`, `bg-light`, bare `text-dark`), retired light-palette hex colors, or inline hex colors in components; use the tokens. Add a `theme-exempt` comment (with a reason) to opt a line out; the email preview pane in `email-config.js` does this. Translucent `rgba()` tints in module styles are allowed.
+- Tests resolve files from `tests/helpers/theme-sources.js` and assert on compiled CSS rather than regexes over SCSS source, so they survive reformatting. When adding a design test, assert an invariant (a rule exists, a token resolves) rather than a literal value or user-facing copy.
 - Bootstrap components are opt-in in `src/scss/sfggc-bootstrap.scss`. `forms`, `alert`, `badge`, `modal` are enabled because the portal uses them; check that file before assuming a Bootstrap class has styles.
 - Components that render as `<section>` inherit the global content-page `section` margins; set `margin: 0` in the module if they are not a content section (see the portal login forms).
 - Portal login screens use `<PortalShell variant="auth">` (centered sign-in card). Other portal pages get the default left-aligned page header.
@@ -415,7 +417,7 @@ Dark-only theme matching the sister site (sflgbtbowl.com). `<html data-bs-theme=
 Images in `src/images/` by category:
 - Use responsive images with multiple sizes
 - Store section background images here
-- Apply `.section-background-shade` overlay for text readability
+- Keep text legible over images with a gradient overlay in the component's own module styles
 - Next.js image optimization disabled (`unoptimized: true` in `next.config.js`). Pre-optimize source images locally before committing if wider than ~800px — no resize step in the deploy pipeline.
 
 ### Testing Patterns

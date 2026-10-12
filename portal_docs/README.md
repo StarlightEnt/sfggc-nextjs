@@ -30,7 +30,7 @@ The participant prototype pages still use CSV data from `portal_docs/sample_data
 
 ### Option A: Docker (recommended)
 
-Needs Docker only; nothing is installed on your machine and no `mysql` client is required.
+Needs Docker (plus `openssl` and `node`, which you already have for this project); no MariaDB or `mysql` client is installed on your machine.
 
 ```bash
 bash scripts/dev/docker-db.sh init
@@ -38,7 +38,7 @@ bash scripts/dev/docker-db.sh init
 
 This starts a MariaDB container (`sfggc-dev-mariadb`) bound to `127.0.0.1:3307`, writes
 `PORTAL_DATABASE_URL` and `ADMIN_SESSION_SECRET` to a new `.env.local` (generated password, never
-printed; an existing `.env.local` is never overwritten), then applies the schema and all migrations.
+printed). An existing `.env.local` is never overwritten: if it has no database settings they are appended, and if it points at a different database the script stops. Then it applies the schema and all migrations.
 Other commands: `up`, `down` (data is kept), `status`, `shell`, and `reset --yes` (deletes the
 container and its data). Set `SFGGC_DOCKER_DB_PORT` if 3307 is taken.
 

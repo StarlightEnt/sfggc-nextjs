@@ -17,7 +17,7 @@ for arg in "$@"; do
     continue
   fi
   case "$arg" in
-    -h|-P|-u|--host|--port|--user|--socket) skip_next=1 ;;
+    -h|-P|-u|--host|--port|--user|--socket|--protocol) skip_next=1 ;;
     --protocol=*|--socket=*|--host=*|--port=*|--user=*|-h?*|-P?*|-u?*) ;;
     *) args+=("$arg") ;;
   esac

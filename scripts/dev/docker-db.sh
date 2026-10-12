@@ -15,7 +15,7 @@ set -euo pipefail
 # once, never printed, and handed to Docker through the environment rather than the command line.
 #
 # Overrides: SFGGC_DOCKER_DB_NAME, SFGGC_DOCKER_DB_PORT, SFGGC_DOCKER_DB_IMAGE,
-#            SFGGC_DOCKER_DB_DATABASE, SFGGC_ENV_FILE
+#            SFGGC_DOCKER_DB_DATABASE, SFGGC_ENV_FILE (not supported by init), SFGGC_INIT_SCRIPT
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -26,6 +26,7 @@ IMAGE="${SFGGC_DOCKER_DB_IMAGE:-mariadb:11}"
 DB_NAME="${SFGGC_DOCKER_DB_DATABASE:-sfggc_portal}"
 VOLUME="${NAME}-data"
 ENV_FILE="${SFGGC_ENV_FILE:-$PROJECT_ROOT/.env.local}"
+INIT_SCRIPT="${SFGGC_INIT_SCRIPT:-$SCRIPT_DIR/init-portal-db.sh}"
 
 usage() {
   sed -n '4,12p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -38,6 +39,7 @@ die() {
 
 require_docker() {
   command -v docker >/dev/null 2>&1 || die "docker not found. Install Docker Desktop (or Docker Engine) first."
+  docker info >/dev/null 2>&1 || die "The Docker daemon is not running. Start Docker Desktop (or the docker service) and try again."
 }
 
 container_exists() {
@@ -48,19 +50,35 @@ container_running() {
   [[ -n "$(docker ps --filter "name=^${NAME}\$" --format '{{.Names}}')" ]]
 }
 
+volume_exists() {
+  docker volume inspect "$VOLUME" >/dev/null 2>&1
+}
+
+# Prints the value of KEY from the env file (without sourcing it), or nothing.
+env_value() {
+  [[ -f "$ENV_FILE" ]] || return 0
+  sed -n "s#^$1=##p" "$ENV_FILE" | head -n 1
+}
+
 # Prints the password stored in the env file's PORTAL_DATABASE_URL, or nothing.
 env_password() {
   [[ -f "$ENV_FILE" ]] || return 0
   sed -n 's#^PORTAL_DATABASE_URL=mysql://[^:@/]*:\([^@]*\)@.*#\1#p' "$ENV_FILE" | head -n 1
 }
 
+# Appends one line to the env file, first ending any unterminated last line.
+append_env_line() {
+  if [[ -s "$ENV_FILE" && -n "$(tail -c1 "$ENV_FILE")" ]]; then
+    printf '\n' >> "$ENV_FILE"
+  fi
+  printf '%s\n' "$1" >> "$ENV_FILE"
+}
+
 # Makes sure the env file holds settings for this container, creating or extending it only
 # when it has none. Refuses (without touching the file) if it already targets another database.
 ensure_env_file() {
-  local url=""
-  if [[ -f "$ENV_FILE" ]]; then
-    url="$(sed -n 's#^PORTAL_DATABASE_URL=##p' "$ENV_FILE" | head -n 1)"
-  fi
+  local url
+  url="$(env_value PORTAL_DATABASE_URL)"
 
   if [[ -n "$url" ]]; then
     case "$url" in
@@ -69,14 +87,22 @@ ensure_env_file() {
     esac
   fi
 
+  # A fresh password cannot unlock existing data: MariaDB only applies it when it first creates the volume.
+  if container_exists || volume_exists; then
+    die "A database container or volume ($NAME / $VOLUME) already exists, but $ENV_FILE has no database password to match it. Restore the file, or run 'reset --yes' to delete the old data and start fresh."
+  fi
+
   local password secret
   password="$(openssl rand -hex 16)"
   secret="$(openssl rand -hex 32)"
   ( umask 077
     touch "$ENV_FILE"
-    printf 'PORTAL_DATABASE_URL=mysql://root:%s@127.0.0.1:%s/%s\n' "$password" "$PORT" "$DB_NAME" >> "$ENV_FILE"
-    grep -q '^ADMIN_SESSION_SECRET=' "$ENV_FILE" || printf 'ADMIN_SESSION_SECRET=%s\n' "$secret" >> "$ENV_FILE"
+    append_env_line "PORTAL_DATABASE_URL=mysql://root:${password}@127.0.0.1:${PORT}/${DB_NAME}"
+    if [[ -z "$(env_value ADMIN_SESSION_SECRET)" ]]; then
+      append_env_line "ADMIN_SESSION_SECRET=${secret}"
+    fi
   )
+  chmod 600 "$ENV_FILE"
   echo "Wrote database settings to $ENV_FILE"
 }
 
@@ -117,14 +143,16 @@ cmd_up() {
 }
 
 cmd_init() {
+  # The repo's init script always reads <project>/.env.local itself, so a different file would be ignored.
+  if [[ -z "${SFGGC_INIT_SCRIPT:-}" && "$ENV_FILE" != "$PROJECT_ROOT/.env.local" ]]; then
+    die "init uses the project's .env.local; SFGGC_ENV_FILE is not supported for init."
+  fi
   cmd_up
   # Put the shim first on PATH so the repo's scripts can use the container's mysql client.
-  set -a
-  # shellcheck source=/dev/null
-  source "$ENV_FILE"
-  set +a
-  export SFGGC_DOCKER_DB_NAME="$NAME"
-  PATH="$SCRIPT_DIR/docker:$PATH" bash "$SCRIPT_DIR/init-portal-db.sh"
+  PORTAL_DATABASE_URL="$(env_value PORTAL_DATABASE_URL)" \
+  SFGGC_DOCKER_DB_NAME="$NAME" \
+  PATH="$SCRIPT_DIR/docker:$PATH" \
+    bash "$INIT_SCRIPT"
 }
 
 cmd_down() {

@@ -2,12 +2,10 @@
 // :root carries the same values so anything rendered before the attribute applies is dark too.
 :root,
 [data-bs-theme="dark"] {
-
   --#{$prefix}body-color: #{$ink};
   --#{$prefix}body-color-rgb: #{red($ink)}, #{green($ink)}, #{blue($ink)};
   --#{$prefix}body-bg: #{$night};
   --#{$prefix}body-bg-rgb: #{red($night)}, #{green($night)}, #{blue($night)};
-  --#{$prefix}body-text-shadow-color: transparent;
 
   --#{$prefix}secondary-color: #{$ink-dim};
   --#{$prefix}secondary-bg: #{$night-mid};
@@ -17,34 +15,8 @@
   --#{$prefix}emphasis-color: #{$ink};
   --#{$prefix}emphasis-color-rgb: #{red($ink)}, #{green($ink)}, #{blue($ink)};
 
-  --#{$prefix}section-heading-bg-color: #{$night-mid};
-  --#{$prefix}section-heading-color: #{$ink};
-
   --#{$prefix}border-color: #{rgba($ink, 0.12)};
   --#{$prefix}border-color-translucent: #{rgba($ink, 0.1)};
 
   --#{$prefix}link-color: #{$pride-blue};
-  --#{$prefix}card-link-color: #{$pride-blue};
-
-  .navbar {
-    --#{$prefix}navbar-disabled-color: #{$ink-dim};
-  }
-
-  .btn-#{$prefix}action {
-    @include button-variant(
-      $night-deep,
-      $night-deep,
-      $hover-background: shade-color($night-deep, $btn-hover-bg-shade-amount),
-      $hover-border: shade-color($night-deep, $btn-hover-border-shade-amount),
-      $active-background: shade-color($night-deep, $btn-active-bg-shade-amount),
-      $active-border: shade-color($night-deep, $btn-active-border-shade-amount)
-    );
-    text-shadow: none;
-  }
-
-  footer {
-    .logo-image {
-      filter: brightness(85%);
-    }
-  }
 }
