@@ -5,6 +5,16 @@
 **Date Deferred:** 2026-02-09
 **Impact:** Test suite now 100% passing (519/519 frontend, 36/36 backend)
 
+## Update (2026-10-12): tests skip even with a database running
+
+`test-all.sh` now runs `tests/integration/` as its own step. With a working database (the Docker
+dev DB from `scripts/dev/docker-db.sh`), the DB-backed files still report `# SKIP Database not
+available` (33 of 42 tests). The shared helper itself initializes fine when probed on its own, so
+the problem is in how the test files read the helper's state: they copy `db`/`dbReady` from
+`setupIntegrationDb()` in a root-level `before()` hook and the copy appears to happen before the
+helper's async initialization has finished. The root cause has not been confirmed. Until it is
+fixed, treat these tests as providing no coverage; the unit/frontend suites do not depend on them.
+
 ## Current State
 
 These 37 tests were moved from `tests/unit/` to `tests/integration/` so they no longer run in the default test scripts (`test-all.sh`, `test-frontend.sh`). The test suite is now fully green.

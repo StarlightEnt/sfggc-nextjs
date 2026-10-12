@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# mysql client shim for the Docker dev database.
+#
+# The repo's dev scripts (init-portal-db.sh, migrations, admin scripts) call a host `mysql`
+# client with host/port/socket/user flags. docker-db.sh puts this directory first on PATH so
+# those calls are forwarded into the container's own client, which needs no host install.
+# Connection flags are dropped; the container client always connects locally as root and
+# reads the password from MYSQL_PWD, which the calling scripts already set.
+
+NAME="${SFGGC_DOCKER_DB_NAME:-sfggc-dev-mariadb}"
+
+args=()
+skip_next=0
+for arg in "$@"; do
+  if [[ $skip_next -eq 1 ]]; then
+    skip_next=0
+    continue
+  fi
+  case "$arg" in
+    -h|-P|-u|--host|--port|--user|--socket) skip_next=1 ;;
+    --protocol=*|--socket=*|--host=*|--port=*|--user=*|-h?*|-P?*|-u?*) ;;
+    *) args+=("$arg") ;;
+  esac
+done
+
+exec docker exec -i -e MYSQL_PWD "$NAME" mariadb -uroot "${args[@]}"

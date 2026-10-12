@@ -28,6 +28,25 @@ The participant prototype pages still use CSV data from `portal_docs/sample_data
 
 ## MariaDB setup (local)
 
+### Option A: Docker (recommended)
+
+Needs Docker only; nothing is installed on your machine and no `mysql` client is required.
+
+```bash
+bash scripts/dev/docker-db.sh init
+```
+
+This starts a MariaDB container (`sfggc-dev-mariadb`) bound to `127.0.0.1:3307`, writes
+`PORTAL_DATABASE_URL` and `ADMIN_SESSION_SECRET` to a new `.env.local` (generated password, never
+printed; an existing `.env.local` is never overwritten), then applies the schema and all migrations.
+Other commands: `up`, `down` (data is kept), `status`, `shell`, and `reset --yes` (deletes the
+container and its data). Set `SFGGC_DOCKER_DB_PORT` if 3307 is taken.
+
+If your `.env.local` already has a `PORTAL_DATABASE_URL` for a different database, the script stops
+instead of changing it.
+
+### Option B: MariaDB installed on your machine
+
 Install MariaDB:
 
 - macOS: `scripts/dev/install-mariadb-macos.sh`
@@ -169,6 +188,7 @@ DB-backed tests:
 - If no DB URL is available, DB-backed tests will skip.
 - Test scripts drop the `_test` database after successful runs and keep it on failure for debugging.
 - Test scripts auto-load `.env.local` when present.
+- Some integration tests report "Database not available" and skip even when a database is running; see [INTEGRATION_TESTS_TODO.md](INTEGRATION_TESTS_TODO.md).
 
 ## Deployment
 
@@ -191,7 +211,7 @@ with `--skip-migrations`.
 
 ## Troubleshooting
 
-- MariaDB not running: `bash scripts/dev/start-mariadb.sh`
+- MariaDB not running: `bash scripts/dev/docker-db.sh up` (Docker) or `bash scripts/dev/start-mariadb.sh` (installed locally)
 - Connection refused: confirm `PORTAL_DATABASE_URL` and that the DB exists
 - **Access denied for user 'root'@'localhost' (ERROR 1698)**: The init script and app use the Unix socket and your macOS user for localhost; keep `mysql://root@localhost:3306/...` in `.env.local`. If your socket is elsewhere, set `MYSQL_UNIX_SOCKET` (e.g. `export MYSQL_UNIX_SOCKET=/tmp/mysql.sock`).
 - Blank admin dashboard: run the XML import or create a participant record

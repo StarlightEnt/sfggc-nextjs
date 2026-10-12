@@ -39,7 +39,11 @@ npm run lint
 # Bootstrap entire development environment
 bash scripts/dev/bootstrap-dev.sh
 
-# Initialize portal database schema
+# Dev database in Docker (no local MariaDB install needed): starts the container,
+# writes .env.local, applies schema + migrations. Also: up | down | status | shell | reset --yes
+bash scripts/dev/docker-db.sh init
+
+# Initialize portal database schema (when using a locally installed MariaDB instead)
 bash scripts/dev/init-portal-db.sh
 
 # Import tournament registration XML (optional)
@@ -453,7 +457,7 @@ bash scripts/test/test-backend.sh  # Backend/API tests only
 
 **Note:** `test-all.sh` runs integration tests (`tests/integration/*.test.js`) as a separate step between frontend and backend tests.
 
-**Database prerequisite:** Backend and full-suite tests require MariaDB running. Start with `bash scripts/dev/start-mariadb.sh` before `test-backend.sh` or `test-all.sh` — test scripts do not start the database themselves.
+**Database prerequisite:** Backend and full-suite tests require MariaDB running. Start with `bash scripts/dev/docker-db.sh up` (Docker) or `bash scripts/dev/start-mariadb.sh` (local install) before `test-backend.sh` or `test-all.sh` — test scripts do not start the database themselves.
 
 **Database Tests:** Auto create/drop `<database>_test` databases. On failure, the test database is preserved for debugging.
 

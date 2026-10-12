@@ -6,9 +6,11 @@ It is a unified [Next.js](https://nextjs.org/) server application (Next.js 14, R
 
 It uses Bootstrap 5, and I started the design with mobile viewports, then adapted them for medium and large ones. Since two out of every three visitors is on a mobile device, it seemed like the best approach.
 
+The look and feel follows the sister site, [sflgbtbowl.com](https://www.sflgbtbowl.com/): a dark theme (near-black violet surfaces, lavender text), neon Pride accent colors, a six-color stripe bar under the sticky nav, Bungee headings, Inter body text, and pill-shaped call-to-action buttons. The site is dark-only; there is no light mode or theme toggle. The design tokens live in `src/scss/_bootstrap-variables.scss`, and `CLAUDE.md` (Bootstrap and Theme Management) lists the conventions the tests enforce.
+
 ## Learning
 
-I have also used this project to further my understanding of Bootstrap's implementation of color modes, and how Sass works vs. CSS variables. It's very cool stuff, and as someone coming from the backend world of software development, it's been fun to see how it all ties together.
+I have also used this project to further my understanding of how Bootstrap's Sass and its CSS variables work together. It's very cool stuff, and as someone coming from the backend world of software development, it's been fun to see how it all ties together.
 
 ## Development & local running
 
@@ -16,6 +18,8 @@ I have also used this project to further my understanding of Bootstrap's impleme
 2. Install [Node.js](https://nodejs.org/en/)
 3. Run `npm install`
 4. To run a development server, run `npm run dev` and have at it!
+
+The public pages need nothing else. The tournament portal needs a database; the quickest way is Docker: `bash scripts/dev/docker-db.sh init` (see [portal_docs/PORTAL_SETUP.md](portal_docs/PORTAL_SETUP.md)).
 
 ## Deployment
 
