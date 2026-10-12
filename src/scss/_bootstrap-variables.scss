@@ -1,8 +1,8 @@
 $prefix: sfggc-;
 
+// Dark design system shared with the sister site (sflgbtbowl.com).
 $font-family-sans-serif:
   'Inter',
-  'Plus Jakarta Sans',
   system-ui,
   -apple-system,
   "Segoe UI",
@@ -12,44 +12,56 @@ $font-family-sans-serif:
   sans-serif;
 
 $font-family-display:
-  'Plus Jakarta Sans',
+  'Bungee',
   'Inter',
-  system-ui,
-  sans-serif;
+  cursive;
 
-// LGBT Progress Pride & SF Light Palette
-$pride-red: #e11d48;       // Pride Coral Rose
-$pride-orange: #f97316;    // Warm Sunset Orange
-$pride-yellow: #eab308;    // Golden Sunburst
-$pride-green: #10b981;     // Emerald Bay Green
-$pride-blue: #2563eb;      // Pacific Sapphire Blue
-$pride-purple: #7c3aed;    // Royal Violet
+// Surfaces and ink
+$night: #0b0a14;           // page background (near-black violet)
+$night-mid: #171129;       // cards and alternating sections
+$night-deep: #241a3d;      // raised panels
+$ink: #f4f1fb;             // body text (light lavender)
+$ink-dim: #a89fc9;         // secondary text
 
-$primary: #e11d48;         // Primary Pride Accent
-$secondary: #2563eb;       // Royal Blue
-$info: #10b981;            // Emerald Green
-$warning: #f97316;         // Warm Orange
-$danger: #e11d48;
+// Neon Pride accents
+$pride-red: #ff4d5e;
+$pride-orange: #ff9838;
+$pride-yellow: #ffd54a;
+$pride-green: #35d68f;
+$pride-blue: #3fa8ff;
+$pride-purple: #b874ff;
 
-$body-bg: #f8fafc;         // Luminous Light Background
-$body-color: #0f172a;      // Deep Slate High Contrast Text
+$primary: $pride-red;
+$secondary: $pride-purple;
+$success: $pride-green;
+$info: $pride-blue;
+$warning: $pride-orange;
+$danger: $pride-red;
 
-$link-color: #2563eb;
-$link-hover-color: #1d4ed8;
+// Bootstrap's dark-mode defaults, pointed at our palette
+$body-bg-dark: $night;
+$body-color-dark: $ink;
+$body-secondary-color-dark: $ink-dim;
+$body-secondary-bg-dark: $night-mid;
+$body-tertiary-color-dark: $ink-dim;
+$body-tertiary-bg-dark: $night-mid;
+$body-emphasis-color-dark: $ink;
+$border-color-dark: rgba($ink, 0.12);
+$link-color-dark: $pride-blue;
+$link-hover-color-dark: lighten($pride-blue, 10%);
 
-$deep-gray: #0f172a;
-$deep-blue: #1e293b;
-$silver: #e2e8f0;
-$silver-dark: #64748b;
-$burnt-orange: #f97316;
-$light-blue: #2563eb;
+$link-color: $pride-blue;
+$link-hover-color: lighten($pride-blue, 10%);
+
+// Legacy names still referenced by component styles
+$deep-gray: $night;
+$deep-blue: $night-mid;
+$silver: $ink-dim;
+$silver-dark: $night-deep;
+$burnt-orange: $pride-orange;
+$light-blue: $pride-blue;
 
 $font-size-root: 16px;
-$border-radius: 0.75rem;
-$border-radius-lg: 1rem;
+$border-radius: 0.625rem;
+$border-radius-lg: 0.875rem;
 $border-radius-sm: 0.5rem;
-
-
-
-
-

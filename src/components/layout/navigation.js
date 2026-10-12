@@ -1,5 +1,4 @@
 import Link from "next/link";
-import ColorModeToggler from "../ColorModeToggler/ColorModeToggler";
 import {useRouter} from "next/router";
 
 const Navigation = () => {
@@ -107,10 +106,6 @@ const Navigation = () => {
                   isButton: true,
                 })}
               </ul>
-
-              <div className="d-flex align-items-center">
-                <ColorModeToggler className={'ms-auto d-inline-block'} />
-              </div>
           </div>
 
         </div>

@@ -2,36 +2,38 @@
 @import 'bootstrap-icons/font/bootstrap-icons.min.css';
 
 :root {
-  --sfggc-title-font-family: "Plus Jakarta Sans", "Inter", var(--sfggc-font-sans-serif);
-  --sfggc-pride-red: #e11d48;
-  --sfggc-pride-orange: #f97316;
-  --sfggc-pride-yellow: #eab308;
-  --sfggc-pride-green: #10b981;
-  --sfggc-pride-blue: #2563eb;
-  --sfggc-pride-purple: #7c3aed;
-
-  --sfggc-glass-bg: rgba(255, 255, 255, 0.92);
-  --sfggc-glass-border: rgba(226, 232, 240, 0.9);
-  --sfggc-glass-card-bg: rgba(255, 255, 255, 0.88);
-  --sfggc-surface-hover: rgba(241, 245, 249, 0.9);
+  --sfggc-title-font-family: #{$font-family-display};
+  --sfggc-night: #{$night};
+  --sfggc-night-mid: #{$night-mid};
+  --sfggc-night-deep: #{$night-deep};
+  --sfggc-ink: #{$ink};
+  --sfggc-ink-dim: #{$ink-dim};
+  --sfggc-ink-on-accent: #1a0a0a;
+  --sfggc-hairline: #{rgba($ink, 0.1)};
+  --sfggc-input-border: #{rgba($ink, 0.16)};
+  --sfggc-pride-red: #{$pride-red};
+  --sfggc-pride-orange: #{$pride-orange};
+  --sfggc-pride-yellow: #{$pride-yellow};
+  --sfggc-pride-green: #{$pride-green};
+  --sfggc-pride-blue: #{$pride-blue};
+  --sfggc-pride-purple: #{$pride-purple};
 }
 
 html {
-  --sfggc-title-font-family: "Plus Jakarta Sans", "Inter", var(--sfggc-font-sans-serif);
   font-family: var(--sfggc-font-sans-serif);
   scroll-behavior: smooth;
 }
 
 body {
   font-family: var(--sfggc-font-sans-serif);
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--sfggc-night);
+  color: var(--sfggc-ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
   &.portal-mode {
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: var(--sfggc-night);
+    color: var(--sfggc-ink);
 
     .nav-and-top {
       .top-image-background,
@@ -41,36 +43,35 @@ body {
     }
 
     .card {
-      background: #ffffff;
-      border: 1px solid rgba(226, 232, 240, 0.9);
-      border-radius: 1rem;
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      background: var(--sfggc-night-mid);
+      border: 1px solid var(--sfggc-hairline);
+      border-radius: 0.875rem;
+      color: var(--sfggc-ink);
     }
 
     .table {
-      border-color: rgba(226, 232, 240, 0.8);
-      color: #0f172a;
+      border-color: var(--sfggc-hairline);
+      color: var(--sfggc-ink);
     }
 
     .btn-outline-primary {
-      background-color: var(--#{$prefix}primary);
-      color: #ffffff;
-      border-color: var(--#{$prefix}primary);
+      background: linear-gradient(90deg, var(--sfggc-pride-orange), var(--sfggc-pride-red));
+      color: var(--sfggc-ink-on-accent);
+      border-color: transparent;
       font-weight: 700;
-      box-shadow: 0 4px 14px rgba(225, 29, 72, 0.25);
     }
 
     .btn-outline-secondary {
-      background-color: var(--#{$prefix}secondary);
-      color: #fff;
-      border-color: var(--#{$prefix}secondary);
+      background-color: var(--sfggc-night-deep);
+      color: var(--sfggc-ink);
+      border-color: var(--sfggc-input-border);
       font-weight: 600;
     }
 
     .btn-outline-info {
-      background-color: var(--#{$prefix}info);
-      color: #fff;
-      border-color: var(--#{$prefix}info);
+      background-color: var(--sfggc-pride-blue);
+      color: var(--sfggc-ink-on-accent);
+      border-color: var(--sfggc-pride-blue);
     }
   }
 
@@ -87,7 +88,7 @@ body {
       background-repeat: no-repeat;
       background-position: 25% top;
       background-image: url('../images/bg/ggb-vertical-991w.jpg');
-      filter: saturate(1.1) brightness(1.05) opacity(0.18);
+      filter: saturate(1.1) brightness(0.8) opacity(0.35);
 
       @media (min-width: 992px) {
         background-size: cover;
@@ -103,8 +104,7 @@ body {
       top: 0;
       bottom: 0;
       z-index: -99;
-      background: linear-gradient(180deg, rgba(248, 250, 252, 0.7) 0%, rgba(248, 250, 252, 0.85) 50%, rgba(248, 250, 252, 0.95) 100%);
-      backdrop-filter: blur(8px);
+      background: linear-gradient(180deg, rgba(11, 10, 20, 0.55) 0%, rgba(11, 10, 20, 0.85) 45%, #{$night} 100%);
     }
 
     .menu-icon {
@@ -117,7 +117,7 @@ body {
     margin-left: 0.5rem;
     margin-right: 0.5rem;
     margin-bottom: 2.5rem;
-    
+
     @media (min-width: 576px) {
       margin-left: 1rem;
       margin-right: 1rem;
@@ -131,19 +131,18 @@ body {
 
     .section-heading {
       font-family: var(--sfggc-title-font-family);
-      font-weight: 700;
-      letter-spacing: -0.02em;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      font-size: clamp(1.4rem, 3.4vw, 2.1rem);
       margin-left: -0.5rem;
       margin-right: -0.5rem;
       padding: 1.25rem 1.5rem;
-      border-radius: 1rem 1rem 0 0;
-      color: #0f172a;
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-      backdrop-filter: blur(12px);
-      border-top: 3px solid #e11d48;
-      border-left: 1px solid rgba(226, 232, 240, 0.9);
-      border-right: 1px solid rgba(226, 232, 240, 0.9);
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+      border-radius: 0.875rem 0.875rem 0 0;
+      color: var(--sfggc-ink);
+      background: var(--sfggc-night-deep);
+      border-top: 3px solid var(--sfggc-pride-purple);
+      border-left: 1px solid var(--sfggc-hairline);
+      border-right: 1px solid var(--sfggc-hairline);
 
       @media (min-width: 576px) {
         margin-left: -1rem;
@@ -167,10 +166,9 @@ body {
       z-index: -49;
       margin-left: -0.5rem;
       margin-right: -0.5rem;
-      background-color: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(16px);
-      border-radius: 1rem;
-      border: 1px solid rgba(226, 232, 240, 0.9);
+      background-color: var(--sfggc-night-mid);
+      border-radius: 0.875rem;
+      border: 1px solid var(--sfggc-hairline);
 
       @media (min-width: 576px) {
         margin-left: -1rem;
@@ -184,76 +182,118 @@ body {
   }
 }
 
-/* Progress Pride Top Rainbow Ribbon */
-.pride-rainbow-bar {
-  height: 4px;
+/* Six-color Pride stripe bar (matches sflgbtbowl.com) */
+.stripe-bar {
+  height: 5px;
   width: 100%;
   background: linear-gradient(
     90deg,
-    #e11d48 0%,
-    #f97316 20%,
-    #eab308 40%,
-    #10b981 60%,
-    #2563eb 80%,
-    #7c3aed 100%
+    var(--sfggc-pride-red) 0 16.667%,
+    var(--sfggc-pride-orange) 16.667% 33.333%,
+    var(--sfggc-pride-yellow) 33.333% 50%,
+    var(--sfggc-pride-green) 50% 66.667%,
+    var(--sfggc-pride-blue) 66.667% 83.333%,
+    var(--sfggc-pride-purple) 83.333% 100%
   );
 }
 
-/* Glassmorphism & Utility Classes */
+/* Display type: Bungee headings */
+.display {
+  font-family: var(--sfggc-title-font-family);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+h1, h2, h3 {
+  font-family: var(--sfggc-title-font-family);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Cards: night-mid surface, faint border */
 .glass-card {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 1rem;
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  background: var(--sfggc-night-mid);
+  border: 1px solid var(--sfggc-hairline);
+  border-radius: 0.875rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 
   &:hover {
-    border-color: rgba(225, 29, 72, 0.3);
-    box-shadow: 0 16px 30px -10px rgba(225, 29, 72, 0.1), 0 8px 20px -6px rgba(37, 99, 235, 0.08);
+    border-color: rgba(184, 116, 255, 0.4);
   }
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #e11d48 0%, #f97316 35%, #2563eb 80%, #7c3aed 100%);
+  background: linear-gradient(90deg, var(--sfggc-pride-orange), var(--sfggc-pride-red) 50%, var(--sfggc-pride-purple));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+/* Primary call-to-action: orange-to-red pill with lift and glow on hover */
 .btn-glow-orange {
-  background: linear-gradient(135deg, #e11d48 0%, #f97316 50%, #2563eb 100%);
-  color: #ffffff !important;
+  background: linear-gradient(90deg, var(--sfggc-pride-orange), var(--sfggc-pride-red));
+  color: var(--sfggc-ink-on-accent) !important;
   border: none;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  padding: 0.75rem 1.75rem;
-  border-radius: 50rem;
-  box-shadow: 0 4px 18px rgba(225, 29, 72, 0.3);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 999px;
+  padding: 0.8rem 1.75rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: transform 0.18s, box-shadow 0.18s;
 
   &:hover, &:focus {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(225, 29, 72, 0.45);
-    color: #ffffff !important;
+    box-shadow: 0 12px 28px rgba(255, 77, 94, 0.38);
+    color: var(--sfggc-ink-on-accent) !important;
   }
 
-  &:active {
-    transform: translateY(0);
+  &:disabled {
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
   }
 }
 
 .badge-glow {
-  background: rgba(225, 29, 72, 0.08);
-  color: #e11d48;
-  border: 1px solid rgba(225, 29, 72, 0.25);
+  background: rgba(184, 116, 255, 0.12);
+  color: var(--sfggc-pride-purple);
+  border: 1px solid rgba(184, 116, 255, 0.4);
   padding: 0.4rem 0.85rem;
-  border-radius: 50rem;
-  font-weight: 600;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+/* Form inputs: translucent dark fill, blue focus ring */
+.form-control,
+.form-select {
+  width: 100%;
+  color: var(--sfggc-ink);
+  background-color: rgba(11, 10, 20, 0.6);
+  border: 1px solid var(--sfggc-input-border);
+  border-radius: 0.625rem;
+  padding: 0.6rem 0.75rem;
+  font-family: var(--sfggc-font-sans-serif);
+  font-size: 0.95rem;
+
+  &::placeholder {
+    color: var(--sfggc-ink-dim);
+  }
+
+  &:focus {
+    outline: 2px solid var(--sfggc-pride-blue);
+    outline-offset: 1px;
+    border-color: transparent;
+  }
+}
+
+label,
+.form-label {
+  color: var(--sfggc-ink-dim);
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 html, body {

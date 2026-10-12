@@ -270,8 +270,7 @@ PageComponent.getLayout = function getLayout(page) {
 
 **Core Architecture:**
 - `src/pages/_app.js` - App wrapper with Bootstrap and Analytics
-- `src/components/layout/layout.js` - Root layout with theme provider
-- `src/utils/ThemeContext.js` - Bootstrap color mode management (dark/light/auto)
+- `src/components/layout/layout.js` - Root layout (stripe bar, header, navigation, sponsors, footer)
 - `src/scss/sfggc.scss` - Main stylesheet
 
 **Portal Implementation:**
@@ -397,7 +396,7 @@ Auto-handles:
 
 ### Bootstrap and Theme Management
 
-Bootstrap 5 with dark/light/auto color mode. Theme state in `ThemeContext`, persisted to localStorage. Theme switcher in nav component.
+Dark-only theme matching the sister site (sflgbtbowl.com). `<html data-bs-theme="dark">` is set in `_document.js`; there is no theme toggler or theme context. Palette tokens (`$night`, `$night-mid`, `$night-deep`, `$ink`, `$ink-dim`, `$pride-*`) live in `src/scss/_bootstrap-variables.scss` and are exposed as `--sfggc-*` CSS custom properties in `sfggc.scss`. Display type is Bungee (`.display`, h1-h3), body type is Inter. Shared styles: `.stripe-bar`, `.btn-glow-orange` (pill CTA), `.glass-card`, `.form-control`. Guarded by `tests/unit/dark-theme-tokens.test.js`.
 
 ### Image Organization
 
