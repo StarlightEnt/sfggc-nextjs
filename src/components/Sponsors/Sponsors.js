@@ -50,7 +50,7 @@ const Sponsors = () => {
 
   return (
     <div className={`${styles.Sponsors} my-5`}>
-      <div className="glass-card p-4 p-md-5 rounded-4 text-center">
+      <div className="surface-card p-4 p-md-5 rounded-4 text-center">
         <div className="row g-4 align-items-center justify-content-center">
           {sponsorDetails.map((s, i) => {
             return (

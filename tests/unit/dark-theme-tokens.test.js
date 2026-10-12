@@ -40,7 +40,7 @@ test("Given the call-to-action gradient, when dark ink sits on it, then it is le
 
 test("Given the shared styles, when compiled, then the stripe bar, pill CTA, card, logo tile and inputs all exist", () => {
   const css = mainCss();
-  for (const selector of [".stripe-bar", ".btn-glow-orange", ".glass-card", ".logo-tile", ".form-control", ".display"]) {
+  for (const selector of [".stripe-bar", ".btn-glow-orange", ".surface-card", ".logo-tile", ".form-control", ".display"]) {
     assert.ok(declarations(css, selector), `${selector} must be defined`);
   }
 });

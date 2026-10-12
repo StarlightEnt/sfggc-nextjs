@@ -43,7 +43,7 @@ Mobile-first with Bootstrap breakpoints (576, 768, 992, 1200px):
 
 ## Section Pattern (content pages)
 
-A `section-heading` bar with a `section-panel` body directly beneath it (`section-panel` is a `glass-card` with the padding, flat top corners and missing top border that continue the heading):
+A `section-heading` bar with a `section-panel` body directly beneath it (`section-panel` is a `surface-card` with the padding, flat top corners and missing top border that continue the heading):
 
 ```jsx
 <section className={`${styles.Name} my-5`}>

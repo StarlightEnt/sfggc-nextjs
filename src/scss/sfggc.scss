@@ -170,7 +170,7 @@ h1, h2, h3 {
 }
 
 /* Cards: night-mid surface, faint border */
-.glass-card {
+.surface-card {
   background: var(--sfggc-night-mid);
   border: 1px solid var(--sfggc-hairline);
   border-radius: 0.875rem;
@@ -183,7 +183,7 @@ h1, h2, h3 {
 
 /* Body of a content section: a card that continues the .section-heading bar above it */
 .section-panel {
-  @extend .glass-card;
+  @extend .surface-card;
   padding: 1.5rem;
   border-top: 0;
   border-top-left-radius: 0;
@@ -253,7 +253,7 @@ h1, h2, h3 {
 
 /* Tables inside cards take the card surface rather than the page background */
 .card .table,
-.glass-card .table {
+.surface-card .table {
   --#{$prefix}table-bg: transparent;
 }
 

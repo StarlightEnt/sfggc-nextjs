@@ -401,7 +401,7 @@ Auto-handles:
 
 ### Bootstrap and Theme Management
 
-Dark-only theme matching the sister site (sflgbtbowl.com). `<html data-bs-theme="dark">` is set in `_document.js`; there is no theme toggler or theme context. Palette tokens (`$night`, `$night-mid`, `$night-deep`, `$ink`, `$ink-dim`, `$pride-*`) live in `src/scss/_bootstrap-variables.scss` and are exposed as `--sfggc-*` CSS custom properties in `sfggc.scss`. Display type is Bungee (`.display`, h1-h3), body type is Inter. Shared styles: `.stripe-bar`, `.btn-glow-orange` (pill CTA), `.glass-card`, `.form-control`. Guarded by `tests/unit/dark-theme-tokens.test.js` (which also computes WCAG contrast from the compiled tokens).
+Dark-only theme matching the sister site (sflgbtbowl.com). `<html data-bs-theme="dark">` is set in `_document.js`; there is no theme toggler or theme context. Palette tokens (`$night`, `$night-mid`, `$night-deep`, `$ink`, `$ink-dim`, `$pride-*`) live in `src/scss/_bootstrap-variables.scss` and are exposed as `--sfggc-*` CSS custom properties in `sfggc.scss`. Display type is Bungee (`.display`, h1-h3), body type is Inter. Shared styles: `.stripe-bar`, `.btn-glow-orange` (pill CTA), `.surface-card`, `.form-control`. Guarded by `tests/unit/dark-theme-tokens.test.js` (which also computes WCAG contrast from the compiled tokens).
 
 **Conventions that the tests enforce** (`tests/unit/theme-no-light-leftovers.test.js`, `theme-cleanup.test.js`, `portal-dark-base.test.js`, `portal-dark-pages.test.js`):
 - CSS variables use this project's `--sfggc-` prefix. Never write `--bs-*`; it does not exist here and fails silently.

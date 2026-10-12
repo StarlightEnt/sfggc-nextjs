@@ -92,7 +92,7 @@ const Location = () => {
           </div>
 
           <div className="col-12 col-lg-5">
-            <div className="glass-card p-4 h-100 border border-secondary border-opacity-10 d-flex flex-column">
+            <div className="surface-card p-4 h-100 border border-secondary border-opacity-10 d-flex flex-column">
               <div className="d-flex align-items-center justify-content-between mb-3">
                 <h5 className="fs-5 fw-bold text-body mb-0 d-flex align-items-center gap-2">
                   <i className="bi bi-shop text-primary"></i>
