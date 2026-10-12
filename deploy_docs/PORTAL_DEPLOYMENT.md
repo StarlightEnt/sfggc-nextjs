@@ -9,8 +9,8 @@ For general deployment, see [DEPLOYMENT.md](DEPLOYMENT.md) and [UNIFIED_DEPLOYME
 | Resource | Value |
 |----------|-------|
 | Application directory | `/home/goldengateclassic/htdocs/www.goldengateclassic.org/portal-app` |
-| Database | MariaDB; host from `DEPLOY_DB_HOST`, database `goldengate` |
-| SMTP | Host, port and user from `DEPLOY_SMTP_*` (see `.deployrc.example`) |
+| Database | MariaDB on RDS: `shared2.cdms8mviovca.us-west-2.rds.amazonaws.com:3306/goldengate` |
+| SMTP | AWS SES: `email-smtp.us-west-2.amazonaws.com:587` |
 | Process manager | PM2 (`sfggc-portal`, port 3000) |
 | Web server | nginx (CloudPanel-managed; vhost in `backend/config/vhost.txt`) |
 
@@ -35,7 +35,7 @@ The unified deployment script handles everything: file sync, dependency install,
 **First deploy:** The script detects no `.env.local` on the server and interactively prompts for:
 - Database password (username is pre-configured as `goldengate`)
 - Admin session secret (auto-generates a default)
-- SMTP password
+- SMTP password (AWS SES)
 - First super-admin account (email, name, password)
 
 **Subsequent deploys:** Skip environment and admin setup, sync files, reinstall dependencies, run any new migrations, rebuild on the server, and restart PM2.
@@ -55,8 +55,8 @@ The unified deployment script handles everything: file sync, dependency install,
 Create `.env.local` in the portal app directory on the server:
 
 ```bash
-# Database
-PORTAL_DATABASE_URL=mysql://USER:PASSWORD@YOUR-DB-HOST:3306/goldengate
+# Database (AWS RDS)
+PORTAL_DATABASE_URL=mysql://USER:PASSWORD@shared2.cdms8mviovca.us-west-2.rds.amazonaws.com:3306/goldengate
 
 # Session signing
 ADMIN_SESSION_SECRET=replace-with-a-long-random-string
@@ -64,23 +64,23 @@ ADMIN_SESSION_SECRET=replace-with-a-long-random-string
 # Public URL (used in email links)
 PORTAL_BASE_URL=https://www.goldengateclassic.org
 
-# SMTP
-SMTP_HOST=smtp.example.com
+# AWS SES SMTP
+SMTP_HOST=email-smtp.us-west-2.amazonaws.com
 SMTP_PORT=587
-SMTP_USER=your-smtp-username
-SMTP_PASS=your-smtp-password
+SMTP_USER=AKIAVU7WKXGTZZA3SOHN
+SMTP_PASS=your-ses-smtp-password
 SMTP_FROM=Golden Gate Classic <noreply@goldengateclassic.org>
 ```
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `PORTAL_DATABASE_URL` | Yes | MariaDB connection string |
+| `PORTAL_DATABASE_URL` | Yes | MariaDB connection string (RDS endpoint) |
 | `ADMIN_SESSION_SECRET` | Yes | Secret for signing session tokens (use `openssl rand -hex 32`) |
 | `PORTAL_BASE_URL` | Yes | Public URL of the site (used in login email links) |
-| `SMTP_HOST` | Yes | SMTP server hostname |
+| `SMTP_HOST` | Yes | AWS SES SMTP endpoint |
 | `SMTP_PORT` | No | SMTP port (default: 587 for STARTTLS, or 465 for TLS) |
-| `SMTP_USER` | Yes | SMTP username |
-| `SMTP_PASS` | Yes | SMTP password |
+| `SMTP_USER` | Yes | SES SMTP username (IAM access key) |
+| `SMTP_PASS` | Yes | SES SMTP password |
 | `SMTP_FROM` | No | From address (default: `Golden Gate Classic <noreply@goldengateclassic.org>`) |
 
 ### 2. Sync Files to Server
@@ -113,13 +113,13 @@ bash scripts/dev/init-portal-db.sh
 Or load the schema manually:
 
 ```bash
-mysql -h YOUR-DB-HOST -P 3306 -u USER -p goldengate < portal_docs/sql/portal_schema.sql
+mysql -h shared2.cdms8mviovca.us-west-2.rds.amazonaws.com -P 3306 -u USER -p goldengate < portal_docs/sql/portal_schema.sql
 ```
 
 ### 5. Create Super Admin
 
 ```bash
-export PORTAL_DATABASE_URL="mysql://USER:PASSWORD@YOUR-DB-HOST:3306/goldengate"
+export PORTAL_DATABASE_URL="mysql://USER:PASSWORD@shared2.cdms8mviovca.us-west-2.rds.amazonaws.com:3306/goldengate"
 export ADMIN_EMAIL="admin@goldengateclassic.org"
 export ADMIN_NAME="Admin Name"
 export ADMIN_PASSWORD="a-strong-password"
@@ -245,14 +245,17 @@ pm2 logs sfggc-portal --lines 50
 
 ### Login email not arriving
 1. Verify SMTP vars in `.env.local` (especially `SMTP_PASS`)
-2. Check server firewall allows outbound on the SMTP port: `nc -zv YOUR-SMTP-HOST 587`
-3. Check that your SMTP provider accepts the sender address in `SMTP_FROM`
+2. Check server firewall allows outbound on port 587: `nc -zv email-smtp.us-west-2.amazonaws.com 587`
+3. Check if the sender address is verified in AWS SES (required in sandbox mode)
 4. Check PM2 logs for SMTP errors: `pm2 logs sfggc-portal --lines 50`
+
+### AWS SES Sandbox Mode
+New SES accounts start in sandbox mode, which only allows sending to verified email addresses. To send to any address, request production access in the AWS SES console.
 
 ### Database connection errors
 1. Verify `PORTAL_DATABASE_URL` in `.env.local`
-2. Test connectivity: `mysql -h YOUR-DB-HOST -P 3306 -u USER -p goldengate -e "SELECT 1;"`
-3. Check that the database allows connections from the CloudPanel server's IP
+2. Test connectivity: `mysql -h shared2.cdms8mviovca.us-west-2.rds.amazonaws.com -P 3306 -u USER -p goldengate -e "SELECT 1;"`
+3. Check that the RDS security group allows inbound from the CloudPanel server's IP
 
 ### Session issues after deploy
 Sessions are signed with `ADMIN_SESSION_SECRET`. If this value changes, all existing sessions are invalidated and users must log in again. This is expected and not harmful.

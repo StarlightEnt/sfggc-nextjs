@@ -48,10 +48,8 @@ DEPLOY_PM2_APP_NAME="sfggc-portal"
 #       during first portal deployment and stored in .env.local on the
 #       server only.
 
-# Database host. REQUIRED for first-time server setup; there is no default.
-# This file is loaded as the default config, so it is left unset on purpose: setting a
-# placeholder here would be written to the server. Set it in your own .deployrc instead:
-# DEPLOY_DB_HOST="your-db-host.example.com"
+# Database host (AWS RDS)
+DEPLOY_DB_HOST="shared2.cdms8mviovca.us-west-2.rds.amazonaws.com"
 
 # Database port
 DEPLOY_DB_PORT="3306"
@@ -70,14 +68,14 @@ DEPLOY_DB_USER="goldengate"
 #       during first portal deployment and stored in .env.local on the
 #       server only.
 
-# SMTP host. REQUIRED for first-time server setup; there is no default (unset on purpose, see above).
-# DEPLOY_SMTP_HOST="smtp.example.com"
+# SMTP host (AWS SES)
+DEPLOY_SMTP_HOST="email-smtp.us-west-2.amazonaws.com"
 
 # SMTP port
 DEPLOY_SMTP_PORT="587"
 
-# SMTP username. REQUIRED for first-time server setup; there is no default (unset on purpose, see above).
-# DEPLOY_SMTP_USER="your-smtp-username"
+# SMTP username (public, not secret)
+DEPLOY_SMTP_USER="AKIAVU7WKXGTZZA3SOHN"
 
 # SMTP from address
 DEPLOY_SMTP_FROM="Golden Gate Classic <noreply@goldengateclassic.org>"

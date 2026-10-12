@@ -240,7 +240,6 @@ describe("docker mysql shim", () => {
 });
 
 describe("secrets hygiene", () => {
-  // Repo-wide credential and endpoint checks live in tests/unit/deployment/portal-settings.test.js.
   test("Given the generated .env.local holds a password, when checking git, then the file is ignored", () => {
     const result = spawnSync("git", ["check-ignore", "-q", ".env.local"], { cwd: ROOT });
     assert.equal(result.status, 0, ".env.local must be listed in .gitignore");

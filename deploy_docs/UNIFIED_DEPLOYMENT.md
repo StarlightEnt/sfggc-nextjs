@@ -24,7 +24,7 @@ The site deploys as a single Next.js server (PM2 process `sfggc-portal`, port 30
 
 - Node.js and npm installed locally
 - SSH access to production configured (see [DEPLOYMENT.md](DEPLOYMENT.md#ssh-key-setup-recommended))
-- For first-time setup: database password, SMTP password, admin email/name/password
+- For first-time setup: database password (AWS RDS), SMTP password (AWS SES), admin email/name/password
 
 ### Basic Usage
 
@@ -134,7 +134,7 @@ Database Configuration:
   Database password: ********
 
   Admin session secret [auto-generated]:    (press Enter to accept)
-  SMTP password: ********
+  SMTP password (AWS SES): ********
   Portal base URL [https://www.goldengateclassic.org]:
 
 No admin accounts found. Creating super admin account.

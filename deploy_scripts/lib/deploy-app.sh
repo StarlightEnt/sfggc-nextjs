@@ -54,9 +54,6 @@ setup_app_environment() {
     fi
   fi
 
-  # Only first-time (or --setup) runs write these values to the server, so check them here.
-  validate_portal_settings || return 1
-
   if [ "${FORCE_SETUP:-false}" = true ]; then
     log_warn "Environment reconfiguration requested (--setup flag)"
   else
@@ -124,7 +121,7 @@ setup_app_environment() {
       log_error "Set environment variable: export DEPLOY_SMTP_PASSWORD='your_password'"
       return 1
     fi
-    read -sp "  SMTP password: " SMTP_PASS
+    read -sp "  SMTP password (AWS SES): " SMTP_PASS
     echo ""
     if [ -z "$SMTP_PASS" ]; then
       log_error "SMTP password cannot be empty"
@@ -158,7 +155,7 @@ ADMIN_SESSION_SECRET=${SESSION_SECRET}
 # Public URL (used in email links)
 PORTAL_BASE_URL=${PORTAL_BASE_URL}
 
-# SMTP
+# AWS SES SMTP
 SMTP_HOST=${DEPLOY_SMTP_HOST}
 SMTP_PORT=${DEPLOY_SMTP_PORT}
 SMTP_USER=${DEPLOY_SMTP_USER}

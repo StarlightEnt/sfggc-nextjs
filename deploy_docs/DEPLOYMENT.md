@@ -10,7 +10,7 @@ For deeper detail on flags, dry-run modes, and CI/CD, see [UNIFIED_DEPLOYMENT.md
 
 - SSH access to the production server (CloudPanel-managed)
 - Node.js and npm installed locally
-- For first-time setup: database password, SMTP password, and a super admin email/name/password
+- For first-time setup: database password, SMTP (AWS SES) password, and a super admin email/name/password
 
 ## SSH Key Setup (Recommended)
 

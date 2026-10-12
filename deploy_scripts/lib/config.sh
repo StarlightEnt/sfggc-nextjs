@@ -119,28 +119,6 @@ override_from_cli() {
   fi
 }
 
-# validate_portal_settings - Ensure the settings that first-time server setup writes into the
-# server's .env.local were provided. Returns 1 (does not exit) so callers can stop cleanly.
-validate_portal_settings() {
-  local missing=() name
-  for name in DEPLOY_DB_HOST DEPLOY_SMTP_HOST DEPLOY_SMTP_USER; do
-    if [ -z "${!name:-}" ]; then
-      missing+=("$name")
-    fi
-  done
-
-  if [ ${#missing[@]} -eq 0 ]; then
-    return 0
-  fi
-
-  for name in "${missing[@]}"; do
-    log_error "$name is not set"
-  done
-  log_info "First-time portal setup writes these to the server's .env.local."
-  log_info "Set them in .deployrc (see .deployrc.example) or export them, then re-run."
-  return 1
-}
-
 # set_defaults - Set sensible defaults for missing values
 set_defaults() {
   # Default SSH user if not set
@@ -158,18 +136,16 @@ set_defaults() {
   # Default PM2 app name if not set
   DEPLOY_PM2_APP_NAME="${DEPLOY_PM2_APP_NAME:-sfggc-portal}"
 
-  # Portal database defaults. The host has no default: set DEPLOY_DB_HOST in .deployrc
-  # (first-time server setup requires it; see validate_portal_settings).
-  DEPLOY_DB_HOST="${DEPLOY_DB_HOST:-}"
+  # Portal database defaults
+  DEPLOY_DB_HOST="${DEPLOY_DB_HOST:-shared2.cdms8mviovca.us-west-2.rds.amazonaws.com}"
   DEPLOY_DB_PORT="${DEPLOY_DB_PORT:-3306}"
   DEPLOY_DB_NAME="${DEPLOY_DB_NAME:-goldengate}"
   DEPLOY_DB_USER="${DEPLOY_DB_USER:-goldengate}"
 
-  # SMTP defaults. The host and user have no defaults: set DEPLOY_SMTP_HOST and
-  # DEPLOY_SMTP_USER in .deployrc (first-time server setup requires them).
-  DEPLOY_SMTP_HOST="${DEPLOY_SMTP_HOST:-}"
+  # SMTP defaults
+  DEPLOY_SMTP_HOST="${DEPLOY_SMTP_HOST:-email-smtp.us-west-2.amazonaws.com}"
   DEPLOY_SMTP_PORT="${DEPLOY_SMTP_PORT:-587}"
-  DEPLOY_SMTP_USER="${DEPLOY_SMTP_USER:-}"
+  DEPLOY_SMTP_USER="${DEPLOY_SMTP_USER:-AKIAVU7WKXGTZZA3SOHN}"
   DEPLOY_SMTP_FROM="${DEPLOY_SMTP_FROM:-Golden Gate Classic <noreply@goldengateclassic.org>}"
 }
 
@@ -181,6 +157,6 @@ show_config() {
   log_info "Domain: ${DEPLOY_DOMAIN}"
   log_info "App Path: ${DEPLOY_APP_PATH}"
   log_info "PM2 App: ${DEPLOY_PM2_APP_NAME}"
-  log_info "Database: ${DEPLOY_DB_HOST:-(not set)}:${DEPLOY_DB_PORT}/${DEPLOY_DB_NAME}"
-  log_info "SMTP: ${DEPLOY_SMTP_HOST:-(not set)}:${DEPLOY_SMTP_PORT}"
+  log_info "Database: ${DEPLOY_DB_HOST}:${DEPLOY_DB_PORT}/${DEPLOY_DB_NAME}"
+  log_info "SMTP: ${DEPLOY_SMTP_HOST}:${DEPLOY_SMTP_PORT}"
 }
