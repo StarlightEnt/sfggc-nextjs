@@ -1,10 +1,6 @@
 .PortalShell {
   padding: 2rem 1rem 3rem;
 
-  .section-heading {
-    margin-bottom: 0.5rem;
-  }
-
   // Sign-in card layout (matches the sister site's sign-in screen)
   &.Auth {
     max-width: 520px;
@@ -39,4 +35,39 @@
   @media (max-width: 575.98px) {
     padding: 28px 20px;
   }
+}
+
+.PageHeader {
+  margin-bottom: 1.5rem;
+}
+
+.PageTitle {
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  color: var(--sfggc-ink);
+
+  // Short six-color accent bar, echoing the site's stripe bar
+  &::after {
+    content: "";
+    display: block;
+    width: 72px;
+    height: 4px;
+    margin-top: 0.6rem;
+    border-radius: 999px;
+    background: linear-gradient(
+      90deg,
+      var(--sfggc-pride-red),
+      var(--sfggc-pride-orange),
+      var(--sfggc-pride-yellow),
+      var(--sfggc-pride-green),
+      var(--sfggc-pride-blue),
+      var(--sfggc-pride-purple)
+    );
+  }
+}
+
+.PageSubtitle {
+  margin-bottom: 0;
+  font-size: 1.05rem;
+  color: var(--sfggc-ink-dim);
 }

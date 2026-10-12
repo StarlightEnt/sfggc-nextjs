@@ -259,6 +259,17 @@ h1, h2, h3 {
   }
 }
 
+/* Tables inside cards take the card surface rather than the page background */
+.card .table,
+.glass-card .table {
+  --#{$prefix}table-bg: transparent;
+}
+
+/* Divider row between qualifiers and the rest in Scratch Masters standings */
+.scratch-cutoff-divider {
+  background: var(--sfggc-pride-purple);
+}
+
 /* Bootstrap primary buttons use the same gradient pill as the CTA */
 .btn-primary {
   --#{$prefix}btn-color: var(--sfggc-ink-on-accent);
