@@ -1,82 +1,46 @@
 .Schedule {
   position: relative;
-
   padding-bottom: 2rem;
 
-  .Disclaimer {
-    text-align: center;
-    font-size: 90%;
-  }
+  .DayCard {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 
-  .DayOfEvents {
-    @media(min-width: 768px) {
-      border-top: 1px solid var(--sfggc-dark-bg-subtle);
-      padding-top: 0.5rem;
-      margin-bottom: 0.5rem;
-
-      [data-bs-theme='dark'] & {
-        border-color: var(--sfggc-tertiary-color);
-      }
+    &:hover {
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      transform: translateY(-2px);
     }
   }
 
-  .Date {
-    text-align: left;
+  .EventCard {
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.8) !important;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
+    transition: all 0.2s ease;
 
-    h4 {
-      padding: 0.5rem 1rem;
-      margin: 0 -1rem;
-      background-color: rgba(var(--sfggc-white-rgb), 0.25);
-
-      @media (min-width: 768px) {
-        background-color: transparent;
-      }
-
-      [data-bs-theme='dark'] & {
-        background-color: rgba(var(--sfggc-black-rgb), 0.75);
-
-        @media (min-width: 768px) {
-          background-color: transparent;
-        }
-      }
-
+    &:hover {
+      background: #f8fafc;
+      border-color: rgba(203, 213, 225, 1) !important;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
     }
   }
 
-  .Event {
-    margin-top: 0.5rem;
-
-    .Detail {
-      text-align: left;
-
-      p {
-        text-align: left;
-        margin-bottom: 0.5rem;
-      }
-
-      .More {
-        font-size: 95%;
-        font-style: italic;
-      }
-    }
-    .Time {
-      text-align: right;
-    }
+  .TimePill {
+    border-width: 1px;
+    border-style: solid;
+    font-size: 0.8rem;
   }
 
-  .BackgroundImage {
-    background-image: url('../../images/bg/transamerica-600w.jpg');
-
-    @media (min-width: 768px) {
-      background-image: url('../../images/bg/transamerica-991w.jpg');
-    }
-
-    @media (min-width: 992px) {
-      background-image: url('../../images/bg/transamerica-fullsize.jpg');
-    }
-  }
-
-  .BackgroundShade {
-    opacity: var(--sfggc-section-background-shade-opacity);
+  .EventIcon {
+    width: 34px;
+    height: 34px;
+    font-size: 0.9rem;
   }
 }
+
+

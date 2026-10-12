@@ -1,52 +1,57 @@
 .Location {
   position: relative;
-
   padding-bottom: 1rem;
 
-  .BackgroundImage {
-    background-image: url('../../images/bg/classic-600w.jpg');
+  .LogoContainer {
+    background-color: #ffffff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-    @media (min-width: 768px) {
-      background-image: url('../../images/bg/classic-991w.jpg');
-    }
-
-    @media (min-width: 992px) {
-      background-image: url('../../images/bg/classic-fullsize.jpg');
-    }
-  }
-
-  .BackgroundShade {
-    opacity: var(--sfggc-section-background-shade-opacity);
-  }
-
-  .Logo {
-    [data-bs-theme='dark'] & {
-      filter: brightness(85%);
-    }
-    background-image: radial-gradient(
-        ellipse
-        closest-side at 50% 50%,
-        rgba(var(--sfggc-white-rgb), var(--sfggc-location-logo-bg-gradient-start)),
-        rgba(var(--sfggc-black-rgb), 0)
-    );
-
-    margin: 1rem 0 1rem;
-  }
-  .Address {
-    text-align: center;
-    @media (min-width: 768px) {
-      text-align: left;
+    &:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
     }
   }
-  .Map {
-    [data-bs-theme='dark'] & {
-      filter: brightness(75%);
+
+  .DiningChip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.825rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    background: #ffffff;
+    color: #334155;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    text-decoration: none;
+    transition: all 0.2s ease;
+
+    &.DiningLink {
+      background: rgba(37, 99, 235, 0.06);
+      color: #2563eb;
+      border-color: rgba(37, 99, 235, 0.2);
+
+      i {
+        color: #2563eb;
+        font-size: 0.75rem;
+        transition: transform 0.2s ease;
+      }
+
+      &:hover {
+        background: rgba(37, 99, 235, 0.12);
+        color: #1d4ed8;
+        border-color: rgba(37, 99, 235, 0.4);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(37, 99, 235, 0.12);
+
+        i {
+          transform: translate(2px, -2px);
+          color: #1d4ed8;
+        }
+      }
     }
-
-    margin-bottom: 1rem;
-  }
-
-  .DiningOptions {
-
   }
 }
+
+
