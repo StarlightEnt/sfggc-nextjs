@@ -109,96 +109,80 @@ If fewer than 6 bowlers sign up in a division, all participants will bowl in the
 `;
 
   return (
-    <div>
-      <section className={styles.Rules}>
-        <h3 className={`section-heading`}>
+    <div className="d-flex flex-column gap-5">
+      <section className={`${styles.Rules} my-4`}>
+        <h3 className={`section-heading mb-0`}>
           Tournament Rules
         </h3>
 
-        <p className={`text-md-center`}>
-          (Draft)
-        </p>
+        <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+          <div className="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary border-opacity-10 flex-wrap gap-2">
+            <span className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill fs-7">
+              Draft Rules
+            </span>
+            <a href='#scratch_masters_rules' className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2">
+              Skip to Scratch Masters rules <i className="bi bi-arrow-down ms-1 text-primary"></i>
+            </a>
+          </div>
 
-        <p>
-          <a href='#scratch_masters_rules'>
-            (skip to Scratch Masters rules)
-          </a>
-        </p>
+          <p className="lead text-muted mb-4 fs-6">
+            The 2027 San Francisco Golden Gate Classic shall be held from Friday, June 18, through Sunday, June 20, 2027, at Classic Bowling Center, located at 900 King Dr., Daly City, CA 94015.
+          </p>
 
-        <p>
-          The 2027 San Francisco Golden Gate Classic shall be held from Friday, June 18, through Sunday, June
-          20, 2027, at Classic Bowling Center, located at 900 King Dr., Daly City, CA 94015.
-        </p>
-
-        <ol>
-          {sections.map((section, i) => (
-            <li key={i}>
-              <h4>
-                {section.header}
-              </h4>
-
-              <ReactMarkdown>{section.markdown}</ReactMarkdown>
-            </li>
-          ))}
-        </ol>
+          <div className="row g-4">
+            {sections.map((section, i) => (
+              <div key={i} className="col-12 col-md-6">
+                <div className="glass-card p-4 h-100 border border-secondary border-opacity-10">
+                  <h4 className="fs-5 fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+                    <span className="bg-primary bg-opacity-10 text-primary rounded-circle px-2.5 py-1 fs-7">{i + 1}</span>
+                    {section.header}
+                  </h4>
+                  <div className="text-secondary fs-6 lh-relaxed">
+                    <ReactMarkdown>{section.markdown}</ReactMarkdown>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
-      <section className={styles.Rules}>
-        <h3 className={`section-heading`} id={'scratch_masters_rules'}>
+      <section className={`${styles.Rules} my-4`} id={'scratch_masters_rules'}>
+        <h3 className={`section-heading mb-0`}>
           Scratch Masters Rules
         </h3>
 
-        <p className={`text-md-center`}>
-          (Draft)
-        </p>
-
-{<div className={`${styles.Sponsor} row`}>
-          <div className={'col-8 col-sm-6 text-end'}>
-            <span className={styles.Intro}>
-              Scratch Masters sponsored by
-            </span>
-            <span className={styles.Name}>
-              Does Your Mother Know
-            </span>
-            <address>
-              <span className={styles.Line}>
-                4141 18th St.
-              </span>
-              <span className={styles.Line}>
-                San Francisco, CA 94114
-              </span>
-              <span className={styles.Line}>
-                <a href={'tel:4158643160'}>
-                  <i className={'bi bi-telephone-fill pe-2'} aria-hidden={true}/>
-                  415-864-3160
-                </a>
-              </span>
-              <span className={styles.Line}>
-                <a href={'https://dymkmedia.wixsite.com/does-your-mother-k-1'}
-                   target={'_blank'}>
-                  <i className={'bi bi-globe2'} aria-hidden={true}/>
-                  <span className={'visually-hidden'}>
-                    website
+        <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+          <div className="glass-card p-4 mb-4 border border-primary border-opacity-25 rounded-4 bg-primary bg-opacity-10">
+            <div className="row align-items-center g-3">
+              <div className="col-12 col-md-8">
+                <span className="text-primary fs-7 text-uppercase fw-bold d-block mb-1">Official Sponsor</span>
+                <h4 className="fs-4 fw-bold text-dark mb-2">Scratch Masters Sponsored By Does Your Mother Know</h4>
+                <address className="fst-normal text-muted fs-7 mb-0">
+                  <span>4141 18th St., San Francisco, CA 94114</span>
+                  <span className="ms-3">
+                    <a href="tel:4158643160" className="text-primary text-decoration-none">
+                      <i className="bi bi-telephone-fill me-1"></i> 415-864-3160
+                    </a>
                   </span>
+                </address>
+              </div>
+              <div className="col-12 col-md-4 text-md-end">
+                <a href={'https://dymkmedia.wixsite.com/does-your-mother-k-1'} target={'_blank'} rel="noreferrer">
+                  <Image src={dymk} className={'img-fluid rounded-3 p-1 bg-white border'} alt={'Logo for Does Your Mother Know'} style={{ maxHeight: '80px', width: 'auto' }}/>
                 </a>
-              </span>
-            </address>
+              </div>
             </div>
-            <div className={'col-4 col-sm-3'}>
-            <a href={'https://dymkmedia.wixsite.com/does-your-mother-k-1'}
-               target={'_blank'}>
-              <Image src={dymk}
-                     className={'img-fluid'}
-                     alt={'Logo for Does Your Mother Know'}/>
-            </a>
-            </div>
-        </div>}
+          </div>
 
-        <ReactMarkdown>{scratchMarkdown}</ReactMarkdown>
-
+          <div className="text-secondary fs-6 lh-relaxed">
+            <ReactMarkdown>{scratchMarkdown}</ReactMarkdown>
+          </div>
+        </div>
       </section>
     </div>
   );
+
 }
 
 export default Rules;

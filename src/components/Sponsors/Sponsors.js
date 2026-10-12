@@ -2,23 +2,13 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-import brunswick from '../../images/sponsors/brunswick.png';
 import storm from '../../images/sponsors/storm.png';
 import igbo from '../../images/sponsors/igbo.png';
 import usbc from '../../images/sponsors/usbc.png';
-// import budlight from '../../images/sponsors/budlight.gif';
-
 import styles from './Sponsors.module.scss';
 
 const Sponsors = () => {
   const sponsorDetails = [
-    // {
-    //   alt: 'Brunswick Bowling Products',
-    //   href: 'https://brunswickbowling.com/bowlers',
-    //   title: 'Brunswick Bowling Products',
-    //   src: brunswick,
-    //   classNames: styles.AdjustedBrightness,
-    // },
     {
       alt: 'Storm Bowling Products',
       href: 'https://stormbowling.com/',
@@ -40,33 +30,35 @@ const Sponsors = () => {
       src: usbc,
       classNames: '',
     },
-    //{
-    //  alt: "Bud Light, by Matagrano",
-    //  href: 'http://www.budlight.com/',
-    //  title: "Bud Light, by Matagrano",
-    //  src: budlight,
-    //  classNames: '',
-    //},
   ];
 
   return (
-    <div className={styles.Sponsors}>
-      <div className={`row g-0 align-items-center justify-content-around ${styles.Row}`}>
-        {sponsorDetails.map((s, i) => {
-          return (
-            <div key={i} className={`col-5 ${styles.ImageContainer}`}>
-              <Link href={s.href}
-                    target={'_blank'}
-                    title={s.title}>
-                <Image className={`img-fluid ${s.classNames}`}
-                       alt={s.alt}
-                       src={s.src} />
-              </Link>
-            </div>
-          );
-        })}
+    <div className={`${styles.Sponsors} my-5`}>
+      <div className="glass-card p-4 p-md-5 rounded-4 text-center">
+        <h5 className="fs-6 text-uppercase tracking-wider text-muted fw-bold mb-4">
+          Our Valued Tournament Partners &amp; Sponsors
+        </h5>
+
+        <div className="row g-4 align-items-center justify-content-center">
+          {sponsorDetails.map((s, i) => {
+            return (
+              <div key={i} className="col-12 col-sm-6 col-md-4">
+                <Link href={s.href}
+                      target={'_blank'}
+                      title={s.title}
+                      className="d-block p-3 rounded-3 bg-white border border-secondary border-opacity-15 shadow-2xs hover-border-primary transition-all">
+                  <Image className={`img-fluid ${s.classNames}`}
+                         alt={s.alt}
+                         src={s.src}
+                         style={{ maxHeight: '70px', width: 'auto', objectFit: 'contain' }} />
+                </Link>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
+
   );
 }
 
