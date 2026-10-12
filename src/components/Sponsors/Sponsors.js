@@ -59,10 +59,9 @@ const Sponsors = () => {
                       target={'_blank'}
                       title={s.title}
                       className="logo-tile d-block p-3">
-                  <Image className={`img-fluid ${s.classNames}`}
+                  <Image className={`img-fluid ${styles.Logo} ${s.classNames}`}
                          alt={s.alt}
-                         src={s.src}
-                         style={{ maxHeight: '70px', width: 'auto', objectFit: 'contain' }} />
+                         src={s.src} />
                 </Link>
               </div>
             );

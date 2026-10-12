@@ -33,8 +33,7 @@ const Location = () => {
                 <Image 
                   src={cbcLogo}
                   alt={'Logo for Classic Bowling Center'}
-                  className="img-fluid"
-                  style={{ maxHeight: '110px', width: 'auto', objectFit: 'contain' }}
+                  className={`img-fluid ${styles.LogoImage}`}
                 />
               </div>
             </Link>

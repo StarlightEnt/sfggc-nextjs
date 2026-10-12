@@ -7,6 +7,12 @@
     min-width: 160px;
   }
 
+  .LogoImage {
+    max-height: 110px;
+    width: auto;
+    object-fit: contain;
+  }
+
   .VenueLink {
     color: var(--sfggc-ink);
 

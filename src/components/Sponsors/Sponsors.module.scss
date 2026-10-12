@@ -1,6 +1,12 @@
 .Sponsors {
   position: relative;
 
+  .Logo {
+    max-height: 70px;
+    width: auto;
+    object-fit: contain;
+  }
+
   // As on main, Storm's logo is dimmed slightly so it does not glare.
   .AdjustedBrightness {
     filter: brightness(85%);

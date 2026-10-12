@@ -190,7 +190,7 @@ If fewer than 6 bowlers sign up in a division, all participants will bowl in the
               </div>
               <div className="col-12 col-md-4 text-md-end">
                 <a href={'https://dymkmedia.wixsite.com/does-your-mother-k-1'} target={'_blank'} rel="noreferrer">
-                  <Image src={dymk} className={'img-fluid logo-tile p-1'} alt={'Logo for Does Your Mother Know'} style={{ maxHeight: '80px', width: 'auto' }}/>
+                  <Image src={dymk} className={`img-fluid logo-tile p-1 ${styles.SponsorLogo}`} alt={'Logo for Does Your Mother Know'}/>
                 </a>
               </div>
             </div>
