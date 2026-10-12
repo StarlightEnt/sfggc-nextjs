@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {useRouter} from "next/router";
+import styles from './navigation.module.scss';
 
 const Navigation = () => {
   const router = useRouter();
@@ -12,19 +13,18 @@ const Navigation = () => {
 
   const navLink = ({path, text, title = '', disabled = false, isButton = false}) => {
     const isActive = router.pathname === path || (path !== '/' && router.pathname.startsWith(path));
+    const stateClass = disabled ? styles.disabled : isActive ? styles.active : '';
+    const linkClass = isButton
+      ? `btn btn-glow-orange ${styles.cta}`
+      : `${styles.link} ${stateClass}`;
 
     return (
-      <li className={`nav-item my-1 my-lg-0 mx-lg-1`}
+      <li className={`nav-item`}
           title={title}>
-        <Link className={`nav-link px-3 py-2 rounded-pill transition-all ${
-                isButton 
-                  ? 'btn btn-sm btn-glow-orange text-white fw-bold shadow-sm' 
-                  : isActive 
-                    ? 'active fw-bold text-primary bg-primary bg-opacity-10 border border-primary border-opacity-25' 
-                    : disabled ? 'disabled text-muted opacity-50' : 'text-dark hover-text-primary'
-              }`}
+        <Link className={`nav-link ${linkClass}`}
               href={path}
               onClick={(event) => linkClicked(event, disabled)}
+              aria-current={isActive && !isButton ? 'page' : undefined}
               aria-disabled={disabled || undefined}
               tabIndex={disabled ? -1 : undefined}
               data-bs-toggle={'collapse'}
@@ -37,33 +37,31 @@ const Navigation = () => {
   };
 
   return (
-      <nav className={`navbar navbar-expand-lg my-3 px-3 py-2 rounded-4 glass-card shadow-sm`}>
-        <div className={`container-fluid px-0`}>
-          <Link href="/" className="navbar-brand d-flex align-items-center me-auto text-decoration-none">
-            <span className="fw-extrabold text-dark fs-5 tracking-tight me-2">
-              SFGGC <span className="text-primary fw-bold">2026</span>
+      <nav className={`navbar navbar-expand-lg ${styles.nav}`}>
+        <div className={`${styles.inner} d-flex flex-wrap align-items-center`}>
+          <Link href="/" className={styles.brand}>
+            <span className={`${styles.wordmark} display`}>
+              SFGGC <span className={styles.year}>2026</span>
             </span>
-            <span className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill fs-8 fw-semibold px-2 py-0.5">
-              IGBO Pride
-            </span>
+            <span className={styles.tagline}>Golden Gate Classic &middot; IGBO Pride</span>
           </Link>
 
           <button
             type={'button'}
             id={'navbarToggler'}
-            className={'navbar-toggler border-0 text-dark shadow-none me-2'}
+            className={`navbar-toggler ${styles.toggler}`}
             data-bs-toggle={'collapse'}
             data-bs-target={'#navbarContent'}
             aria-controls={`navbarContent`}
             aria-expanded={false}
             aria-label={'Toggle navigation'}>
-            <i className={`bi bi-list menu-icon text-dark fs-3`}></i>
+            <i className={`bi bi-list menu-icon fs-3`}></i>
           </button>
 
           <div className={`collapse navbar-collapse justify-content-end`}
                id={'navbarContent'}
                tabIndex={'-1'}>
-              <ul className={`navbar-nav align-items-lg-center mb-2 mb-lg-0 me-lg-3`}>
+              <ul className={`navbar-nav ${styles.links}`}>
                 {navLink({
                   path: '/',
                   text: 'Home',
@@ -114,4 +112,3 @@ const Navigation = () => {
 }
 
 export default Navigation;
-

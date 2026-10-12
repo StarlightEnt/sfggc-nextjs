@@ -6,19 +6,20 @@ import Sponsors from "../Sponsors/Sponsors";
 export default function RootLayout({ children }) {
   return (
     <>
-      <div className="stripe-bar position-sticky top-0 z-3"></div>
-      <div className={`container-xl px-3 px-xl-4`}>
-        <Header/>
-        <Navigation/>
+      <Header/>
+      <Navigation/>
+      <div className="stripe-bar"></div>
 
+      <div className={`container-xl px-3 px-xl-4`}>
         <main className="py-2">
           {children}
         </main>
 
         <Sponsors/>
-        <Footer/>
       </div>
+
+      <div className="stripe-bar"></div>
+      <Footer/>
     </>
   );
 }
-
