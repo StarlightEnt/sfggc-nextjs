@@ -118,10 +118,10 @@ If fewer than 6 bowlers sign up in a division, all participants will bowl in the
         <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
           <div className={`${styles.Toolbar} d-flex justify-content-between align-items-center mb-4 pb-3 flex-wrap gap-2`}>
             <span className="badge-glow">
-              Draft Rules
+              (Draft)
             </span>
             <a href='#scratch_masters_rules' className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2">
-              Skip to Scratch Masters rules <i className="bi bi-arrow-down ms-1"></i>
+              (skip to Scratch Masters rules) <i className="bi bi-arrow-down ms-1"></i>
             </a>
           </div>
 
@@ -147,22 +147,43 @@ If fewer than 6 bowlers sign up in a division, all participants will bowl in the
         </div>
       </section>
 
-      <section className={`${styles.Rules} my-4`} id={'scratch_masters_rules'}>
-        <h3 className={`section-heading mb-0`}>
+      <section className={`${styles.Rules} my-4`}>
+        <h3 className={`section-heading mb-0`} id={'scratch_masters_rules'}>
           Scratch Masters Rules
         </h3>
 
         <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+          <p className={`${styles.Draft} mb-4`}>
+            <span className="badge-glow">
+              (Draft)
+            </span>
+          </p>
+
           <div className={`${styles.SponsorCard} mb-4`}>
             <div className="row align-items-center g-3">
               <div className="col-12 col-md-8">
-                <span className={styles.SponsorTag}>Official Sponsor</span>
-                <h4 className={styles.SponsorName}>Scratch Masters Sponsored By Does Your Mother Know</h4>
+                <span className={styles.SponsorTag}>Scratch Masters sponsored by</span>
+                <h4 className={styles.SponsorName}>Does Your Mother Know</h4>
                 <address className={`${styles.SponsorAddress} fst-normal mb-0`}>
-                  <span>4141 18th St., San Francisco, CA 94114</span>
-                  <span className="ms-3">
-                    <a href="tel:4158643160" className="text-decoration-none">
-                      <i className="bi bi-telephone-fill me-1"></i> 415-864-3160
+                  <span className="d-block">
+                    4141 18th St.
+                  </span>
+                  <span className="d-block">
+                    San Francisco, CA 94114
+                  </span>
+                  <span className="d-block">
+                    <a href={'tel:4158643160'} className="text-decoration-none">
+                      <i className={'bi bi-telephone-fill pe-2'} aria-hidden={true}/>
+                      415-864-3160
+                    </a>
+                  </span>
+                  <span className="d-block">
+                    <a href={'https://dymkmedia.wixsite.com/does-your-mother-k-1'}
+                       target={'_blank'} rel="noreferrer" className="text-decoration-none">
+                      <i className={'bi bi-globe2'} aria-hidden={true}/>
+                      <span className={'visually-hidden'}>
+                        website
+                      </span>
                     </a>
                   </span>
                 </address>

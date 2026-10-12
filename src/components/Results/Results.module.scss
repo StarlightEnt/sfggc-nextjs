@@ -1,5 +1,8 @@
 .Results {
   .Notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
     padding: 1rem 1.25rem;
     background: rgba(255, 152, 56, 0.08);
     border: 1px solid rgba(255, 152, 56, 0.4);
@@ -8,14 +11,10 @@
     font-size: 1rem;
   }
 
-  .NoticeTitle {
-    display: block;
-    margin-bottom: 0.25rem;
-    color: var(--sfggc-ink);
-
-    i {
-      color: var(--sfggc-pride-orange);
-    }
+  .NoticeIcon {
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+    color: var(--sfggc-pride-orange);
   }
 
   .ResultsCard {
@@ -40,6 +39,11 @@
   .ResultName {
     font-weight: 600;
     color: var(--sfggc-ink);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--sfggc-pride-orange);
+    }
 
     i {
       color: var(--sfggc-pride-red);

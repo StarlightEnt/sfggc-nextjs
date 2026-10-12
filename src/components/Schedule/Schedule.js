@@ -17,7 +17,7 @@ const Schedule = () => {
           name: 'Tournament Check-in',
           detail: 'Bowling center meeting room',
           more: '',
-          time: '4:30 PM – 6:45 PM',
+          time: '4:30pm - 6:45pm',
           icon: 'bi-clipboard-check-fill',
           badge: 'Registration',
         },
@@ -25,7 +25,7 @@ const Schedule = () => {
           name: 'Team Event',
           detail: 'Classic Bowling Center',
           more: '',
-          time: '7:00 PM – 10:00 PM',
+          time: '7pm - 10pm',
           icon: 'bi-people-fill',
           badge: 'Competition',
         },
@@ -39,15 +39,15 @@ const Schedule = () => {
           name: 'Tournament Check-in',
           detail: 'Bowling center meeting room',
           more: '',
-          time: '1:30 PM – 2:15 PM',
+          time: '1:30pm - 2:15pm',
           icon: 'bi-clipboard-check-fill',
           badge: 'Registration',
         },
         {
-          name: 'Doubles & Singles Events',
+          name: 'Doubles and Singles Events',
           detail: '30-minute break between events',
-          more: '',
-          time: '2:30 PM – 8:30 PM',
+          // more: 'We&apos;ll provide food between events!',
+          time: '2:30pm - 8:30pm',
           icon: 'bi-trophy-fill',
           badge: 'Main Event',
         },
@@ -59,20 +59,26 @@ const Schedule = () => {
       events: [
         {
           name: 'Scratch Masters',
-          detail: 'Classic Bowling Center Main Lanes',
+          detail: '',
           more: '',
-          time: '10:00 AM – 1:00 PM',
+          time: '10am - 1pm',
           icon: 'bi-award-fill',
           badge: 'Finals',
         },
         {
-          name: 'Cocktail Reception & Awards',
+          name: 'Cocktail Reception, Awards Ceremony and Small Bites',
           detail: '300 Sports Bar & Lounge (Inside Classic Bowling Center)',
-          more: 'Small Bites served. Starts approx 30–45 min after Scratch Masters.',
-          time: '1:30 PM – 4:00 PM',
+          more: 'Approximately 30-45 min after Scratch Masters',
+          time: '1:30 / 1:45pm - 4pm',
           icon: 'bi-cup-hot-fill',
           badge: 'Social & Awards',
         },
+        // {
+        //   name: 'Scratch Masters',
+        //   detail: '',
+        //   more: '',
+        //   time: '2pm - 5pm',
+        // },
       ]
     },
   ];
@@ -86,7 +92,7 @@ const Schedule = () => {
       <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
         <p className={`${styles.Note} text-center mb-4`}>
           <i className="bi bi-info-circle me-2"></i>
-          Proposed Preliminary Schedule — subject to minor adjustments
+          (Proposed Preliminary Schedule)
         </p>
 
         <div className="row g-4 justify-content-center">

@@ -10,7 +10,7 @@ const Mission = () => (
       <div className={styles.Quote}>
         <i className={`bi bi-quote ${styles.Mark}`}></i>
         <p className={styles.Text}>
-          &ldquo;To seamlessly integrate friendly competition that reflects the full diversity of the Bay Area, by creating an experience where every participant, regardless of background or skill level, feels welcomed and recognizes their own contribution to the spirit of the tournament and its success.&rdquo;
+          To seamlessly integrate friendly competition that reflects the full diversity of the Bay Area, by creating an experience where every participant, regardless of background or skill level, feels welcomed and recognizes their own contribution to the spirit of the tournament and its success.
         </p>
       </div>
     </div>

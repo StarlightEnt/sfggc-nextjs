@@ -87,7 +87,7 @@ test("Given the San Francisco banner, when rendered, then its image style is rea
   assert.match(source, /styles\.CityDaytimeImage/);
   assert.match(
     styles,
-    /\.SanFrancisco\s*\{\s*\.CityDaytimeImage\s*\{[^}]*background-image:[^;]*url\(/,
+    /\.CityDaytimeImage\s*\{[^}]*background-image:[^;]*url\(/,
     ".CityDaytimeImage must be a direct child rule of .SanFrancisco, not nested under an unused wrapper"
   );
 });

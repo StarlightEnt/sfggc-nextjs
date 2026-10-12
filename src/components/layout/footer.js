@@ -8,17 +8,22 @@ const Footer = () => {
       <div className="d-flex flex-column align-items-center justify-content-center gap-2">
         <div className={styles.logo}>
           <Image src={logo}
-                 alt={'SFGGC Tournament logo'}
+                 alt={'Tournament logo'}
                  width={48}
                  height={48}
                  className={`img-fluid object-fit-cover`} />
         </div>
 
         <p className={styles.line}>
-          &copy; {new Date().getFullYear()} <strong>San Francisco Golden Gate Classic</strong>
-        </p>
-        <p className={styles.affiliation}>
-          An official IGBO &amp; USBC affiliated tournament event.
+          <span>
+            &copy; 2024&nbsp;
+          </span>
+          <span className={'d-md-none pe-2'}>
+            SF Golden Gate Classic
+          </span>
+          <span className={'d-none d-md-inline pe-2'}>
+            San Francisco Golden Gate Classic
+          </span>
         </p>
       </div>
     </footer>

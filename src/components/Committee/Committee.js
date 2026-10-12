@@ -11,24 +11,28 @@ const Committee = () => {
   const directors = [
     {
       name: 'Allison Laureano',
+      alt: 'A cartoon image of Allison',
       role: 'Co-Director',
       image: allison,
       email: 'mailto:directors@goldengateclassic.org?subject=About%20the%20Golden%20Gate%20Classic',
     },
     {
       name: 'Cathy Patterson',
+      alt: 'Cathy Patterson',
       role: 'Co-Director',
       image: cathy,
       email: 'mailto:directors@goldengateclassic.org?subject=About%20the%20Golden%20Gate%20Classic',
     },
     {
       name: 'Duane Flohra',
+      alt: 'Duane',
       role: 'Scratch Master',
       image: duane,
       email: 'mailto:directors@goldengateclassic.org?subject=About%20the%20Golden%20Gate%20Classic',
     },
     {
       name: 'JF Unson',
+      alt: 'JF Unson',
       role: 'Chief Technologist',
       image: jfunson,
       email: 'mailto:jfu@jfunson.com?subject=About%20the%20Golden%20Gate%20Classic',
@@ -49,7 +53,7 @@ const Committee = () => {
 
       <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
         <p className={`${styles.Intro} text-center mb-5`}>
-          Putting on a tournament is a community effort. The Golden Gate Classic wouldn&apos;t be possible without the work and contributions of all the dedicated people on this team.
+          Putting on a tournament is a community effort. The Golden Gate Classic wouldn&apos;t be possible without the work and contributions of all the people on this page.
         </p>
 
         <div className="row g-4 justify-content-center mb-5">
@@ -58,7 +62,7 @@ const Committee = () => {
               <div className={`${styles.Card} h-100`}>
                 <div className={styles.Photo}>
                   <Image src={person.image}
-                         alt={person.name}
+                         alt={person.alt}
                          fill
                          sizes="(max-width: 768px) 100vw, 250px"
                          style={{ objectFit: 'cover' }}
@@ -80,7 +84,7 @@ const Committee = () => {
         <div className={styles.Volunteers}>
           <h5 className={styles.VolunteersTitle}>
             <i className="bi bi-heart-fill"></i>
-            Committee &amp; Dedicated Volunteers
+            Committee &amp; Volunteers
           </h5>
           <div className="d-flex flex-wrap justify-content-center gap-2">
             {volunteers.map((name, i) => (

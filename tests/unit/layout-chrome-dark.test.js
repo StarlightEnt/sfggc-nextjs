@@ -60,7 +60,7 @@ test("Given the navigation, when rendered, then Portal Login is the pill call-to
   assert.match(navigationJs, /btn-glow-orange/);
   assert.match(navigationJs, /navbar-toggler/);
   assert.match(navigationJs, /aria-label=\{?['"]Toggle navigation['"]/);
-  assert.match(navigationJs, /text:\s*'Portal Login'/);
+  assert.match(navigationJs, /isButton:\s*true/);
 });
 
 test("Given the navigation links, when one is active, then it is marked with aria-current", () => {

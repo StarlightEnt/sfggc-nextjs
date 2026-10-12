@@ -2,13 +2,22 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+import brunswick from '../../images/sponsors/brunswick.png';
 import storm from '../../images/sponsors/storm.png';
 import igbo from '../../images/sponsors/igbo.png';
 import usbc from '../../images/sponsors/usbc.png';
+// import budlight from '../../images/sponsors/budlight.gif';
 import styles from './Sponsors.module.scss';
 
 const Sponsors = () => {
   const sponsorDetails = [
+    // {
+    //   alt: 'Brunswick Bowling Products',
+    //   href: 'https://brunswickbowling.com/bowlers',
+    //   title: 'Brunswick Bowling Products',
+    //   src: brunswick,
+    //   classNames: styles.AdjustedBrightness,
+    // },
     {
       alt: 'Storm Bowling Products',
       href: 'https://stormbowling.com/',
@@ -30,15 +39,18 @@ const Sponsors = () => {
       src: usbc,
       classNames: '',
     },
+    //{
+    //  alt: "Bud Light, by Matagrano",
+    //  href: 'http://www.budlight.com/',
+    //  title: "Bud Light, by Matagrano",
+    //  src: budlight,
+    //  classNames: '',
+    //},
   ];
 
   return (
     <div className={`${styles.Sponsors} my-5`}>
       <div className="glass-card p-4 p-md-5 rounded-4 text-center">
-        <h5 className={styles.Heading}>
-          Our Valued Tournament Partners &amp; Sponsors
-        </h5>
-
         <div className="row g-4 align-items-center justify-content-center">
           {sponsorDetails.map((s, i) => {
             return (

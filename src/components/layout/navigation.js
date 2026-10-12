@@ -41,7 +41,7 @@ const Navigation = () => {
         <div className={`${styles.inner} d-flex flex-wrap align-items-center`}>
           <Link href="/" className={styles.brand}>
             <span className={`${styles.wordmark} display`}>
-              SFGGC <span className={styles.year}>2026</span>
+              SFGGC <span className={styles.year}>2027</span>
             </span>
             <span className={styles.tagline}>Golden Gate Classic &middot; IGBO Pride</span>
           </Link>
@@ -70,9 +70,26 @@ const Navigation = () => {
                 {navLink({
                   path: 'https://go.signmeup.io/?eventid=51',
                   text: 'Register',
+                  // disabled: false,
                   disabled: true,
+                  // title: 'Get your team registered!',
+                  // title: 'Registration is now open!',
                   title: 'Contact Directors for Registration Info!',
                 })}
+
+                {/*<li className={`nav-item`}>*/}
+                {/*  <Link className={`nav-link`} href={'/#section-location'}>*/}
+                {/*    Bowling Center*/}
+                {/*  </Link>*/}
+                {/*</li>*/}
+
+                {/*<li className={`nav-item`}>*/}
+                {/*  <Link className={`nav-link`}*/}
+                {/*        href={'/#section-schedule'}*/}
+                {/*  >*/}
+                {/*    Schedule*/}
+                {/*  </Link>*/}
+                {/*</li>*/}
 
                 {navLink({
                   path: '/rules',
@@ -85,6 +102,14 @@ const Navigation = () => {
                   path: '/san-francisco',
                   text: 'San Francisco',
                 })}
+
+                {/*<li className={`nav-item`}>*/}
+                {/*  <Link className={`nav-link`}*/}
+                {/*        href={'/#section-beneficiary'}*/}
+                {/*  >*/}
+                {/*    Charity Partner*/}
+                {/*  </Link>*/}
+                {/*</li>*/}
 
                 {navLink({
                   path: '/committee',
@@ -100,7 +125,7 @@ const Navigation = () => {
 
                 {navLink({
                   path: '/portal/',
-                  text: 'Portal Login',
+                  text: 'Login',
                   isButton: true,
                 })}
               </ul>
