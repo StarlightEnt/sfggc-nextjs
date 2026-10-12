@@ -43,6 +43,14 @@ container and its data). Set `SFGGC_DOCKER_DB_PORT` if 3307 is taken.
 If your `.env.local` already has a `PORTAL_DATABASE_URL` for a different database, the script stops
 instead of changing it.
 
+### Already using a local MariaDB?
+
+Nothing changes for you: Docker is optional, and the app, migrations and test scripts work exactly as before with a local install. To switch to the Docker database:
+
+1. Stop the local server (for example `brew services stop mariadb`).
+2. `docker-db.sh` refuses to run while `.env.local` has a `PORTAL_DATABASE_URL` for a different database (to protect it). Comment out that one line (`# PORTAL_DATABASE_URL=...`), keeping your other settings, then run `bash scripts/dev/docker-db.sh init`. It adds a Docker `PORTAL_DATABASE_URL` and reuses your existing `ADMIN_SESSION_SECRET`. Your data is not copied; re-import with `scripts/dev/import-igbo-xml.sh`.
+3. To go back, run `bash scripts/dev/docker-db.sh down`, delete the Docker `PORTAL_DATABASE_URL` line, and uncomment your old one.
+
 ### Option B: MariaDB installed on your machine
 
 Install MariaDB:
@@ -156,7 +164,7 @@ npm --prefix backend test
 Test environment notes:
 - Tests do not load `.env.local` by default.
 - Backend tests do not require MariaDB; the admin bootstrap test uses `SKIP_DB=true`.
-- DB-backed tests use `PORTAL_DATABASE_URL` or `PORTAL_TEST_DATABASE_URL` and will skip if no DB is available.
+- DB-backed tests use `PORTAL_DATABASE_URL` or `PORTAL_TEST_DATABASE_URL` and will skip if no DB is available. When a database URL is configured, `test-all.sh` instead fails the integration step if any test was skipped, because a skip then means the database was not used.
 - Test scripts drop the `_test` database after successful runs and keep it on failure for debugging.
 - Test scripts auto-load `.env.local` when present.
 

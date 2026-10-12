@@ -461,7 +461,7 @@ bash scripts/test/test-backend.sh  # Backend/API tests only
 
 **Database prerequisite:** Backend and full-suite tests require MariaDB running. Start with `bash scripts/dev/docker-db.sh up` (Docker) or `bash scripts/dev/start-mariadb.sh` (local install) before `test-backend.sh` or `test-all.sh` — test scripts do not start the database themselves.
 
-**Database Tests:** Auto create/drop `<database>_test` databases. On failure, the test database is preserved for debugging.
+**Database Tests:** Auto create/drop `<database>_test` databases. On failure, the test database is preserved for debugging. With a database URL configured, `test-all.sh` fails (rather than skips) skipped integration tests. See `CLAUDE-PATTERNS.md#Dev Environment for Database-Dependent Tests` for the `.env.local` rules (never print, commit, or overwrite it) and how integration tests read DB state.
 
 **Rule:** During development, run only localized tests for files being changed. Run `bash scripts/test/test-all.sh` after all sprints complete or before check-in.
 

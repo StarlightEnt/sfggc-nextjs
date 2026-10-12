@@ -408,15 +408,19 @@ test("Given migration script, when checking logic, then it's idempotent", () => 
 
 **Rule:** When working on portal features that touch the database (API routes, imports, participant data, scores, audit logs), ensure MariaDB is running before running backend tests.
 
-**Start MariaDB:**
+**Start MariaDB** (Docker is the recommended dev database; a locally installed MariaDB also works):
 ```bash
-bash scripts/dev/start-mariadb.sh
+bash scripts/dev/docker-db.sh up      # Docker; `init` also applies schema + migrations
+bash scripts/dev/start-mariadb.sh     # local install
 ```
 
 **Verify it's running:**
 ```bash
-pgrep -qf mysqld && echo "MariaDB running" || echo "MariaDB NOT running"
+bash scripts/dev/docker-db.sh status  # Docker (pgrep cannot see a container's mysqld)
+pgrep -qf mysqld && echo "MariaDB running" || echo "MariaDB NOT running"   # local install
 ```
+
+**`.env.local` rules for agents:** `docker-db.sh` creates it (random password, mode 600) and never overwrites it. Do not print, commit, or hand-edit the database password, and do not replace a `PORTAL_DATABASE_URL` that points at the Docker database.
 
 **Test scripts that require a running database:**
 - `bash scripts/test/test-backend.sh` — backend API integration tests
@@ -426,7 +430,13 @@ pgrep -qf mysqld && echo "MariaDB running" || echo "MariaDB NOT running"
 - `bash scripts/test/test-frontend.sh` — frontend structural/route tests
 - Individual unit tests with mock queries (`node --test tests/unit/*.test.js`)
 
-**Key:** The test scripts do NOT start MariaDB themselves. The agent must ensure it's running before invoking `test-backend.sh` or `test-all.sh`.
+**Key:** The test scripts do NOT start MariaDB themselves. The agent must ensure it's running before invoking `test-backend.sh` or `test-all.sh`. When a database URL is configured (the scripts auto-load `.env.local`), `test-all.sh` **fails** the integration step if any test was skipped; with no URL configured, skipping stays legitimate.
+
+### Reading Database State in Integration Tests
+
+**Problem:** `setupIntegrationDb()` initializes the database in an async `before()` hook. Copying its fields (`db`, `dbReady`) in another root-level `before()` can run first and silently skip every test with "Database not available".
+
+**Solution:** Read the shared state at test time: `requireDb(t, dbState)`, or `dbState.db` directly, or copy it in `beforeEach()`. Never copy it in a root-level `before()`.
 
 ### Integration Test Admin Seeding
 

@@ -143,6 +143,19 @@ describe("docker-db.sh", () => {
     assert.equal(fs.statSync(envFile).mode & 0o777, 0o600);
   });
 
+  test("Given a developer who commented out their old database URL, when running up, then a Docker URL is added and every other setting is kept", () => {
+    const fake = fakeDocker();
+    const envFile = path.join(fake.dir, ".env.local");
+    const existing = "# PORTAL_DATABASE_URL=mysql://root@localhost:3306/sfggc_portal_dev\nADMIN_SESSION_SECRET=keepme\nSMTP_HOST=smtp.example.test\n";
+    fs.writeFileSync(envFile, existing);
+    const result = run(fake, ["up"]);
+    assert.equal(result.status, 0, result.stderr);
+    const env = read(envFile);
+    assert.ok(env.startsWith(existing), "the existing lines must be untouched");
+    assert.match(env, /^PORTAL_DATABASE_URL=mysql:\/\/root:[0-9a-f]{32}@127\.0\.0\.1:3307\//m);
+    assert.equal((env.match(/^ADMIN_SESSION_SECRET=/gm) || []).length, 1, "the existing session secret must be reused, not duplicated");
+  });
+
   test("Given an env file that points at another database, when running up, then it refuses and changes nothing", () => {
     const fake = fakeDocker();
     const envFile = path.join(fake.dir, ".env.local");
