@@ -5,15 +5,16 @@
 **Date Deferred:** 2026-02-09
 **Impact:** Test suite now 100% passing (519/519 frontend, 36/36 backend)
 
-## Update (2026-10-12): tests skip even with a database running
+## Update (2026-10-12): `portal-api` tests were silently skipping (fixed)
 
-`test-all.sh` now runs `tests/integration/` as its own step. With a working database (the Docker
-dev DB from `scripts/dev/docker-db.sh`), the DB-backed files still report `# SKIP Database not
-available` (33 of 42 tests). The shared helper itself initializes fine when probed on its own, so
-the problem is in how the test files read the helper's state: they copy `db`/`dbReady` from
-`setupIntegrationDb()` in a root-level `before()` hook and the copy appears to happen before the
-helper's async initialization has finished. The root cause has not been confirmed. Until it is
-fixed, treat these tests as providing no coverage; the unit/frontend suites do not depend on them.
+With a working database, `tests/integration/portal-api.test.js` reported `# SKIP Database not
+available` for all 33 of its tests. The shared helper (`setupIntegrationDb`) initializes the database
+in an async `before()` hook; the test file copied `db`/`dbReady` out of the helper's state in its own
+root-level `before()`, and that copy ran before the initialization finished, so it always saw
+`dbReady = false`. The copy now happens in `beforeEach()`, which always runs after the root hooks, and
+all 33 tests pass against the Docker dev database. Tests that use the helper's `requireDb(t, state)`
+read live state and were never affected. When writing new integration tests, read `dbState` (or use
+`requireDb`) at test time; do not copy it in a root-level hook.
 
 ## Current State
 

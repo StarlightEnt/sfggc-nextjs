@@ -188,7 +188,6 @@ DB-backed tests:
 - If no DB URL is available, DB-backed tests will skip.
 - Test scripts drop the `_test` database after successful runs and keep it on failure for debugging.
 - Test scripts auto-load `.env.local` when present.
-- Some integration tests report "Database not available" and skip even when a database is running; see [INTEGRATION_TESTS_TODO.md](INTEGRATION_TESTS_TODO.md).
 
 ## Deployment
 

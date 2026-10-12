@@ -156,7 +156,7 @@ npm --prefix backend test
 Test environment notes:
 - Tests do not load `.env.local` by default.
 - Backend tests do not require MariaDB; the admin bootstrap test uses `SKIP_DB=true`.
-- DB-backed tests use `PORTAL_DATABASE_URL` or `PORTAL_TEST_DATABASE_URL` and will skip if no DB is available. Some integration tests skip even with a database running; see [INTEGRATION_TESTS_TODO.md](INTEGRATION_TESTS_TODO.md).
+- DB-backed tests use `PORTAL_DATABASE_URL` or `PORTAL_TEST_DATABASE_URL` and will skip if no DB is available.
 - Test scripts drop the `_test` database after successful runs and keep it on failure for debugging.
 - Test scripts auto-load `.env.local` when present.
 

@@ -1,4 +1,4 @@
-const { test, before } = require("node:test");
+const { test, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
@@ -60,7 +60,9 @@ const seedTeamMember = async ({
   );
 };
 
-before(() => {
+// Copy the shared state before each test, not in a root-level before(): the helper initializes the
+// database asynchronously, and a copy taken in a sibling root hook can run before that finishes.
+beforeEach(() => {
   db = dbState.db;
   dbReady = dbState.dbReady;
   dbSkipReason = dbState.dbSkipReason;
