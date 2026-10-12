@@ -29,7 +29,7 @@ const Location = () => {
         <div className="row align-items-center g-4 mb-4 pb-4 border-bottom border-secondary border-opacity-10">
           <div className="col-12 col-md-4 text-center">
             <Link href={'http://www.classicbowling.com/'} target={'_blank'} className="d-inline-block">
-              <div className={`${styles.LogoContainer} rounded-3 p-3 bg-white border border-secondary border-opacity-15 shadow-sm d-inline-flex align-items-center justify-content-center`}>
+              <div className={`${styles.LogoContainer} logo-tile p-3 d-inline-flex align-items-center justify-content-center`}>
                 <Image 
                   src={cbcLogo}
                   alt={'Classic Bowling Center Logo'}
@@ -41,19 +41,19 @@ const Location = () => {
           </div>
 
           <div className="col-12 col-md-8 text-center text-md-start">
-            <div className="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-primary bg-opacity-10 text-primary fs-7 fw-bold mb-2">
+            <div className={`${styles.VenueTag} d-inline-flex align-items-center gap-2 mb-2`}>
               <i className="bi bi-geo-alt-fill"></i> Official Host Venue
             </div>
-            <h4 className="fs-2 fw-bold text-dark mb-2">
-              <a href={'http://www.classicbowling.com/'} target="_blank" rel="noreferrer" className="text-dark text-decoration-none hover-text-primary">
+            <h4 className="fs-2 fw-bold text-body mb-2">
+              <a href={'http://www.classicbowling.com/'} target="_blank" rel="noreferrer" className="text-body text-decoration-none hover-text-primary">
                 Classic Bowling Center <i className="bi bi-box-arrow-up-right fs-6 ms-1 text-primary"></i>
               </a>
             </h4>
 
             <address className="fst-normal text-muted fs-6 mb-3">
               <div className="d-flex align-items-center justify-content-center justify-content-md-start gap-2 mb-1">
-                <i className="bi bi-pin-map text-secondary fs-5"></i>
-                <span className="text-dark">900 King Drive, Daly City, CA 94015</span>
+                <i className="bi bi-pin-map text-body-secondary fs-5"></i>
+                <span className="text-body">900 King Drive, Daly City, CA 94015</span>
               </div>
             </address>
 
@@ -71,7 +71,7 @@ const Location = () => {
         {/* Map and Nearby Dining Options */}
         <div className="row g-4 align-items-stretch">
           <div className="col-12 col-lg-7">
-            <div className="ratio ratio-16x9 rounded-4 overflow-hidden border border-secondary border-opacity-15 shadow-sm">
+            <div className={`${styles.Map} ratio ratio-16x9 overflow-hidden`}>
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m12!1m8!1m3!1d3158.965833030376!2d-122.46923535449218!3d37.65000730003063!3m2!1i1024!2i768!4f13.1!2m1!1sRestaurants!5e0!3m2!1sen!2sus!4v1689623109059!5m2!1sen!2sus"
                 allowFullScreen="" loading="lazy"
@@ -83,11 +83,11 @@ const Location = () => {
           <div className="col-12 col-lg-5">
             <div className="glass-card p-4 h-100 border border-secondary border-opacity-10 d-flex flex-column">
               <div className="d-flex align-items-center justify-content-between mb-3">
-                <h5 className="fs-5 fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                <h5 className="fs-5 fw-bold text-body mb-0 d-flex align-items-center gap-2">
                   <i className="bi bi-shop text-primary"></i>
                   Nearby Dining Options
                 </h5>
-                <span className="badge bg-secondary bg-opacity-10 text-secondary fw-normal fs-8">
+                <span className={styles.Area}>
                   Daly City / King Plaza
                 </span>
               </div>

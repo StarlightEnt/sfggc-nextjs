@@ -1,3 +1,22 @@
 .Mission {
+  .Quote {
+    max-width: 52rem;
+    margin: 0 auto;
+  }
 
+  .Mark {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 3rem;
+    color: var(--sfggc-pride-purple);
+    opacity: 0.7;
+  }
+
+  .Text {
+    margin: 0;
+    font-size: clamp(1.1rem, 2.4vw, 1.5rem);
+    font-style: italic;
+    line-height: 1.6;
+    color: var(--sfggc-ink);
+  }
 }

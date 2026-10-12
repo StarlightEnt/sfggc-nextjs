@@ -1,11 +1,71 @@
 .Spotlight {
   text-align: center;
-  font-size: calc(1rem + 0.3vw);
   margin-bottom: 2rem;
 
   @media (min-width: 768px) {
-    font-size: calc(1rem + 0.5vw);
     margin-bottom: 4rem;
   }
 
+  .Wrap {
+    max-width: 56rem;
+    margin: 0 auto;
+  }
+
+  .Lead {
+    margin-bottom: 1.5rem;
+    font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+    line-height: 1.6;
+    color: var(--sfggc-ink-dim);
+  }
+
+  .Update {
+    text-align: left;
+    background: var(--sfggc-night-mid);
+    border: 1px solid rgba(184, 116, 255, 0.4);
+    border-radius: 0.875rem;
+    padding: 1.5rem;
+
+    @media (min-width: 768px) {
+      padding: 2.5rem;
+    }
+  }
+
+  .Icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 77, 94, 0.14);
+    color: var(--sfggc-pride-red);
+    font-size: 1.4rem;
+  }
+
+  .Title {
+    margin: 0;
+    font-size: clamp(1.1rem, 2.6vw, 1.5rem);
+    color: var(--sfggc-ink);
+  }
+
+  .Body {
+    color: var(--sfggc-ink-dim);
+    font-size: 1rem;
+  }
+
+  .Banner {
+    margin: 1rem 0;
+    padding: 1rem;
+    text-align: center;
+    background: rgba(184, 116, 255, 0.08);
+    border: 1px solid rgba(184, 116, 255, 0.4);
+    border-radius: 0.875rem;
+
+    h4 {
+      margin: 0;
+      font-size: clamp(1.15rem, 3.4vw, 1.9rem);
+      line-height: 1.3;
+    }
+  }
 }

@@ -35,7 +35,7 @@ const Sponsors = () => {
   return (
     <div className={`${styles.Sponsors} my-5`}>
       <div className="glass-card p-4 p-md-5 rounded-4 text-center">
-        <h5 className="fs-6 text-uppercase tracking-wider text-muted fw-bold mb-4">
+        <h5 className={styles.Heading}>
           Our Valued Tournament Partners &amp; Sponsors
         </h5>
 
@@ -46,7 +46,7 @@ const Sponsors = () => {
                 <Link href={s.href}
                       target={'_blank'}
                       title={s.title}
-                      className="d-block p-3 rounded-3 bg-white border border-secondary border-opacity-15 shadow-2xs hover-border-primary transition-all">
+                      className="logo-tile d-block p-3">
                   <Image className={`img-fluid ${s.classNames}`}
                          alt={s.alt}
                          src={s.src}

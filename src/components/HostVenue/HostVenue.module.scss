@@ -1,3 +1,46 @@
 .HostVenue {
+  .Tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255, 152, 56, 0.12);
+    border: 1px solid rgba(255, 152, 56, 0.4);
+    color: var(--sfggc-pride-orange);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
 
+  .Name {
+    margin-bottom: 0.5rem;
+    font-size: clamp(1.4rem, 3.4vw, 2rem);
+    color: var(--sfggc-ink);
+  }
+
+  .Copy {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: var(--sfggc-ink-dim);
+
+    strong {
+      color: var(--sfggc-ink);
+    }
+
+    .Highlight {
+      color: var(--sfggc-pride-green);
+    }
+  }
+
+  .Address {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--sfggc-ink-dim);
+
+    i {
+      color: var(--sfggc-pride-red);
+    }
+  }
 }

@@ -3,55 +3,69 @@
   padding-bottom: 1rem;
 
   .LogoContainer {
-    background-color: #ffffff;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    // Logo artwork is dark-on-light, so it sits on the shared .logo-tile.
+    min-width: 160px;
+  }
 
-    &:hover {
-      transform: scale(1.02);
-      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
-    }
+  .VenueTag {
+    padding: 0.3rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(255, 77, 94, 0.12);
+    border: 1px solid rgba(255, 77, 94, 0.4);
+    color: var(--sfggc-pride-red);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .Map {
+    background: var(--sfggc-night-deep);
+    border: 1px solid var(--sfggc-hairline);
+    border-radius: 0.875rem;
+  }
+
+  .Area {
+    color: var(--sfggc-ink-dim);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   .DiningChip {
     display: inline-flex;
     align-items: center;
     padding: 0.45rem 0.85rem;
-    font-size: 0.825rem;
+    font-size: 0.85rem;
     font-weight: 500;
-    border-radius: 0.5rem;
-    background: #ffffff;
-    color: #334155;
-    border: 1px solid rgba(226, 232, 240, 0.9);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    border-radius: 999px;
+    background: var(--sfggc-night-deep);
+    color: var(--sfggc-ink);
+    border: 1px solid var(--sfggc-hairline);
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
 
     &.DiningLink {
-      background: rgba(37, 99, 235, 0.06);
-      color: #2563eb;
-      border-color: rgba(37, 99, 235, 0.2);
+      background: rgba(63, 168, 255, 0.1);
+      color: var(--sfggc-pride-blue);
+      border-color: rgba(63, 168, 255, 0.4);
 
       i {
-        color: #2563eb;
         font-size: 0.75rem;
-        transition: transform 0.2s ease;
+        color: var(--sfggc-pride-blue);
+        transition: transform 0.18s ease;
       }
 
       &:hover {
-        background: rgba(37, 99, 235, 0.12);
-        color: #1d4ed8;
-        border-color: rgba(37, 99, 235, 0.4);
+        background: rgba(63, 168, 255, 0.2);
+        border-color: var(--sfggc-pride-blue);
         transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(37, 99, 235, 0.12);
 
         i {
           transform: translate(2px, -2px);
-          color: #1d4ed8;
         }
       }
     }
   }
 }
-
-

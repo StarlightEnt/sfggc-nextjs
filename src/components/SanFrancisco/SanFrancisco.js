@@ -47,11 +47,11 @@ const SanFrancisco = ({full = true}) => {
                          className="rounded-3"
                   />
                 </div>
-                <h4 className="fs-4 fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                <h4 className="fs-4 fw-bold text-body mb-2 d-flex align-items-center gap-2">
                   <i className="bi bi-sun-fill text-warning"></i> Weather
                 </h4>
-                <p className="text-secondary fs-6 mb-3">
-                  San Francisco is known for its refreshing cool fog and coastal breeze. Highs average around <strong className="text-dark">60-70°F (15-21°C)</strong> and lows around <strong className="text-dark">50s°F (12°C)</strong>.
+                <p className="text-body-secondary fs-6 mb-3">
+                  San Francisco is known for its refreshing cool fog and coastal breeze. Highs average around <strong className="text-body">60-70°F (15-21°C)</strong> and lows around <strong className="text-body">50s°F (12°C)</strong>.
                 </p>
                 <div className="mt-auto pt-2">
                   <a href="https://www.wunderground.com/weather/us/ca/san-francisco/KCASANFR2046" target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2 w-100">
@@ -72,10 +72,10 @@ const SanFrancisco = ({full = true}) => {
                          className="rounded-3"
                   />
                 </div>
-                <h4 className="fs-4 fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                <h4 className="fs-4 fw-bold text-body mb-2 d-flex align-items-center gap-2">
                   <i className="bi bi-compass-fill text-primary"></i> Top Attractions
                 </h4>
-                <ul className="text-secondary fs-6 ps-3 mb-3">
+                <ul className="text-body-secondary fs-6 ps-3 mb-3">
                   <li>Golden Gate Bridge &amp; Park</li>
                   <li>Historic Cable Cars &amp; Union Square</li>
                   <li>Alcatraz Island &amp; Pier 39</li>
@@ -101,10 +101,10 @@ const SanFrancisco = ({full = true}) => {
                          className="rounded-3"
                   />
                 </div>
-                <h4 className="fs-4 fw-bold text-dark mb-2 d-flex align-items-center gap-2">
+                <h4 className="fs-4 fw-bold text-body mb-2 d-flex align-items-center gap-2">
                   <i className="bi bi-egg-fried text-info"></i> World-Class Dining
                 </h4>
-                <p className="text-secondary fs-6 mb-3">
+                <p className="text-body-secondary fs-6 mb-3">
                   Home to iconic eateries, Mission burritos, fresh seafood, dim sum, and a thriving vegan &amp; plant-based culinary scene.
                 </p>
                 <div className="mt-auto pt-2">

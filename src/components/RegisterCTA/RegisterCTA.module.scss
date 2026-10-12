@@ -1,3 +1,19 @@
 .RegisterCTA {
   text-align: center;
+
+  .Closed {
+    padding: 0.8rem 1.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--sfggc-hairline);
+    background: var(--sfggc-night-deep);
+    color: var(--sfggc-ink-dim);
+    font-weight: 600;
+    cursor: not-allowed;
+  }
+
+  .Contact {
+    padding: 0.8rem 1.75rem;
+    border-radius: 999px;
+    font-weight: 600;
+  }
 }
