@@ -46,7 +46,7 @@ After running the migration, you can verify it worked by:
 
 ```bash
 # Check the column exists
-mysql -h shared2.cdms8mviovca.us-west-2.rds.amazonaws.com \
+mysql -h YOUR-DB-HOST \
   -u goldengate -p goldengate \
   -e "DESCRIBE people;" | grep nickname
 ```

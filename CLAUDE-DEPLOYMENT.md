@@ -74,7 +74,7 @@ Required (or the script fails fast):
 
 ```bash
 export DEPLOY_DB_PASSWORD='...'          # Database password
-export DEPLOY_SMTP_PASSWORD='...'        # SMTP password (AWS SES)
+export DEPLOY_SMTP_PASSWORD='...'        # SMTP password
 export DEPLOY_ADMIN_EMAIL='...'          # Super admin email (first deploy only)
 export DEPLOY_ADMIN_NAME='...'           # Super admin name  (first deploy only)
 export DEPLOY_ADMIN_PASSWORD='...'       # Super admin password (first deploy only)
