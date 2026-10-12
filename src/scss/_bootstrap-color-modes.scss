@@ -4,20 +4,21 @@
   --#{$prefix}background-shade-opacity: 0.25;
   --#{$prefix}section-background-shade-opacity: 0.5;
 
-  --#{$prefix}body-color: #{$gray-100};
-  --#{$prefix}body-bg: #{$deep-gray};
-  --#{$prefix}body-text-shadow-color: #{$deep-gray};
+  --#{$prefix}body-color: #0f172a;
+  --#{$prefix}body-bg: #f8fafc;
+  --#{$prefix}body-text-shadow-color: transparent;
 
-  --#{$prefix}emphasis-color: #{$white};
-  --#{$prefix}emphasis-color-rgb: rgb(#{$white});
+  --#{$prefix}emphasis-color: #0f172a;
+  --#{$prefix}emphasis-color-rgb: 15, 23, 42;
 
-  --#{$prefix}section-heading-bg-color: #{$deep-blue};
-  --#{$prefix}section-heading-color: #{$gray-100};
+  --#{$prefix}section-heading-bg-color: #ffffff;
+  --#{$prefix}section-heading-color: #0f172a;
 
-  --#{$prefix}border-color-translucent: #{$gray-500};
-  --#{$prefix}border-color: #{$gray-500};
+  --#{$prefix}border-color-translucent: rgba(226, 232, 240, 0.8);
+  --#{$prefix}border-color: rgba(226, 232, 240, 0.8);
 
-  --#{$prefix}card-link-color: #{$deep-blue};
+  --#{$prefix}card-link-color: #2563eb;
+
 
   --#{$prefix}image-shade-opacity: 0;
 
