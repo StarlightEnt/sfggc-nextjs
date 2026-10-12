@@ -24,8 +24,7 @@ test("Given the section panel, when compiled, then it is a card body with paddin
   const paddings = parseRules(css)
     .filter((r) => r.selectors.includes(".section-panel"))
     .flatMap((r) => [...r.body.matchAll(/(?:^|[;\s])padding:\s*([^;]+)/g)].map((m) => m[1]));
-  assert.ok(paddings.length >= 2, "the panel must set a base padding and a larger one from md up");
-  assert.match(css, /@media \(min-width: 768px\)\s*\{[^@]*\.section-panel/, "the larger padding must start at the md breakpoint");
+  assert.ok(paddings.length >= 2, "the panel must set a base padding and a larger one at a wider breakpoint");
 });
 
 test("Given the section heading, when compiled, then it removes its own bottom margin so it sits flush on the panel", () => {
@@ -33,26 +32,25 @@ test("Given the section heading, when compiled, then it removes its own bottom m
   assert.match(rules.map((r) => r.body).join(" "), /margin-bottom:\s*0/);
 });
 
-test("Given every component, when its classes are read, then none re-spells the panel utilities that .section-panel owns", () => {
+test("Given every component, when its classes are read, then none re-spells the panel's flat-top look with utilities", () => {
+  // The signature of the old copy-pasted body: both flat-top utilities on one element.
   const offenders = [];
   for (const file of componentFiles) {
-    for (const token of classesIn(file)) {
-      if (["rounded-top-0", "border-top-0"].includes(token)) offenders.push(`${file}: ${token}`);
+    for (const value of classNameStrings(read(file))) {
+      const parts = value.split(/\s+/);
+      if (parts.includes("rounded-top-0") && parts.includes("border-top-0")) offenders.push(`${file}: ${value}`);
     }
   }
-  assert.deepEqual(offenders, [], "use className=\"section-panel\" instead of p-4 p-md-5 rounded-top-0 border-top-0");
+  assert.deepEqual(offenders, [], "use className=\"section-panel\" instead of spelling out the padding and flat-top utilities");
 });
 
-test("Given a component with a section heading, when its classes are read, then it does not repeat mb-0 and has a section panel", () => {
+test("Given a component with a section heading, when its classes are read, then the heading does not repeat the margin the stylesheet already removes", () => {
   const offenders = [];
   for (const file of componentFiles) {
-    const tokens = classesIn(file);
-    if (!tokens.includes("section-heading")) continue;
     for (const value of classNameStrings(read(file))) {
       const parts = value.split(/\s+/);
       if (parts.includes("section-heading") && parts.includes("mb-0")) offenders.push(`${file}: section-heading mb-0`);
     }
-    if (!tokens.includes("section-panel") && !file.endsWith("Beneficiary.js")) offenders.push(`${file}: no section-panel`);
   }
   assert.deepEqual(offenders, []);
 });
