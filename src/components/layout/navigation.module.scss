@@ -77,13 +77,13 @@ nav.nav {
     &:hover,
     &:focus-visible {
       color: var(--sfggc-ink);
-      background: rgba(244, 241, 251, 0.06);
+      background: color-mix(in srgb, var(--sfggc-ink) 6%, transparent);
     }
 
     &.active {
       color: var(--sfggc-ink);
-      background: rgba(184, 116, 255, 0.16);
-      box-shadow: inset 0 0 0 1px rgba(184, 116, 255, 0.4);
+      background: color-mix(in srgb, var(--sfggc-pride-purple) 16%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sfggc-pride-purple) 40%, transparent);
     }
 
     &.disabled {

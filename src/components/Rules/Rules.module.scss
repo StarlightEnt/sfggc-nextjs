@@ -41,8 +41,8 @@
     width: 1.9rem;
     height: 1.9rem;
     border-radius: 50%;
-    background: rgba(184, 116, 255, 0.16);
-    border: 1px solid rgba(184, 116, 255, 0.4);
+    background: color-mix(in srgb, var(--sfggc-pride-purple) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--sfggc-pride-purple) 40%, transparent);
     color: var(--sfggc-pride-purple);
     font-size: 0.85rem;
     font-weight: 700;
@@ -70,7 +70,7 @@
   .SponsorCard {
     padding: 1.5rem;
     background: var(--sfggc-night-deep);
-    border: 1px solid rgba(184, 116, 255, 0.4);
+    border: 1px solid color-mix(in srgb, var(--sfggc-pride-purple) 40%, transparent);
     border-radius: 0.875rem;
   }
 

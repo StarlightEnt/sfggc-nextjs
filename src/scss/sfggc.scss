@@ -177,7 +177,7 @@ h1, h2, h3 {
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 
   &:hover {
-    border-color: rgba(184, 116, 255, 0.4);
+    border-color: color-mix(in srgb, var(--sfggc-pride-purple) 40%, transparent);
   }
 }
 
@@ -215,7 +215,7 @@ h1, h2, h3 {
 
   &:hover, &:focus {
     transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(255, 77, 94, 0.38);
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--sfggc-pride-red) 38%, transparent);
     color: var(--sfggc-ink-on-accent) !important;
   }
 
@@ -227,9 +227,9 @@ h1, h2, h3 {
 }
 
 .badge-glow {
-  background: rgba(184, 116, 255, 0.12);
+  background: color-mix(in srgb, var(--sfggc-pride-purple) 12%, transparent);
   color: var(--sfggc-pride-purple);
-  border: 1px solid rgba(184, 116, 255, 0.4);
+  border: 1px solid color-mix(in srgb, var(--sfggc-pride-purple) 40%, transparent);
   padding: 0.4rem 0.85rem;
   border-radius: 999px;
   font-weight: 700;
@@ -247,7 +247,7 @@ h1, h2, h3 {
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 24px rgba(184, 116, 255, 0.25);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--sfggc-pride-purple) 25%, transparent);
   }
 }
 
@@ -280,7 +280,7 @@ h1, h2, h3 {
   &:hover:not(:disabled),
   &:focus-visible {
     transform: translateY(-1px);
-    box-shadow: 0 10px 24px rgba(255, 77, 94, 0.35);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--sfggc-pride-red) 35%, transparent);
   }
 }
 
@@ -289,7 +289,7 @@ h1, h2, h3 {
 .form-select {
   width: 100%;
   color: var(--sfggc-ink);
-  background-color: rgba(11, 10, 20, 0.6);
+  background-color: color-mix(in srgb, var(--sfggc-night) 60%, transparent);
   border: 1px solid var(--sfggc-input-border);
   border-radius: 0.625rem;
   padding: 0.6rem 0.75rem;
