@@ -116,28 +116,28 @@ If fewer than 6 bowlers sign up in a division, all participants will bowl in the
         </h3>
 
         <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
-          <div className="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary border-opacity-10 flex-wrap gap-2">
-            <span className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill fs-7">
+          <div className={`${styles.Toolbar} d-flex justify-content-between align-items-center mb-4 pb-3 flex-wrap gap-2`}>
+            <span className="badge-glow">
               Draft Rules
             </span>
             <a href='#scratch_masters_rules' className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2">
-              Skip to Scratch Masters rules <i className="bi bi-arrow-down ms-1 text-primary"></i>
+              Skip to Scratch Masters rules <i className="bi bi-arrow-down ms-1"></i>
             </a>
           </div>
 
-          <p className="lead text-muted mb-4 fs-6">
+          <p className={`${styles.Lead} mb-4`}>
             The 2027 San Francisco Golden Gate Classic shall be held from Friday, June 18, through Sunday, June 20, 2027, at Classic Bowling Center, located at 900 King Dr., Daly City, CA 94015.
           </p>
 
           <div className="row g-4">
             {sections.map((section, i) => (
               <div key={i} className="col-12 col-md-6">
-                <div className="glass-card p-4 h-100 border border-secondary border-opacity-10">
-                  <h4 className="fs-5 fw-bold text-dark mb-3 d-flex align-items-center gap-2">
-                    <span className="bg-primary bg-opacity-10 text-primary rounded-circle px-2.5 py-1 fs-7">{i + 1}</span>
+                <div className={`${styles.RuleCard} h-100`}>
+                  <h4 className={styles.RuleTitle}>
+                    <span className={styles.RuleNumber}>{i + 1}</span>
                     {section.header}
                   </h4>
-                  <div className="text-secondary fs-6 lh-relaxed">
+                  <div className={styles.RuleBody}>
                     <ReactMarkdown>{section.markdown}</ReactMarkdown>
                   </div>
                 </div>
@@ -153,15 +153,15 @@ If fewer than 6 bowlers sign up in a division, all participants will bowl in the
         </h3>
 
         <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
-          <div className="glass-card p-4 mb-4 border border-primary border-opacity-25 rounded-4 bg-primary bg-opacity-10">
+          <div className={`${styles.SponsorCard} mb-4`}>
             <div className="row align-items-center g-3">
               <div className="col-12 col-md-8">
-                <span className="text-primary fs-7 text-uppercase fw-bold d-block mb-1">Official Sponsor</span>
-                <h4 className="fs-4 fw-bold text-dark mb-2">Scratch Masters Sponsored By Does Your Mother Know</h4>
-                <address className="fst-normal text-muted fs-7 mb-0">
+                <span className={styles.SponsorTag}>Official Sponsor</span>
+                <h4 className={styles.SponsorName}>Scratch Masters Sponsored By Does Your Mother Know</h4>
+                <address className={`${styles.SponsorAddress} fst-normal mb-0`}>
                   <span>4141 18th St., San Francisco, CA 94114</span>
                   <span className="ms-3">
-                    <a href="tel:4158643160" className="text-primary text-decoration-none">
+                    <a href="tel:4158643160" className="text-decoration-none">
                       <i className="bi bi-telephone-fill me-1"></i> 415-864-3160
                     </a>
                   </span>
@@ -169,13 +169,13 @@ If fewer than 6 bowlers sign up in a division, all participants will bowl in the
               </div>
               <div className="col-12 col-md-4 text-md-end">
                 <a href={'https://dymkmedia.wixsite.com/does-your-mother-k-1'} target={'_blank'} rel="noreferrer">
-                  <Image src={dymk} className={'img-fluid rounded-3 p-1 bg-white border'} alt={'Logo for Does Your Mother Know'} style={{ maxHeight: '80px', width: 'auto' }}/>
+                  <Image src={dymk} className={'img-fluid logo-tile p-1'} alt={'Logo for Does Your Mother Know'} style={{ maxHeight: '80px', width: 'auto' }}/>
                 </a>
               </div>
             </div>
           </div>
 
-          <div className="text-secondary fs-6 lh-relaxed">
+          <div className={styles.RuleBody}>
             <ReactMarkdown>{scratchMarkdown}</ReactMarkdown>
           </div>
         </div>

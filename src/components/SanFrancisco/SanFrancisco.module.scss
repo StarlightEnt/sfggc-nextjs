@@ -1,44 +1,10 @@
 .SanFrancisco {
-  .JumboImage {
-    position: relative;
-    margin: 0.25rem auto;
-
-    height: 25vh;
-    width: 100%;
-    @media (min-width: 768px) {
-      height: 45vh;
-    }
-
-    // Adds an overlay to the image to dim it as needed.
-    .CityDaytimeColor {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      z-index: 2;
-      background-color: black;
-      opacity: var(--sfggc-image-shade-opacity);
-    }
-
-    .CityDaytimeImage {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      z-index: 1;
-      background-repeat: no-repeat;
-      background-position: 0 25%;
-      background-size: cover;
-
-      background-image: url('../../images/san-francisco/sf-downtown-600w.jpg');
-
-      @media (min-width: 768px) {
-        // Go progressively bigger
-        //background-image: url('../../images/san-francisco/cable-car-transamerica.jpg');
-      }
-    }
+  .CityDaytimeImage {
+    background-repeat: no-repeat;
+    background-position: 0 25%;
+    background-size: cover;
+    background-image: linear-gradient(180deg, rgba(11, 10, 20, 0) 55%, rgba(11, 10, 20, 0.55) 100%),
+      url('../../images/san-francisco/sf-downtown-600w.jpg');
   }
 
   .Credit {

@@ -48,29 +48,28 @@ const Committee = () => {
       </h3>
 
       <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
-        <p className="text-center text-muted fs-5 mb-5 max-w-3xl mx-auto">
+        <p className={`${styles.Intro} text-center mb-5`}>
           Putting on a tournament is a community effort. The Golden Gate Classic wouldn&apos;t be possible without the work and contributions of all the dedicated people on this team.
         </p>
 
         <div className="row g-4 justify-content-center mb-5">
           {directors.map((person, i) => (
             <div key={i} className="col-12 col-sm-6 col-lg-3">
-              <div className="glass-card h-100 p-3 text-center border border-secondary border-opacity-10 transition-all hover-transform-up">
-                <div className="position-relative overflow-hidden rounded-4 mb-3" style={{ height: '220px' }}>
+              <div className={`${styles.Card} h-100`}>
+                <div className={styles.Photo}>
                   <Image src={person.image}
                          alt={person.name}
                          fill
                          sizes="(max-width: 768px) 100vw, 250px"
                          style={{ objectFit: 'cover' }}
-                         className="rounded-4"
                   />
                 </div>
-                <h5 className="fs-5 fw-bold text-dark mb-1">
-                  <a href={person.email} className="text-dark text-decoration-none hover-text-primary">
+                <h5 className={styles.Name}>
+                  <a href={person.email}>
                     {person.name}
                   </a>
                 </h5>
-                <span className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-1 rounded-pill fs-7 fw-semibold">
+                <span className="badge-glow">
                   {person.role}
                 </span>
               </div>
@@ -78,14 +77,14 @@ const Committee = () => {
           ))}
         </div>
 
-        <div className="glass-card p-4 border border-secondary border-opacity-10 max-w-4xl mx-auto">
-          <h5 className="fs-5 fw-bold text-dark mb-3 text-center d-flex align-items-center justify-content-center gap-2">
-            <i className="bi bi-heart-fill text-primary"></i>
+        <div className={styles.Volunteers}>
+          <h5 className={styles.VolunteersTitle}>
+            <i className="bi bi-heart-fill"></i>
             Committee &amp; Dedicated Volunteers
           </h5>
           <div className="d-flex flex-wrap justify-content-center gap-2">
             {volunteers.map((name, i) => (
-              <span key={i} className="badge bg-white text-secondary border border-secondary border-opacity-15 px-3 py-2 fs-7 fw-normal shadow-2xs">
+              <span key={i} className={styles.Volunteer}>
                 {name}
               </span>
             ))}

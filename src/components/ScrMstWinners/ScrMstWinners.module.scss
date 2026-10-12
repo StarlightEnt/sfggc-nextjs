@@ -1,59 +1,44 @@
 .ScrMstWinners {
-
   .Intro {
-  }
-
-  .Image {
-    [data-bs-theme='dark'] & {
-      filter: brightness(90%);
-    }
+    color: var(--sfggc-ink-dim);
+    font-size: 1.1rem;
   }
 
   .Card {
+    overflow: hidden;
     text-align: center;
-    margin-bottom: 0.5rem;
+    background: var(--sfggc-night-deep);
+    border: 1px solid var(--sfggc-hairline);
+    border-radius: 0.875rem;
+    transition: transform 0.18s ease, border-color 0.18s ease;
 
-    background-color: var(--sfggc-body-color);
-    color: var(--sfggc-body-bg);
-    border-color: var(--sfggc-body-bg);
-
-    text-shadow: none;
-
-    a {
-      text-shadow: none;
-      color: var(--sfggc-card-link-color);
-
-      &:hover, &:active {
-        color: var(--sfggc-link-hover-color);
-      }
-    }
-
-    .Face {
-      padding: 0.5rem;
-
-      .Placeholder {
-        font-size: 450%;
-        opacity: .75;
-      }
-    }
-    .Name {
-      font-weight: bold;
-    }
-    .Role {
-      margin-bottom: 0;
-    }
-
-  }
-
-  .Thanks {
-    .Photo {
-      width: 50%;
-      margin-bottom: 1rem;
-
-      @media (min-width: 768px) {
-        width: 80%;
-      }
+    &:hover {
+      transform: translateY(-2px);
+      border-color: rgba(184, 116, 255, 0.4);
     }
   }
 
+  .Image {
+    width: 100%;
+    height: auto;
+  }
+
+  .Body {
+    padding: 0.85rem 0.75rem 1rem;
+  }
+
+  .Name {
+    margin: 0 0 0.25rem;
+    font-weight: 700;
+    color: var(--sfggc-ink);
+  }
+
+  .Role {
+    margin: 0;
+    color: var(--sfggc-pride-purple);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
 }

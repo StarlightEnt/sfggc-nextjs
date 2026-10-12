@@ -1,8 +1,103 @@
 .Rules {
-  background-color: var(--sfggc-body-bg);
   @media (min-width: 768px) {
     p {
       margin: 0.5rem;
+    }
+  }
+
+  .Toolbar {
+    border-bottom: 1px solid var(--sfggc-hairline);
+  }
+
+  .Lead {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--sfggc-ink-dim);
+  }
+
+  .RuleCard {
+    padding: 1.5rem;
+    background: var(--sfggc-night-deep);
+    border: 1px solid var(--sfggc-hairline);
+    border-radius: 0.875rem;
+  }
+
+  .RuleTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    font-family: var(--sfggc-font-sans-serif);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--sfggc-ink);
+  }
+
+  .RuleNumber {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 50%;
+    background: rgba(184, 116, 255, 0.16);
+    border: 1px solid rgba(184, 116, 255, 0.4);
+    color: var(--sfggc-pride-purple);
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .RuleBody {
+    color: var(--sfggc-ink-dim);
+    font-size: 1rem;
+    line-height: 1.6;
+
+    a {
+      color: var(--sfggc-pride-blue);
+      overflow-wrap: anywhere;
+    }
+
+    strong {
+      color: var(--sfggc-ink);
+    }
+
+    li::marker {
+      color: var(--sfggc-pride-purple);
+    }
+  }
+
+  .SponsorCard {
+    padding: 1.5rem;
+    background: var(--sfggc-night-deep);
+    border: 1px solid rgba(184, 116, 255, 0.4);
+    border-radius: 0.875rem;
+  }
+
+  .SponsorTag {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--sfggc-pride-purple);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .SponsorName {
+    margin-bottom: 0.5rem;
+    font-family: var(--sfggc-font-sans-serif);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--sfggc-ink);
+  }
+
+  .SponsorAddress {
+    color: var(--sfggc-ink-dim);
+    font-size: 0.9rem;
+
+    a {
+      color: var(--sfggc-pride-blue);
     }
   }
 
@@ -22,21 +117,5 @@
     padding-left: 0.5rem;
     line-height: 1.5rem;
     margin-bottom: 0.5rem;
-  }
-  .Sponsor {
-    .Intro {
-      font-style: italic;
-      font-size: 90%;
-    }
-    .Name {
-      display: block;
-      font-weight: bold;
-      font-size: 110%;
-    }
-    address {
-      .Line {
-        display: block;
-      }
-    }
   }
 }
