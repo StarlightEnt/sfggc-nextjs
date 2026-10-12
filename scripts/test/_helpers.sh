@@ -87,7 +87,18 @@ load_env_value() {
   return 0
 }
 
+# run_test_command [--no-skips-when-db-configured] NAME COMMAND...
+#
+# Runs COMMAND, echoes its output, and records failures for print_summary. Returns COMMAND's status.
+# A non-zero exit is always recorded, even if the command printed no failing test (a crash, a
+# missing binary). With --no-skips-when-db-configured, skipped tests also fail the step whenever a
+# database URL is configured: for DB-backed suites a skip then means the database was not used.
 run_test_command() {
+  local forbid_skips=0
+  if [[ "${1:-}" == "--no-skips-when-db-configured" ]]; then
+    forbid_skips=1
+    shift
+  fi
   local name="$1"
   shift
   local output_file
@@ -104,6 +115,21 @@ run_test_command() {
   if [[ -n "${failures}" ]]; then
     FAILED_SUMMARY+=("${name}:")
     FAILED_SUMMARY+=("${failures}")
+  elif [[ "${status}" -ne 0 ]]; then
+    FAILED_SUMMARY+=("${name}:")
+    FAILED_SUMMARY+=("exited with status ${status} without reporting a failing test (see the output above)")
+  fi
+
+  if [[ "${forbid_skips}" -eq 1 ]] && [[ -n "${PORTAL_DATABASE_URL:-}${PORTAL_TEST_DATABASE_URL:-}" ]]; then
+    local skipped
+    skipped="$(grep -E '^# skipped [1-9][0-9]*' "$output_file" | head -n 1 || true)"
+    if [[ -n "${skipped}" ]]; then
+      FAILED_SUMMARY+=("${name}:")
+      FAILED_SUMMARY+=("${skipped#\# } although a database URL is configured; skipped tests give no coverage. Start the database (bash scripts/dev/docker-db.sh up) or fix the test setup.")
+      if [[ "${status}" -eq 0 ]]; then
+        status=1
+      fi
+    fi
   fi
 
   rm -f "$output_file"
