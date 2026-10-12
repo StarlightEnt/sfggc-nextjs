@@ -7,6 +7,15 @@
     min-width: 160px;
   }
 
+  .VenueLink {
+    color: var(--sfggc-ink);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--sfggc-pride-orange);
+    }
+  }
+
   .VenueTag {
     padding: 0.3rem 0.85rem;
     border-radius: 999px;

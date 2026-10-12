@@ -17,12 +17,12 @@ const SanFrancisco = ({full = true}) => {
       <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
         <div className="position-relative rounded-4 overflow-hidden mb-4 shadow-lg" style={{ height: '300px' }}>
           <div className={`${styles.CityDaytimeImage} h-100 w-100`} />
-          <div className="position-absolute bottom-0 end-0 bg-dark bg-opacity-75 text-white-50 fs-7 px-3 py-1 m-2 rounded-pill">
+          <div className="position-absolute bottom-0 end-0 bg-dark bg-opacity-75 text-white-50 small px-3 py-1 m-2 rounded-pill">
             Image by <a href={'https://www.pexels.com/photo/city-skyline-during-golden-hour-3584437/'} target={'_blank'} rel="noreferrer" className="text-white">Kehn Hermano</a>
           </div>
         </div>
 
-        <p className="fs-5 text-muted leading-relaxed mb-4 max-w-4xl mx-auto text-center">
+        <p className={`${styles.Intro} mb-4 text-center`}>
           The San Francisco Bay Area has a long, rich history. Its diverse tapestry of people, culture, breathtaking scenery, and world-class food makes it a premier destination for travelers.
         </p>
 

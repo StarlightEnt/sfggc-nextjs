@@ -398,6 +398,14 @@ Auto-handles:
 
 Dark-only theme matching the sister site (sflgbtbowl.com). `<html data-bs-theme="dark">` is set in `_document.js`; there is no theme toggler or theme context. Palette tokens (`$night`, `$night-mid`, `$night-deep`, `$ink`, `$ink-dim`, `$pride-*`) live in `src/scss/_bootstrap-variables.scss` and are exposed as `--sfggc-*` CSS custom properties in `sfggc.scss`. Display type is Bungee (`.display`, h1-h3), body type is Inter. Shared styles: `.stripe-bar`, `.btn-glow-orange` (pill CTA), `.glass-card`, `.form-control`. Guarded by `tests/unit/dark-theme-tokens.test.js`.
 
+**Conventions that the tests enforce** (`tests/unit/theme-cleanup.test.js`, `portal-dark-base.test.js`, `portal-dark-pages.test.js`):
+- CSS variables use this project's `--sfggc-` prefix. Never write `--bs-*`; it does not exist here and fails silently.
+- Every `var(--sfggc-*)` must resolve to a defined variable. No `data-bs-theme` branching outside `_document.js` and `_bootstrap-color-modes.scss`.
+- No light utilities (`text-dark`, `bg-white`, `bg-light`) or hard-coded colors in components. Use the tokens. The email preview pane in `email-config.js` is the one intentional exception.
+- Bootstrap components are opt-in in `src/scss/sfggc-bootstrap.scss`. `forms`, `alert`, `badge`, `modal` are enabled because the portal uses them; check that file before assuming a Bootstrap class has styles.
+- Components that render as `<section>` inherit the global content-page `section` margins; set `margin: 0` in the module if they are not a content section (see the portal login forms).
+- Portal login screens use `<PortalShell variant="auth">` (centered sign-in card). Other portal pages get the default left-aligned page header.
+
 ### Image Organization
 
 Images in `src/images/` by category:

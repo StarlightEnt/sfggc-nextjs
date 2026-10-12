@@ -54,14 +54,6 @@ $link-hover-color-dark: lighten($pride-blue, 10%);
 $link-color: $pride-blue;
 $link-hover-color: lighten($pride-blue, 10%);
 
-// Legacy names still referenced by component styles
-$deep-gray: $night;
-$deep-blue: $night-mid;
-$silver: $ink-dim;
-$silver-dark: $night-deep;
-$burnt-orange: $pride-orange;
-$light-blue: $pride-blue;
-
 $font-size-root: 16px;
 $border-radius: 0.625rem;
 $border-radius-lg: 0.875rem;

@@ -2,8 +2,6 @@
 // :root carries the same values so anything rendered before the attribute applies is dark too.
 :root,
 [data-bs-theme="dark"] {
-  --#{$prefix}background-shade-opacity: 0.5;
-  --#{$prefix}section-background-shade-opacity: 0.6;
 
   --#{$prefix}body-color: #{$ink};
   --#{$prefix}body-color-rgb: #{red($ink)}, #{green($ink)}, #{blue($ink)};
@@ -27,12 +25,6 @@
 
   --#{$prefix}link-color: #{$pride-blue};
   --#{$prefix}card-link-color: #{$pride-blue};
-
-  --#{$prefix}image-shade-opacity: 0.1;
-
-  --#{$prefix}location-logo-bg-gradient-start: 0.70;
-
-  --#{$prefix}sponsor-logo-bg: #{$ink};
 
   .navbar {
     --#{$prefix}navbar-disabled-color: #{$ink-dim};

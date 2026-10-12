@@ -45,7 +45,7 @@ const Location = () => {
               <i className="bi bi-geo-alt-fill"></i> Official Host Venue
             </div>
             <h4 className="fs-2 fw-bold text-body mb-2">
-              <a href={'http://www.classicbowling.com/'} target="_blank" rel="noreferrer" className="text-body text-decoration-none hover-text-primary">
+              <a href={'http://www.classicbowling.com/'} target="_blank" rel="noreferrer" className={`${styles.VenueLink} text-decoration-none`}>
                 Classic Bowling Center <i className="bi bi-box-arrow-up-right fs-6 ms-1 text-primary"></i>
               </a>
             </h4>
@@ -91,7 +91,7 @@ const Location = () => {
                   Daly City / King Plaza
                 </span>
               </div>
-              <p className="text-muted fs-7 mb-3">
+              <p className="text-muted small mb-3">
                 Great dining options within walking distance or short drive from the bowling center:
               </p>
 
