@@ -14,7 +14,7 @@ const ParticipantLookupForm = ({ onSubmit, disabled = false }) => {
   return (
     <section className={`${styles.ParticipantLookupForm}`}>
       <form onSubmit={handleSubmit} className="row g-3">
-        <div className="col-12 col-md-8">
+        <div className="col-12">
           <label className="form-label" htmlFor="participant-lookup">
             Email address
           </label>
@@ -28,7 +28,7 @@ const ParticipantLookupForm = ({ onSubmit, disabled = false }) => {
             disabled={disabled}
           />
         </div>
-        <div className="col-12 col-md-4 d-flex align-items-end">
+        <div className="col-12">
           <button className="btn btn-primary w-100" type="submit" disabled={disabled}>
             Send login link
           </button>

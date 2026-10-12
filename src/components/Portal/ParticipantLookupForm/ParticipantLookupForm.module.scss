@@ -1,3 +1,5 @@
 .ParticipantLookupForm {
-  padding: 1rem 0;
+  // Cancel the global section spacing meant for content pages.
+  margin: 0;
+  padding: 0;
 }

@@ -53,26 +53,6 @@ body {
       border-color: var(--sfggc-hairline);
       color: var(--sfggc-ink);
     }
-
-    .btn-outline-primary {
-      background: linear-gradient(90deg, var(--sfggc-pride-orange), var(--sfggc-pride-red));
-      color: var(--sfggc-ink-on-accent);
-      border-color: transparent;
-      font-weight: 700;
-    }
-
-    .btn-outline-secondary {
-      background-color: var(--sfggc-night-deep);
-      color: var(--sfggc-ink);
-      border-color: var(--sfggc-input-border);
-      font-weight: 600;
-    }
-
-    .btn-outline-info {
-      background-color: var(--sfggc-pride-blue);
-      color: var(--sfggc-ink-on-accent);
-      border-color: var(--sfggc-pride-blue);
-    }
   }
 
   .nav-and-top {
@@ -276,6 +256,28 @@ h1, h2, h3 {
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 24px rgba(184, 116, 255, 0.25);
+  }
+}
+
+/* Bootstrap primary buttons use the same gradient pill as the CTA */
+.btn-primary {
+  --#{$prefix}btn-color: var(--sfggc-ink-on-accent);
+  --#{$prefix}btn-hover-color: var(--sfggc-ink-on-accent);
+  --#{$prefix}btn-active-color: var(--sfggc-ink-on-accent);
+  --#{$prefix}btn-disabled-color: var(--sfggc-ink-on-accent);
+  --#{$prefix}btn-border-color: transparent;
+  --#{$prefix}btn-hover-border-color: transparent;
+  --#{$prefix}btn-active-border-color: transparent;
+  --#{$prefix}btn-disabled-border-color: transparent;
+  background-image: linear-gradient(90deg, var(--sfggc-pride-orange), var(--sfggc-pride-red));
+  border-radius: 999px;
+  font-weight: 600;
+  transition: transform 0.18s, box-shadow 0.18s;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(255, 77, 94, 0.35);
   }
 }
 

@@ -4,4 +4,39 @@
   .section-heading {
     margin-bottom: 0.5rem;
   }
+
+  // Sign-in card layout (matches the sister site's sign-in screen)
+  &.Auth {
+    max-width: 520px;
+    padding-top: 3rem;
+  }
+}
+
+.AuthTitle {
+  margin-bottom: 0.5rem;
+  text-align: center;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  color: var(--sfggc-ink);
+}
+
+.AuthSubtitle {
+  margin-bottom: 0;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--sfggc-ink-dim);
+}
+
+.AuthCard {
+  width: 100%;
+  max-width: 440px;
+  margin: 1.5rem auto 0;
+  padding: 36px 32px;
+  text-align: left;
+  background: var(--sfggc-night-mid);
+  border: 1px solid var(--sfggc-hairline);
+  border-radius: 14px;
+
+  @media (max-width: 575.98px) {
+    padding: 28px 20px;
+  }
 }
