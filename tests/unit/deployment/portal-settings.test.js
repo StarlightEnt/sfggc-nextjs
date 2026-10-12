@@ -77,6 +77,20 @@ describe("validate_portal_settings", () => {
   });
 });
 
+describe("the example config that is loaded as the default", () => {
+  test("Given .deployrc.example is sourced as the default config, when validating, then the required settings are still reported missing (example values must not be live)", () => {
+    const r = deploySh(`source "${ROOT}/.deployrc.example"; set_defaults; validate_portal_settings`);
+    assert.notEqual(r.status, 0, "placeholder values in the example would be written to the server's .env.local");
+    const output = r.stdout + r.stderr;
+    for (const name of ["DEPLOY_DB_HOST", "DEPLOY_SMTP_HOST", "DEPLOY_SMTP_USER"]) assert.match(output, new RegExp(name));
+  });
+
+  test("Given .deployrc.example is sourced as the default config, when reading the deploy target, then the SSH settings it provides are intact", () => {
+    const r = deploySh(`source "${ROOT}/.deployrc.example"; set_defaults; echo "user=\${DEPLOY_SSH_USER} host=\${DEPLOY_SSH_HOST} path=\${DEPLOY_APP_PATH}"`);
+    assert.match(r.stdout, /user=goldengateclassic host=\S+ path=\/home\/goldengateclassic\/htdocs\/www\.goldengateclassic\.org\/portal-app/);
+  });
+});
+
 describe("first-time server setup", () => {
   const STUBS = `check_remote_file_exists() { return 1; }; ssh_command() { echo "$*" >> "$SSH_LOG"; return 0; };`;
 
