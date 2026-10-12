@@ -1,11 +1,8 @@
 .Sponsors {
-  .Heading {
-    margin-bottom: 1.5rem;
-    color: var(--sfggc-ink-dim);
-    font-family: var(--sfggc-font-sans-serif);
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+  position: relative;
+
+  // As on main, Storm's logo is dimmed slightly so it does not glare.
+  .AdjustedBrightness {
+    filter: brightness(85%);
   }
 }

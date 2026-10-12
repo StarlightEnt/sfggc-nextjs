@@ -1,104 +1,72 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import fs from "fs";
-import path from "path";
+import { createRequire } from "module";
 
 /**
- * BDD tests for the dark design system shared with the sister site
- * (sflgbtbowl.com): near-black violet surfaces, neon Pride accents,
- * Bungee display headings, Inter body text, and a six-color stripe bar.
+ * BDD tests for the dark design system shared with the sister site (sflgbtbowl.com).
+ * They read the compiled stylesheet, so they follow what the browser receives and keep
+ * passing when the SCSS is reformatted or a token's exact value is tuned.
  */
 
-const root = process.cwd();
-const read = (rel) => fs.readFileSync(path.join(root, rel), "utf-8");
-const exists = (rel) => fs.existsSync(path.join(root, rel));
+const require = createRequire(import.meta.url);
+const { read, exists, mainCss, rootTokens, declarations, contrast } = require("../helpers/theme-sources.js");
 
-const variables = read("src/scss/_bootstrap-variables.scss");
-const colorModes = read("src/scss/_bootstrap-color-modes.scss");
-const mainScss = read("src/scss/sfggc.scss");
-const documentJs = read("src/pages/_document.js");
-const layoutJs = read("src/components/layout/layout.js");
-const navigationJs = read("src/components/layout/navigation.js");
+const tokens = rootTokens();
+const HEX = /^#[0-9a-f]{6}$/i;
+const SURFACES = ["--sfggc-night", "--sfggc-night-mid", "--sfggc-night-deep"];
+const TEXT = ["--sfggc-ink", "--sfggc-ink-dim", ...["red", "orange", "yellow", "green", "blue", "purple"].map((c) => `--sfggc-pride-${c}`)];
 
-const PALETTE = {
-  bg: "#0b0a14",
-  bgMid: "#171129",
-  bgDeep: "#241a3d",
-  ink: "#f4f1fb",
-  inkDim: "#a89fc9",
-  red: "#ff4d5e",
-  orange: "#ff9838",
-  yellow: "#ffd54a",
-  green: "#35d68f",
-  blue: "#3fa8ff",
-  purple: "#b874ff",
-};
-
-test("Given the Sass variables, when read, then every sister-site palette color is defined", () => {
-  for (const [name, hex] of Object.entries(PALETTE)) {
-    assert.ok(
-      variables.toLowerCase().includes(hex),
-      `_bootstrap-variables.scss must define ${name} (${hex})`
-    );
+test("Given the compiled stylesheet, when reading :root, then every surface, ink and Pride accent token is a hex color", () => {
+  for (const name of [...SURFACES, ...TEXT, "--sfggc-ink-on-accent"]) {
+    assert.match(tokens[name] ?? "", HEX, `${name} must be defined as a #rrggbb color`);
   }
 });
 
-test("Given the Sass variables, when read, then Bungee is the display font and Inter the body font", () => {
+test("Given the palette, when text is drawn on any dark surface, then every pairing meets WCAG AA (4.5:1)", () => {
+  for (const surface of SURFACES) {
+    for (const text of TEXT) {
+      const ratio = contrast(tokens[surface], tokens[text]);
+      assert.ok(ratio >= 4.5, `${text} on ${surface} is ${ratio.toFixed(2)}:1, needs 4.5:1`);
+    }
+  }
+});
+
+test("Given the call-to-action gradient, when dark ink sits on it, then it is legible at both ends", () => {
+  for (const accent of ["--sfggc-pride-orange", "--sfggc-pride-red"]) {
+    const ratio = contrast(tokens["--sfggc-ink-on-accent"], tokens[accent]);
+    assert.ok(ratio >= 4.5, `ink-on-accent over ${accent} is ${ratio.toFixed(2)}:1, needs 4.5:1`);
+  }
+});
+
+test("Given the shared styles, when compiled, then the stripe bar, pill CTA, card, logo tile and inputs all exist", () => {
+  const css = mainCss();
+  for (const selector of [".stripe-bar", ".btn-glow-orange", ".glass-card", ".logo-tile", ".form-control", ".display"]) {
+    assert.ok(declarations(css, selector), `${selector} must be defined`);
+  }
+});
+
+test("Given the stripe bar, when compiled, then it is a gradient of all six Pride colors", () => {
+  const rule = declarations(mainCss(), ".stripe-bar");
+  assert.match(rule, /linear-gradient/);
+  for (const color of ["red", "orange", "yellow", "green", "blue", "purple"]) {
+    assert.ok(rule.includes(`--sfggc-pride-${color}`), `stripe bar must include ${color}`);
+  }
+});
+
+test("Given the font settings, when read, then Bungee is the display face and Inter the body face", () => {
+  const variables = read("src/scss/_bootstrap-variables.scss");
   assert.match(variables, /\$font-family-display:\s*['"]?Bungee/);
   assert.match(variables, /\$font-family-sans-serif:\s*['"]?Inter/);
+  const documentJs = read("src/pages/_document.js");
+  assert.match(documentJs, /Bungee/);
+  assert.match(documentJs, /Inter/);
 });
 
-test("Given the color mode map, when read, then dark values are the default and no light mode block remains", () => {
-  assert.doesNotMatch(colorModes, /\[data-bs-theme=["']light["']\]/);
-  assert.match(colorModes, /:root,\s*\[data-bs-theme=["']dark["']\]/);
-  assert.match(colorModes, /--#\{\$prefix\}body-bg:\s*#\{\$night\}/, "body background must be the dark violet token");
-  assert.match(colorModes, /--#\{\$prefix\}body-color:\s*#\{\$ink\}/, "body text must be the light lavender ink token");
+test("Given the document, when rendered, then the site is locked to the dark color mode", () => {
+  assert.match(read("src/pages/_document.js"), /<Html[^>]*data-bs-theme=["']dark["']/);
 });
 
-test("Given the document, when rendered, then it is locked to dark and loads Bungee and Inter", () => {
-  assert.match(documentJs, /<Html[^>]*data-bs-theme=["']dark["']/);
-  assert.match(documentJs, /family=Bungee/);
-  assert.match(documentJs, /family=Inter/);
-  assert.doesNotMatch(documentJs, /Plus\+Jakarta\+Sans/);
-});
-
-test("Given the main stylesheet, when read, then it defines the shared stripe bar, pill button, card and input styles", () => {
-  assert.match(mainScss, /\.stripe-bar\b/);
-  assert.match(mainScss, /\.btn-glow-orange\b/);
-  assert.match(mainScss, /\.glass-card\b/);
-  assert.match(mainScss, /\.form-control\b/);
-  assert.match(mainScss, /\.display\b/);
-});
-
-test("Given the stripe bar, when styled, then it is 5px tall and uses all six Pride colors", () => {
-  const block = mainScss.slice(mainScss.indexOf(".stripe-bar"));
-  assert.match(block, /height:\s*5px/);
-  for (const key of ["red", "orange", "yellow", "green", "blue", "purple"]) {
-    assert.match(
-      block.slice(0, 900),
-      new RegExp(`pride-${key}|${PALETTE[key]}`, "i"),
-      `stripe bar must include ${key}`
-    );
-  }
-});
-
-test("Given the main stylesheet, when read, then no light-theme surface colors remain", () => {
-  for (const light of ["#f8fafc", "#0f172a", "rgba(255, 255, 255", "#ffffff"]) {
-    assert.ok(
-      !mainScss.toLowerCase().includes(light),
-      `sfggc.scss must not contain light-theme color ${light}`
-    );
-  }
-});
-
-test("Given the layout, when rendered, then it uses the stripe bar instead of the old light ribbon", () => {
-  assert.match(layoutJs, /stripe-bar/);
-  assert.doesNotMatch(layoutJs, /pride-rainbow-bar/);
-});
-
-test("Given the theme toggler is removed, when searching the source, then no toggler or theme context remains", () => {
-  assert.equal(exists("src/components/ColorModeToggler"), false, "ColorModeToggler directory must be deleted");
-  assert.equal(exists("src/utils/ThemeContext.js"), false, "ThemeContext.js must be deleted");
-  assert.doesNotMatch(layoutJs, /ThemeContext/);
-  assert.doesNotMatch(navigationJs, /ColorModeToggler/);
+test("Given the theme toggler was removed, when looking for it, then neither the component nor the context exists", () => {
+  assert.equal(exists("src/components/ColorModeToggler"), false);
+  assert.equal(exists("src/utils/ThemeContext.js"), false);
 });

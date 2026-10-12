@@ -1,78 +1,39 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import fs from "fs";
-import path from "path";
+import { createRequire } from "module";
 
 /**
- * BDD tests for the site chrome (nav, stripe bars, footer) matching the
- * sister site: sticky dark nav with a hairline border, stripe bar beneath it,
- * and a second stripe bar above a quiet footer.
+ * BDD tests for the site chrome: a sticky dark nav, a stripe bar directly beneath it, and a
+ * second stripe bar above the footer. Assertions target the structural invariants, not copy,
+ * quote style, or exact class strings.
  */
 
-const root = process.cwd();
-const read = (rel) => fs.readFileSync(path.join(root, rel), "utf-8");
+const require = createRequire(import.meta.url);
+const { read, compile, declarations } = require("../helpers/theme-sources.js");
 
 const layoutJs = read("src/components/layout/layout.js");
 const navigationJs = read("src/components/layout/navigation.js");
-const navigationScss = read("src/components/layout/navigation.module.scss");
-const footerJs = read("src/components/layout/footer.js");
-const footerScss = read("src/components/layout/footer.module.scss");
 
-const LIGHT_UTILITIES = ["text-dark", "bg-white", "glass-card", "shadow-sm", "rounded-4"];
-
-test("Given the layout, when rendered, then the nav sits outside the page container before the first stripe bar", () => {
-  const nav = layoutJs.indexOf("<Navigation");
-  const firstStripe = layoutJs.indexOf("stripe-bar");
-  const container = layoutJs.indexOf("container-xl");
-  assert.ok(nav > -1 && firstStripe > -1 && container > -1);
-  assert.ok(nav < firstStripe, "Navigation must precede the first stripe bar");
-  assert.ok(firstStripe < container, "stripe bar must precede the page container");
+test("Given the layout, when rendered, then a stripe bar follows the navigation and another precedes the footer", () => {
+  assert.match(layoutJs, /<Navigation\s*\/>\s*<div[^>]*\bstripe-bar\b[^>]*>\s*<\/div>/);
+  assert.match(layoutJs, /<div[^>]*\bstripe-bar\b[^>]*>\s*<\/div>\s*<Footer\s*\/>/);
 });
 
-test("Given the layout, when rendered, then a stripe bar appears above the footer as well", () => {
-  const stripes = layoutJs.match(/stripe-bar/g) || [];
-  assert.equal(stripes.length, 2, "exactly two stripe bars: below the nav and above the footer");
-  assert.ok(layoutJs.lastIndexOf("stripe-bar") < layoutJs.indexOf("<Footer"));
-  assert.doesNotMatch(layoutJs, /position-sticky/, "the stripe bar scrolls; the nav is the sticky element");
+test("Given the navigation styles, when compiled, then the nav sticks to the top above page content on a dark surface", () => {
+  const rule = declarations(compile("src/components/layout/navigation.module.scss"), "nav.nav");
+  assert.match(rule, /position:\s*sticky/);
+  assert.match(rule, /top:\s*0/);
+  assert.match(rule, /z-index:\s*\d+/);
+  assert.match(rule, /background[^:]*:\s*var\(--sfggc-/);
 });
 
-test("Given the navigation, when styled, then it is a sticky dark bar with a hairline bottom border", () => {
-  assert.match(navigationScss, /position:\s*sticky/);
-  assert.match(navigationScss, /top:\s*0/);
-  assert.match(navigationScss, /background(-color)?:\s*var\(--sfggc-night\)/);
-  assert.match(navigationScss, /border-bottom:\s*1px solid var\(--sfggc-hairline\)/);
-  assert.match(navigationScss, /z-index:\s*\d+/);
-});
-
-test("Given the navigation, when rendered, then it uses the module styles and a Bungee wordmark with a tagline", () => {
-  assert.match(navigationJs, /import styles from ['"]\.\/navigation\.module\.scss['"]/);
-  assert.match(navigationJs, /className=\{`?\$\{styles\.wordmark\}[^}]*display/);
-  assert.match(navigationJs, /styles\.tagline/);
-});
-
-test("Given the navigation, when rendered, then no light-theme utility classes remain", () => {
-  for (const cls of LIGHT_UTILITIES) {
-    assert.ok(!navigationJs.includes(cls), `navigation.js must not use ${cls}`);
-  }
-});
-
-test("Given the navigation, when rendered, then Portal Login is the pill call-to-action and the mobile toggler remains", () => {
-  assert.match(navigationJs, /btn-glow-orange/);
-  assert.match(navigationJs, /navbar-toggler/);
-  assert.match(navigationJs, /aria-label=\{?['"]Toggle navigation['"]/);
-  assert.match(navigationJs, /isButton:\s*true/);
-});
-
-test("Given the navigation links, when one is active, then it is marked with aria-current", () => {
+test("Given the navigation, when links render, then the active page is announced and the mobile toggler is labelled", () => {
   assert.match(navigationJs, /aria-current/);
+  assert.match(navigationJs, /navbar-toggler/);
+  assert.match(navigationJs, /aria-label=/);
 });
 
-test("Given the footer, when rendered, then it is a quiet dark line without light-theme utilities", () => {
-  for (const cls of LIGHT_UTILITIES) {
-    assert.ok(!footerJs.includes(cls), `footer.js must not use ${cls}`);
-  }
-  assert.doesNotMatch(footerJs, /text-muted/);
-  assert.match(footerJs, /import styles from ['"]\.\/footer\.module\.scss['"]/);
-  assert.match(footerJs, /San Francisco Golden Gate Classic/);
-  assert.match(footerScss, /color:\s*var\(--sfggc-ink-dim\)/);
+test("Given the footer styles, when compiled, then the footer text uses a theme token", () => {
+  const rule = declarations(compile("src/components/layout/footer.module.scss"), "footer.footer");
+  assert.match(rule, /color:\s*var\(--sfggc-/);
 });

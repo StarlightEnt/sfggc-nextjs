@@ -306,7 +306,7 @@ const EmailConfigPage = ({ adminRole }) => {
                 <div className="mb-2">
                   <strong>Subject:</strong> {renderWithSampleVars(form.subject)}
                 </div>
-                {/* Stays light on purpose: previews how the email looks in a recipient's inbox. */}
+                {/* theme-exempt: stays light on purpose; previews how the email looks in a recipient's inbox. */}
                 <div
                   className="border rounded p-2"
                   style={{ background: "#f8f9fa", minHeight: 200 }}
