@@ -19,11 +19,11 @@ const Location = () => {
 
   return (
     <section className={`${styles.Location} my-5`} id={'section-location'}>
-      <h3 className={`section-heading mb-0`}>
+      <h3 className={`section-heading`}>
         Location
       </h3>
 
-      <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+      <div className="section-panel">
         
         {/* Main Venue Header */}
         <div className="row align-items-center g-4 mb-4 pb-4 border-bottom border-secondary border-opacity-10">

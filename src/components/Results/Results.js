@@ -21,11 +21,11 @@ const Results = ({ showStandingsLink = false, showOptionalEventsLink = false }) 
 
   return (
     <section className={`${styles.Results} my-5`}>
-      <h3 className={`section-heading mb-0`}>
+      <h3 className={`section-heading`}>
         2026 Tournament Results
       </h3>
       
-      <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+      <div className="section-panel">
         <div className={`${styles.Notice} mb-4`}>
           <i className={`bi bi-info-circle-fill ${styles.NoticeIcon}`} aria-hidden={true}></i>
           <p className="mb-0">

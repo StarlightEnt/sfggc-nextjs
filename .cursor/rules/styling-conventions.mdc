@@ -43,12 +43,12 @@ Mobile-first with Bootstrap breakpoints (576, 768, 992, 1200px):
 
 ## Section Pattern (content pages)
 
-A `section-heading` panel with a `glass-card` body directly beneath it (the card is solid dark despite its name):
+A `section-heading` bar with a `section-panel` body directly beneath it (`section-panel` is a `glass-card` with the padding, flat top corners and missing top border that continue the heading):
 
 ```jsx
 <section className={`${styles.Name} my-5`}>
-  <h3 className="section-heading mb-0">Title</h3>
-  <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">...</div>
+  <h3 className="section-heading">Title</h3>
+  <div className="section-panel">...</div>
 </section>
 ```
 

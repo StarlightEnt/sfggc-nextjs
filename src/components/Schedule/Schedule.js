@@ -85,11 +85,11 @@ const Schedule = () => {
 
   return (
     <section className={`${styles.Schedule} my-5`} id={'section-schedule'}>
-      <h3 className={`section-heading mb-0`}>
+      <h3 className={`section-heading`}>
         Schedule of Events
       </h3>
 
-      <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+      <div className="section-panel">
         <p className={`${styles.Note} text-center mb-4`}>
           <i className="bi bi-info-circle me-2"></i>
           (Proposed Preliminary Schedule)

@@ -14,11 +14,11 @@ const SanFrancisco = ({full = true}) => {
 
   return (
     <section className={`${styles.SanFrancisco} my-5`} id={'section-san-francisco'}>
-      <h3 className={`section-heading mb-0`}>
+      <h3 className={`section-heading`}>
         San Francisco, California
       </h3>
 
-      <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+      <div className="section-panel">
         <div className={styles.Banner}>
           <div className={`${styles.CityDaytimeImage} h-100 w-100`} />
           <div className={styles.BannerCredit}>

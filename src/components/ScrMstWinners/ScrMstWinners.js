@@ -17,11 +17,11 @@ const winners = [
 const ScrMstWinners = () => {
   return (
     <section className={`${styles.ScrMstWinners} my-5`} id={'contact'}>
-      <h3 className={`section-heading mb-0`}>
+      <h3 className={`section-heading`}>
         Scratch Masters Winners
       </h3>
 
-      <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+      <div className="section-panel">
         <p className={`${styles.Intro} text-center mb-4`}>
           Gallery of Winners 2026
         </p>

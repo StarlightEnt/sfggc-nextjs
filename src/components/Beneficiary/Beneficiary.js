@@ -11,7 +11,7 @@ const Beneficiary = () => {
 
   return (
     <section className={styles.Beneficiary} id={'section-beneficiary'}>
-      <h3 className={`section-heading`}>
+      <h3 className={`section-heading mb-2`}>
         Charitable Partner
       </h3>
 

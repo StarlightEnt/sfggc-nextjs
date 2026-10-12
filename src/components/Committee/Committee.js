@@ -47,11 +47,11 @@ const Committee = () => {
 
   return (
     <section className={`${styles.Committee} my-5`} id={'contact'}>
-      <h3 className={`section-heading mb-0`}>
+      <h3 className={`section-heading`}>
         Tournament Committee
       </h3>
 
-      <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+      <div className="section-panel">
         <p className={`${styles.Intro} text-center mb-5`}>
           Putting on a tournament is a community effort. The Golden Gate Classic wouldn&apos;t be possible without the work and contributions of all the people on this page.
         </p>

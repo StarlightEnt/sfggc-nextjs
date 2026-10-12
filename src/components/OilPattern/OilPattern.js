@@ -4,10 +4,10 @@ import styles from './oilpattern.module.scss';
 const OilPattern = () => {
   return (
   <section className={`${styles.oilpattern} my-5`} id={'section-oilpattern'}>
-    <h3 className={`section-heading mb-0`}>
+    <h3 className={`section-heading`}>
       2027 Tournament Oil Pattern - TBD
     </h3>
-    <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+    <div className="section-panel">
       <div className={`row d-flex justify-content-center flex-wrap`}>
  {/* <div className={`col-6 col-md-5 col-lg-4`}>
            <Image src={oilPatImage}

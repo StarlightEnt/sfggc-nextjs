@@ -116,6 +116,7 @@ body {
       font-size: clamp(1.4rem, 3.4vw, 2.1rem);
       margin-left: -0.5rem;
       margin-right: -0.5rem;
+      margin-bottom: 0;
       padding: 1.25rem 1.5rem;
       border-radius: 0.875rem 0.875rem 0 0;
       color: var(--sfggc-ink);
@@ -177,6 +178,19 @@ h1, h2, h3 {
 
   &:hover {
     border-color: rgba(184, 116, 255, 0.4);
+  }
+}
+
+/* Body of a content section: a card that continues the .section-heading bar above it */
+.section-panel {
+  @extend .glass-card;
+  padding: 1.5rem;
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+
+  @media (min-width: 768px) {
+    padding: 3rem;
   }
 }
 

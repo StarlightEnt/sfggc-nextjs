@@ -2,11 +2,11 @@ import styles from './HostVenue.module.scss';
 
 const HostVenue = () => (
   <section className={`${styles.HostVenue} my-5`} id={'section-hostvenue'}>
-    <h3 className={`section-heading mb-0`}>
+    <h3 className={`section-heading`}>
       Host Venue
     </h3>
 
-    <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+    <div className="section-panel">
       <p className={styles.Copy}>
         The Pilsner Inn will be our Host Bar all Weekend.  Show up with your Tournament Badge to receive a $1 discount on drinks for the duration of the tournament.
       </p>

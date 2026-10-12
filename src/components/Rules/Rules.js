@@ -111,11 +111,11 @@ If fewer than 6 bowlers sign up in a division, all participants will bowl in the
   return (
     <div className="d-flex flex-column gap-5">
       <section className={`${styles.Rules} my-4`}>
-        <h3 className={`section-heading mb-0`}>
+        <h3 className={`section-heading`}>
           Tournament Rules
         </h3>
 
-        <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+        <div className="section-panel">
           <div className={`${styles.Toolbar} d-flex justify-content-between align-items-center mb-4 pb-3 flex-wrap gap-2`}>
             <span className="badge-glow">
               (Draft)
@@ -148,11 +148,11 @@ If fewer than 6 bowlers sign up in a division, all participants will bowl in the
       </section>
 
       <section className={`${styles.Rules} my-4`}>
-        <h3 className={`section-heading mb-0`} id={'scratch_masters_rules'}>
+        <h3 className={`section-heading`} id={'scratch_masters_rules'}>
           Scratch Masters Rules
         </h3>
 
-        <div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">
+        <div className="section-panel">
           <p className={`${styles.Draft} mb-4`}>
             <span className="badge-glow">
               (Draft)

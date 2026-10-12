@@ -267,9 +267,9 @@ PageComponent.getLayout = function getLayout(page) {
 
 **Section Pattern** (content pages):
 - `<section className={`${styles.Name} my-5`}>` wrapper with a component-specific class
-- `<h3 className="section-heading mb-0">` for the title (a purple-topped panel header)
-- `<div className="glass-card p-4 p-md-5 rounded-top-0 border-top-0">` directly beneath it for the body
-  (`.glass-card` is a solid dark card despite the name; it is kept to avoid churn on content files)
+- `<h3 className="section-heading">` for the title (a purple-topped panel header)
+- `<div className="section-panel">` directly beneath it for the body (padding, flat top corners and no top border
+  are defined once in `sfggc.scss`; do not re-spell them as utilities)
 
 ### Key Files Reference
 
