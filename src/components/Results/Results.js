@@ -32,7 +32,7 @@ const Results = ({ showStandingsLink = false, showOptionalEventsLink = false }) 
             **UPDATE.** Much apologies to our winners for the delay in getting your awards out.  We had a commitment of 30 days, and we did not meet that promise. Due to unforseen circumstances, we encountered a procedural hiccup in the check processing. Rest assured, all checks should be received during the week of March 16th.
           </p>
         </div>
-            
+
         <div className="row g-3">
           {available.map((resultSet, i) => (
             <div className="col-12 col-lg-6" key={i}>

@@ -100,4 +100,3 @@ const Committee = () => {
 }
 
 export default Committee;
-

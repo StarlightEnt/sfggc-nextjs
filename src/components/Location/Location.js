@@ -24,13 +24,13 @@ const Location = () => {
       </h3>
 
       <div className="section-panel">
-        
+
         {/* Main Venue Header */}
         <div className="row align-items-center g-4 mb-4 pb-4 border-bottom border-secondary border-opacity-10">
           <div className="col-12 col-md-4 text-center">
             <Link href={'http://www.classicbowling.com/'} target={'_blank'} className="d-inline-block">
               <div className={`${styles.LogoContainer} logo-tile p-3 d-inline-flex align-items-center justify-content-center`}>
-                <Image 
+                <Image
                   src={cbcLogo}
                   alt={'Logo for Classic Bowling Center'}
                   className={`img-fluid ${styles.LogoImage}`}
@@ -116,11 +116,9 @@ const Location = () => {
           </div>
         </div>
 
-
       </div>
     </section>
   );
 }
 
 export default Location;
-
