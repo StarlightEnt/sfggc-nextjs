@@ -1,113 +1,112 @@
 .SanFrancisco {
-  .JumboImage {
+  .Banner {
     position: relative;
-    margin: 0.25rem auto;
+    height: 300px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    border-radius: 0.875rem;
+    border: 1px solid var(--sfggc-hairline);
+  }
 
-    height: 25vh;
-    width: 100%;
-    @media (min-width: 768px) {
-      height: 45vh;
+  .CityDaytimeImage {
+    background-repeat: no-repeat;
+    background-position: 0 25%;
+    background-size: cover;
+    background-image: linear-gradient(180deg, rgba(11, 10, 20, 0) 55%, rgba(11, 10, 20, 0.55) 100%),
+      url('../../images/san-francisco/sf-downtown-600w.jpg');
+  }
+
+  .BannerCredit {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    margin: 0.5rem;
+    padding: 0.2rem 0.9rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sfggc-night) 75%, transparent);
+    color: var(--sfggc-ink-dim);
+    font-size: 0.875rem;
+
+    a {
+      color: var(--sfggc-ink);
     }
+  }
 
-    // Adds an overlay to the image to dim it as needed.
-    .CityDaytimeColor {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      z-index: 2;
-      background-color: black;
-      opacity: var(--sfggc-image-shade-opacity);
-    }
+  .Intro {
+    max-width: 56rem;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 1.25rem;
+    line-height: 1.6;
+    color: var(--sfggc-ink-dim);
+  }
 
-    .CityDaytimeImage {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      z-index: 1;
-      background-repeat: no-repeat;
-      background-position: 0 25%;
-      background-size: cover;
+  .Card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    background: var(--sfggc-night-deep);
+    border: 1px solid var(--sfggc-hairline);
+    border-radius: 0.875rem;
+  }
 
-      background-image: url('../../images/san-francisco/sf-downtown-600w.jpg');
-
-      @media (min-width: 768px) {
-        // Go progressively bigger
-        //background-image: url('../../images/san-francisco/cable-car-transamerica.jpg');
-      }
-    }
+  .CardImage {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+    border-radius: 0.625rem;
   }
 
   .Credit {
-    text-align: center;
-    font-size: 80%;
-    margin-bottom: 0.5rem;
+    margin: 0.35rem 0 1rem;
+    color: var(--sfggc-ink-dim);
+    font-size: 0.8rem;
+
+    a {
+      color: var(--sfggc-pride-blue);
+    }
   }
 
-  .Content {
-    .Intro {
+  .CardTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-family: var(--sfggc-font-sans-serif);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--sfggc-ink);
+
+    i {
+      color: var(--sfggc-pride-orange);
+    }
+  }
+
+  .CardBody {
+    color: var(--sfggc-ink-dim);
+    font-size: 1rem;
+    line-height: 1.55;
+
+    a {
+      color: var(--sfggc-pride-blue);
     }
 
-    .Thing {
-      margin-bottom: 1rem;
-      background-color: transparent;
-      border-color: transparent;
-
-      .Image {
-        position: relative;
-        overflow: hidden;
-        max-height: 10rem;
-        
-        @media (min-width: 576px) {
-          max-height: 16rem;
-        }
-        @media (min-width: 768px) {
-          max-height: 18rem;
-        }
-
-        .Img {
-          width: 100%;
-          height: auto;
-          z-index: 1;
-        }
-
-        .ImageShade {
-          position: absolute;
-          left: 0;
-          right: 0;
-          top: 0;
-          bottom: 0;
-          z-index: 2;
-          background-color: black;
-          opacity: var(--sfggc-image-shade-opacity);
-        }
-      }
-
-      .CardBody {
-        padding-top: 0;
-        padding-bottom: 0;
-      }
-
-      .ExternalLink {
-
-      }
-
-      .HighTemp {
-        color: var(--sfggc-yellow);
-      }
-
-      .LowTemp {
-        color: var(--sfggc-cyan);
-      }
+    ul {
+      padding-left: 1.25rem;
     }
 
-    .MoreLink {
-      text-align: right;
-      padding-bottom: 1rem;
-      margin-bottom: 0;
+    li::marker {
+      color: var(--sfggc-pride-purple);
     }
+  }
+
+  .HighTemp {
+    color: var(--sfggc-pride-yellow);
+    font-weight: 600;
+  }
+
+  .LowTemp {
+    color: var(--sfggc-pride-blue);
+    font-weight: 600;
   }
 }

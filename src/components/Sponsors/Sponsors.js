@@ -7,7 +7,6 @@ import storm from '../../images/sponsors/storm.png';
 import igbo from '../../images/sponsors/igbo.png';
 import usbc from '../../images/sponsors/usbc.png';
 // import budlight from '../../images/sponsors/budlight.gif';
-
 import styles from './Sponsors.module.scss';
 
 const Sponsors = () => {
@@ -50,23 +49,27 @@ const Sponsors = () => {
   ];
 
   return (
-    <div className={styles.Sponsors}>
-      <div className={`row g-0 align-items-center justify-content-around ${styles.Row}`}>
-        {sponsorDetails.map((s, i) => {
-          return (
-            <div key={i} className={`col-5 ${styles.ImageContainer}`}>
-              <Link href={s.href}
-                    target={'_blank'}
-                    title={s.title}>
-                <Image className={`img-fluid ${s.classNames}`}
-                       alt={s.alt}
-                       src={s.src} />
-              </Link>
-            </div>
-          );
-        })}
+    <div className={`${styles.Sponsors} my-5`}>
+      <div className="surface-card p-4 p-md-5 rounded-4 text-center">
+        <div className="row g-4 align-items-center justify-content-center">
+          {sponsorDetails.map((s, i) => {
+            return (
+              <div key={i} className="col-12 col-sm-6 col-md-4">
+                <Link href={s.href}
+                      target={'_blank'}
+                      title={s.title}
+                      className="logo-tile d-block p-3">
+                  <Image className={`img-fluid ${styles.Logo} ${s.classNames}`}
+                         alt={s.alt}
+                         src={s.src} />
+                </Link>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
+
   );
 }
 

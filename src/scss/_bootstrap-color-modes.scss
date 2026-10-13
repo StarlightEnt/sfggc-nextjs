@@ -1,86 +1,22 @@
-
+// The site is dark-only; <html data-bs-theme="dark"> is set in _document.js.
+// :root carries the same values so anything rendered before the attribute applies is dark too.
 :root,
-[data-bs-theme="light"] {
-  --#{$prefix}background-shade-opacity: 0.25;
-  --#{$prefix}section-background-shade-opacity: 0.5;
-
-  --#{$prefix}body-color: #{$gray-100};
-  --#{$prefix}body-bg: #{$deep-gray};
-  --#{$prefix}body-text-shadow-color: #{$deep-gray};
-
-  --#{$prefix}emphasis-color: #{$white};
-  --#{$prefix}emphasis-color-rgb: rgb(#{$white});
-
-  --#{$prefix}section-heading-bg-color: #{$deep-blue};
-  --#{$prefix}section-heading-color: #{$gray-100};
-
-  --#{$prefix}border-color-translucent: #{$gray-500};
-  --#{$prefix}border-color: #{$gray-500};
-
-  --#{$prefix}card-link-color: #{$deep-blue};
-
-  --#{$prefix}image-shade-opacity: 0;
-
-  --#{$prefix}location-logo-bg-gradient-start: 0.95;
-
-  --#{$prefix}sponsor-logo-bg: #{$gray-200};
-
-  .navbar {
-    --#{$prefix}navbar-disabled-color: #{$gray-500};
-  }
-
-  .btn-#{$prefix}action {
-    @include button-variant(
-        $silver,
-        $silver,
-      $hover-background: shade-color($silver, $btn-hover-bg-shade-amount),
-      $hover-border: shade-color($silver, $btn-hover-border-shade-amount),
-      $active-background: shade-color($silver, $btn-active-bg-shade-amount),
-      $active-border: shade-color($silver, $btn-active-border-shade-amount)
-    );
-    text-shadow: none;
-  }
-
-  footer {
-    .logo-image {
-      filter: brightness(100%);
-    }
-  }
-}
-
 [data-bs-theme="dark"] {
-  --#{$prefix}background-shade-opacity: 0.5;
-  --#{$prefix}section-background-shade-opacity: 0.6;
+  --#{$prefix}body-color: #{$ink};
+  --#{$prefix}body-color-rgb: #{red($ink)}, #{green($ink)}, #{blue($ink)};
+  --#{$prefix}body-bg: #{$night};
+  --#{$prefix}body-bg-rgb: #{red($night)}, #{green($night)}, #{blue($night)};
 
-  --#{$prefix}body-color: #{$gray-200};
+  --#{$prefix}secondary-color: #{$ink-dim};
+  --#{$prefix}secondary-bg: #{$night-mid};
+  --#{$prefix}tertiary-color: #{$ink-dim};
+  --#{$prefix}tertiary-bg: #{$night-mid};
 
-  --#{$prefix}emphasis-color: #{$gray-200};
-  --#{$prefix}emphasis-color-rgb: rgb(#{$gray-200});
+  --#{$prefix}emphasis-color: #{$ink};
+  --#{$prefix}emphasis-color-rgb: #{red($ink)}, #{green($ink)}, #{blue($ink)};
 
-  --#{$prefix}section-heading-bg-color: #{shade-color($deep-blue, 20%)};
-  --#{$prefix}section-heading-color: #{$gray-200};
+  --#{$prefix}border-color: #{rgba($ink, 0.12)};
+  --#{$prefix}border-color-translucent: #{rgba($ink, 0.1)};
 
-  --#{$prefix}image-shade-opacity: 0.1;
-
-  --#{$prefix}location-logo-bg-gradient-start: 0.70;
-
-  --#{$prefix}sponsor-logo-bg: #{$gray-400};
-
-  .btn-#{$prefix}action {
-    @include button-variant(
-      $silver-dark,
-      $silver-dark,
-      $hover-background: shade-color($silver-dark, $btn-hover-bg-shade-amount),
-      $hover-border: shade-color($silver-dark, $btn-hover-border-shade-amount),
-      $active-background: shade-color($silver-dark, $btn-active-bg-shade-amount),
-      $active-border: shade-color($silver-dark, $btn-active-border-shade-amount)
-    );
-    text-shadow: none;
-  }
-
-  footer {
-    .logo-image {
-      filter: brightness(85%);
-    }
-  }
+  --#{$prefix}link-color: #{$pride-blue};
 }

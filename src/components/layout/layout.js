@@ -1,4 +1,3 @@
-import {ThemeContextProvider} from "../../utils/ThemeContext";
 import Navigation from "./navigation";
 import Header from "./header";
 import Footer from "./footer";
@@ -6,21 +5,21 @@ import Sponsors from "../Sponsors/Sponsors";
 
 export default function RootLayout({ children }) {
   return (
-    <ThemeContextProvider>
-      <div className={`container-xl gx-0 gx-xl-4`}>
-        <Header/>
-        <Navigation/>
+    <>
+      <Header/>
+      <Navigation/>
+      <div className="stripe-bar"></div>
 
-        <main>
+      <div className={`container-xl px-3 px-xl-4`}>
+        <main className="py-2">
           {children}
         </main>
 
-        <footer>
-          <hr />
-          <Sponsors/>
-          <Footer/>
-        </footer>
+        <Sponsors/>
       </div>
-    </ThemeContextProvider>
+
+      <div className="stripe-bar"></div>
+      <Footer/>
+    </>
   );
 }

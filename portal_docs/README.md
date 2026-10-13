@@ -28,6 +28,33 @@ The participant prototype pages still use CSV data from `portal_docs/sample_data
 
 ## MariaDB setup (local)
 
+### Option A: Docker (recommended)
+
+Needs Docker (plus `openssl` and `node`, which you already have for this project); no MariaDB or `mysql` client is installed on your machine.
+
+```bash
+bash scripts/dev/docker-db.sh init
+```
+
+This starts a MariaDB container (`sfggc-dev-mariadb`) bound to `127.0.0.1:3307`, writes
+`PORTAL_DATABASE_URL` and `ADMIN_SESSION_SECRET` to a new `.env.local` (generated password, never
+printed). An existing `.env.local` is never overwritten: if it has no database settings they are appended, and if it points at a different database the script stops. Then it applies the schema and all migrations.
+Other commands: `up`, `down` (data is kept), `status`, `shell`, and `reset --yes` (deletes the
+container and its data). Set `SFGGC_DOCKER_DB_PORT` if 3307 is taken.
+
+If your `.env.local` already has a `PORTAL_DATABASE_URL` for a different database, the script stops
+instead of changing it.
+
+### Already using a local MariaDB?
+
+Nothing changes for you: Docker is optional, and the app, migrations and test scripts work exactly as before with a local install. To switch to the Docker database:
+
+1. Stop the local server (for example `brew services stop mariadb`).
+2. `docker-db.sh` refuses to run while `.env.local` has a `PORTAL_DATABASE_URL` for a different database (to protect it). Comment out that one line (`# PORTAL_DATABASE_URL=...`), keeping your other settings, then run `bash scripts/dev/docker-db.sh init`. It adds a Docker `PORTAL_DATABASE_URL` and reuses your existing `ADMIN_SESSION_SECRET`. Your data is not copied; re-import with `scripts/dev/import-igbo-xml.sh`.
+3. To go back, run `bash scripts/dev/docker-db.sh down`, delete the Docker `PORTAL_DATABASE_URL` line, and uncomment your old one.
+
+### Option B: MariaDB installed on your machine
+
 Install MariaDB:
 
 - macOS: `scripts/dev/install-mariadb-macos.sh`
@@ -166,7 +193,7 @@ Run backend tests:
 DB-backed tests:
 - Set `PORTAL_DATABASE_URL` or `PORTAL_TEST_DATABASE_URL` (recommended).
 - MariaDB must be running; tests auto-create `<db>_test` if needed.
-- If no DB URL is available, DB-backed tests will skip.
+- If no DB URL is available, DB-backed tests will skip. When a database URL is configured, `test-all.sh` instead fails the integration step if any test was skipped, because a skip then means the database was not used.
 - Test scripts drop the `_test` database after successful runs and keep it on failure for debugging.
 - Test scripts auto-load `.env.local` when present.
 
@@ -191,7 +218,7 @@ with `--skip-migrations`.
 
 ## Troubleshooting
 
-- MariaDB not running: `bash scripts/dev/start-mariadb.sh`
+- MariaDB not running: `bash scripts/dev/docker-db.sh up` (Docker) or `bash scripts/dev/start-mariadb.sh` (installed locally)
 - Connection refused: confirm `PORTAL_DATABASE_URL` and that the DB exists
 - **Access denied for user 'root'@'localhost' (ERROR 1698)**: The init script and app use the Unix socket and your macOS user for localhost; keep `mysql://root@localhost:3306/...` in `.env.local`. If your socket is elsewhere, set `MYSQL_UNIX_SOCKET` (e.g. `export MYSQL_UNIX_SOCKET=/tmp/mysql.sock`).
 - Blank admin dashboard: run the XML import or create a participant record

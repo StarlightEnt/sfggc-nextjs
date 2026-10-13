@@ -1,59 +1,84 @@
 .Committee {
-
   .Intro {
-  }
-
-  .Image {
-    [data-bs-theme='dark'] & {
-      filter: brightness(90%);
-    }
+    max-width: 48rem;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+    line-height: 1.6;
+    color: var(--sfggc-ink-dim);
   }
 
   .Card {
+    padding: 1rem;
     text-align: center;
+    background: var(--sfggc-night-deep);
+    border: 1px solid var(--sfggc-hairline);
+    border-radius: 0.875rem;
+    transition: transform 0.18s ease, border-color 0.18s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--sfggc-pride-purple) 40%, transparent);
+    }
+  }
+
+  .Photo {
+    position: relative;
+    height: 220px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    border-radius: 0.625rem;
+    border: 1px solid var(--sfggc-hairline);
+  }
+
+  .Name {
     margin-bottom: 0.5rem;
-
-    background-color: var(--sfggc-body-color);
-    color: var(--sfggc-body-bg);
-    border-color: var(--sfggc-body-bg);
-
-    text-shadow: none;
+    font-family: var(--sfggc-font-sans-serif);
+    font-size: 1.15rem;
+    font-weight: 700;
 
     a {
-      text-shadow: none;
-      color: var(--sfggc-card-link-color);
+      color: var(--sfggc-ink);
+      text-decoration: none;
 
-      &:hover, &:active {
-        color: var(--sfggc-link-hover-color);
-      }
-    }
-
-    .Face {
-      padding: 0.5rem;
-
-      .Placeholder {
-        font-size: 450%;
-        opacity: .75;
-      }
-    }
-    .Name {
-      font-weight: bold;
-    }
-    .Role {
-      margin-bottom: 0;
-    }
-
-  }
-
-  .Thanks {
-    .Photo {
-      width: 50%;
-      margin-bottom: 1rem;
-
-      @media (min-width: 768px) {
-        width: 80%;
+      &:hover,
+      &:focus-visible {
+        color: var(--sfggc-pride-orange);
       }
     }
   }
 
+  .Volunteers {
+    max-width: 56rem;
+    margin: 0 auto;
+    padding: 1.5rem;
+    background: var(--sfggc-night-deep);
+    border: 1px solid var(--sfggc-hairline);
+    border-radius: 0.875rem;
+  }
+
+  .VolunteersTitle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-family: var(--sfggc-font-sans-serif);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--sfggc-ink);
+
+    i {
+      color: var(--sfggc-pride-red);
+    }
+  }
+
+  .Volunteer {
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    background: var(--sfggc-night-mid);
+    border: 1px solid var(--sfggc-hairline);
+    color: var(--sfggc-ink);
+    font-size: 0.9rem;
+  }
 }

@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import styles from "./PortalShell.module.scss";
 
-const PortalShell = ({ title, subtitle, children }) => {
+const PortalShell = ({ title, subtitle, variant, children }) => {
+  const isAuth = variant === "auth";
   const lastPingRef = useRef(0);
 
   useEffect(() => {
@@ -23,14 +24,22 @@ const PortalShell = ({ title, subtitle, children }) => {
     };
   }, []);
 
+  if (isAuth) {
+    return (
+      <section className={`${styles.PortalShell} ${styles.Auth} container`}>
+        <h1 className={`display ${styles.AuthTitle}`}>{title}</h1>
+        {subtitle && <p className={styles.AuthSubtitle}>{subtitle}</p>}
+        <div className={styles.AuthCard}>{children}</div>
+      </section>
+    );
+  }
+
   return (
     <section className={`${styles.PortalShell} container`}>
-      <div className="row">
-        <div className="col-12 col-lg-10">
-          <h1 className="section-heading">{title}</h1>
-          {subtitle && <p className="lead">{subtitle}</p>}
-        </div>
-      </div>
+      <header className={styles.PageHeader}>
+        <h1 className={`display ${styles.PageTitle}`}>{title}</h1>
+        {subtitle && <p className={styles.PageSubtitle}>{subtitle}</p>}
+      </header>
       <div className="row">
         <div className="col-12">{children}</div>
       </div>

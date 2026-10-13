@@ -37,12 +37,13 @@ const AdminLoginPage = () => {
   return (
     <div>
       <PortalShell
+        variant="auth"
         title="Admin login"
         subtitle="Sign in to manage registration, scores, and results."
       >
         {error && <div className="alert alert-danger">{error}</div>}
         <AdminLoginForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
-        <p className="mt-3">
+        <p className="mt-3 mb-0 text-center">
           <Link href="/portal/admin/reset">Forgot your password?</Link>
         </p>
       </PortalShell>

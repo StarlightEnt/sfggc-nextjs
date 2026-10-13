@@ -103,6 +103,9 @@ sfggc-nextjs/
       test-frontend.sh
       test-backend.sh
     dev/
+      docker-db.sh
+      docker/
+        mysql
       install-mariadb-macos.sh
       install-mariadb-ubuntu.sh
       init-portal-db.sh

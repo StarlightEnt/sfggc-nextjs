@@ -1,38 +1,46 @@
 import Spotlight from "../Spotlight/Spotlight";
-
 import styles from './Hero.module.scss';
 import RegisterCTA from "../RegisterCTA/RegisterCTA";
 
+const STATS = [
+  {label: 'Dates', value: 'June 18-20, 2027', icon: 'bi-calendar3', accent: 'var(--sfggc-pride-red)'},
+  {label: 'Weekend', value: 'Juneteenth Weekend', icon: 'bi-stars', accent: 'var(--sfggc-pride-orange)'},
+];
+
 const Hero = () => {
-
   return (
-    <section className={`${styles.Hero}`}>
-      <div className={`${styles.Content}`}>
+    <section className={`${styles.Hero} py-4 py-lg-5`}>
+      <div className={`${styles.Content} container-fluid px-3 px-md-4`}>
 
-        <h1 className={`display-1 ${styles.Title}`}>
-          The San Francisco Golden Gate Classic Invitational
+        <h1 className={`display ${styles.Title}`}>
+          The San Francisco <br className="d-none d-md-inline" />
+          <span className="gradient-text">Golden Gate Classic Invitational</span>
         </h1>
 
-        <h2 className={`display-2 ${styles.Subtitle}`}>
+        <h2 className={styles.Subtitle}>
           An{' '}
-          <span className={'fw-bold'}>IGBO</span>
+          <strong>IGBO</strong>
           {' '}bowling tournament
         </h2>
 
-        <h3 className={`display-3 ${styles.Dates}`}>
-          June 18-20, 2027
-        </h3>
+        <div className="row justify-content-center g-3 my-4">
+          {STATS.map((stat) => (
+            <div key={stat.label} className="col-12 col-sm-6 col-lg-4">
+              <div className={styles.Stat} style={{'--accent': stat.accent}}>
+                <i className={`bi ${stat.icon}`}></i>
+                <span className={styles.Label}>{stat.label}</span>
+                <strong className={styles.Value}>{stat.value}</strong>
+              </div>
+            </div>
+          ))}
+        </div>
 
-        <h4 className={`display-4 ${styles.Weekend}`}>
-          Juneteenth Weekend
-        </h4>
-
-        <RegisterCTA/>
+        <RegisterCTA />
       </div>
 
-      <Spotlight/>
+      <Spotlight />
     </section>
-  )
-}
+  );
+};
 
 export default Hero;

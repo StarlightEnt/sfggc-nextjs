@@ -1,22 +1,20 @@
-import Image from "next/image";
 import styles from './oilpattern.module.scss';
 // import oilPatImage from '../../images/Lithium.jpg';
 
 const OilPattern = () => {
   return (
-  <section className={`${styles.oilpattern}`} id={'section-oilpattern'}>
+  <section className={`${styles.oilpattern} my-5`} id={'section-oilpattern'}>
     <h3 className={`section-heading`}>
       2027 Tournament Oil Pattern - TBD
     </h3>
-    <div>
-      <hr />
-      <div className={`row d-flex justify-content-center flex-wrap pb-0`}>
+    <div className="section-panel">
+      <div className={`row d-flex justify-content-center flex-wrap`}>
  {/* <div className={`col-6 col-md-5 col-lg-4`}>
            <Image src={oilPatImage}
                   alt={'2026 Oil Pattern'}
                   className={`img-fluid oilPattern-image`}/>
          </div> */}
-        <p className={`col-12 text-center pt-3`}>
+        <p className={`${styles.Pattern} col-12 text-center mb-0`}>
           <span>
             2027&nbsp;
           </span>
@@ -33,5 +31,3 @@ const OilPattern = () => {
   )
 }
 export default OilPattern;
-
-

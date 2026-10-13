@@ -1,15 +1,39 @@
 @import 'sfggc-bootstrap';
 @import 'bootstrap-icons/font/bootstrap-icons.min.css';
 
+:root {
+  --sfggc-title-font-family: #{$font-family-display};
+  --sfggc-night: #{$night};
+  --sfggc-night-mid: #{$night-mid};
+  --sfggc-night-deep: #{$night-deep};
+  --sfggc-ink: #{$ink};
+  --sfggc-ink-dim: #{$ink-dim};
+  --sfggc-ink-on-accent: #1a0a0a;
+  --sfggc-hairline: #{rgba($ink, 0.1)};
+  --sfggc-input-border: #{rgba($ink, 0.16)};
+  --sfggc-pride-red: #{$pride-red};
+  --sfggc-pride-orange: #{$pride-orange};
+  --sfggc-pride-yellow: #{$pride-yellow};
+  --sfggc-pride-green: #{$pride-green};
+  --sfggc-pride-blue: #{$pride-blue};
+  --sfggc-pride-purple: #{$pride-purple};
+}
+
 html {
-  --sfggc-title-font-family: "DM Serif Display", "Times New Roman", var(--sfggc-font-sans-serif);
+  font-family: var(--sfggc-font-sans-serif);
+  scroll-behavior: smooth;
 }
 
 body {
-  text-shadow: 1px 1px 1px var(--sfggc-body-text-shadow-color);
+  font-family: var(--sfggc-font-sans-serif);
+  background-color: var(--sfggc-night);
+  color: var(--sfggc-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 
   &.portal-mode {
-    background-color: #7f8791;
+    background-color: var(--sfggc-night);
+    color: var(--sfggc-ink);
 
     .nav-and-top {
       .top-image-background,
@@ -18,68 +42,16 @@ body {
       }
     }
 
-    .btn-outline-primary {
-      background-color: var(--#{$prefix}primary);
-      color: #fff;
-      border-color: var(--#{$prefix}primary);
+    .card {
+      background: var(--sfggc-night-mid);
+      border: 1px solid var(--sfggc-hairline);
+      border-radius: 0.875rem;
+      color: var(--sfggc-ink);
     }
 
-    .btn-outline-secondary {
-      background-color: var(--#{$prefix}secondary);
-      color: #fff;
-      border-color: var(--#{$prefix}secondary);
-    }
-
-    .btn-outline-success {
-      background-color: var(--#{$prefix}success);
-      color: #fff;
-      border-color: var(--#{$prefix}success);
-    }
-
-    .btn-outline-danger {
-      background-color: var(--#{$prefix}danger);
-      color: #fff;
-      border-color: var(--#{$prefix}danger);
-    }
-
-    .btn-outline-info {
-      background-color: var(--#{$prefix}info);
-      color: #fff;
-      border-color: var(--#{$prefix}info);
-    }
-
-    .btn-outline-dark {
-      background-color: var(--#{$prefix}dark);
-      color: #fff;
-      border-color: var(--#{$prefix}dark);
-    }
-
-    .btn-outline-warning {
-      background-color: var(--#{$prefix}warning);
-      color: #212529;
-      border-color: var(--#{$prefix}warning);
-    }
-
-    .btn-outline-light {
-      background-color: var(--#{$prefix}light);
-      color: #212529;
-      border-color: var(--#{$prefix}light);
-    }
-
-    @media (max-width: 575.98px) {
-      .portal-actions {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .portal-actions .btn {
-        width: 100%;
-      }
-
-      .portal-edit-form {
-        --#{$prefix}gutter-x: 0.75rem;
-        --#{$prefix}gutter-y: 0.5rem;
-      }
+    .table {
+      border-color: var(--sfggc-hairline);
+      color: var(--sfggc-ink);
     }
   }
 
@@ -95,10 +67,8 @@ body {
       z-index: -100;
       background-repeat: no-repeat;
       background-position: 25% top;
-      //background-size: cover;
-      // Each section provides its own image(s)
-
       background-image: url('../images/bg/ggb-vertical-991w.jpg');
+      filter: saturate(1.1) brightness(0.8) opacity(0.35);
 
       @media (min-width: 992px) {
         background-size: cover;
@@ -114,39 +84,46 @@ body {
       top: 0;
       bottom: 0;
       z-index: -99;
-      background-color: black;
-      opacity: var(--sfggc-background-shade-opacity);
+      background: linear-gradient(180deg, rgba(11, 10, 20, 0.55) 0%, rgba(11, 10, 20, 0.85) 45%, #{$night} 100%);
     }
 
     .menu-icon {
-      font-size: 150%;
+      font-size: 140%;
     }
   }
 
   section {
     position: relative;
-
     margin-left: 0.5rem;
     margin-right: 0.5rem;
-    
+    margin-bottom: 2.5rem;
+
     @media (min-width: 576px) {
       margin-left: 1rem;
       margin-right: 1rem;
+      margin-bottom: 3.5rem;
     }
     @media (min-width: 992px) {
-      margin-left: 2rem;
-      margin-right: 2rem;
+      margin-left: 1.5rem;
+      margin-right: 1.5rem;
+      margin-bottom: 4.5rem;
     }
 
     .section-heading {
+      font-family: var(--sfggc-title-font-family);
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      font-size: clamp(1.4rem, 3.4vw, 2.1rem);
       margin-left: -0.5rem;
       margin-right: -0.5rem;
-      padding-top: 0.75rem;
-      padding-bottom: 1rem;
-      padding-left: 1rem;
-
-      color: var(--sfggc-section-heading-color);
-      background-color: var(--sfggc-section-heading-bg-color);
+      margin-bottom: 0;
+      padding: 1.25rem 1.5rem;
+      border-radius: 0.875rem 0.875rem 0 0;
+      color: var(--sfggc-ink);
+      background: var(--sfggc-night-deep);
+      border-top: 3px solid var(--sfggc-pride-purple);
+      border-left: 1px solid var(--sfggc-hairline);
+      border-right: 1px solid var(--sfggc-hairline);
 
       @media (min-width: 576px) {
         margin-left: -1rem;
@@ -156,56 +133,185 @@ body {
         text-align: center;
       }
       @media (min-width: 992px) {
-        margin-left: -2rem;
-        margin-right: -2rem;
+        margin-left: -1.5rem;
+        margin-right: -1.5rem;
       }
     }
 
-    .section-image-background {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      z-index: -50;
-      margin-left: -0.5rem;
-      margin-right: -0.5rem;
-      background-repeat: no-repeat;
-      background-position: center top;
-      background-size: cover;
-      // Each section provides its own image(s)
-
-      @media (min-width: 576px) {
-        margin-left: -1rem;
-        margin-right: -1rem;
-      }
-      @media (min-width: 992px) {
-        margin-left: -2rem;
-        margin-right: -2rem;
-      }
-    }
-    .section-background-shade {
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      z-index: -49;
-      margin-left: -0.5rem;
-      margin-right: -0.5rem;
-      background-color: black;
-      // each section specifies its own opacities
-
-      @media (min-width: 576px) {
-        margin-left: -1rem;
-        margin-right: -1rem;
-      }
-      @media (min-width: 992px) {
-        margin-left: -2rem;
-        margin-right: -2rem;
-      }
-    }
   }
+}
+
+/* Six-color Pride stripe bar (matches sflgbtbowl.com) */
+.stripe-bar {
+  height: 5px;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--sfggc-pride-red) 0 16.667%,
+    var(--sfggc-pride-orange) 16.667% 33.333%,
+    var(--sfggc-pride-yellow) 33.333% 50%,
+    var(--sfggc-pride-green) 50% 66.667%,
+    var(--sfggc-pride-blue) 66.667% 83.333%,
+    var(--sfggc-pride-purple) 83.333% 100%
+  );
+}
+
+/* Display type: Bungee headings */
+.display {
+  font-family: var(--sfggc-title-font-family);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+h1, h2, h3 {
+  font-family: var(--sfggc-title-font-family);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Cards: night-mid surface, faint border */
+.surface-card {
+  background: var(--sfggc-night-mid);
+  border: 1px solid var(--sfggc-hairline);
+  border-radius: 0.875rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--sfggc-pride-purple) 40%, transparent);
+  }
+}
+
+/* Body of a content section: a card that continues the .section-heading bar above it */
+.section-panel {
+  @extend .surface-card;
+  padding: 1.5rem;
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+
+  @media (min-width: 768px) {
+    padding: 3rem;
+  }
+}
+
+.gradient-text {
+  background: linear-gradient(90deg, var(--sfggc-pride-orange), var(--sfggc-pride-red) 50%, var(--sfggc-pride-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Primary call-to-action: orange-to-red pill with lift and glow on hover */
+.btn-glow-orange {
+  background: linear-gradient(90deg, var(--sfggc-pride-orange), var(--sfggc-pride-red));
+  color: var(--sfggc-ink-on-accent) !important;
+  border: none;
+  border-radius: 999px;
+  padding: 0.8rem 1.75rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: transform 0.18s, box-shadow 0.18s;
+
+  &:hover, &:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px color-mix(in srgb, var(--sfggc-pride-red) 38%, transparent);
+    color: var(--sfggc-ink-on-accent) !important;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+.badge-glow {
+  background: color-mix(in srgb, var(--sfggc-pride-purple) 12%, transparent);
+  color: var(--sfggc-pride-purple);
+  border: 1px solid color-mix(in srgb, var(--sfggc-pride-purple) 40%, transparent);
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Light tile so partner logos with dark artwork stay legible on dark surfaces */
+.logo-tile {
+  background: var(--sfggc-ink);
+  border: 1px solid var(--sfggc-hairline);
+  border-radius: 0.75rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--sfggc-pride-purple) 25%, transparent);
+  }
+}
+
+/* Tables inside cards take the card surface rather than the page background */
+.card .table,
+.surface-card .table {
+  --#{$prefix}table-bg: transparent;
+}
+
+/* Divider row between qualifiers and the rest in Scratch Masters standings */
+.scratch-cutoff-divider {
+  background: var(--sfggc-pride-purple);
+}
+
+/* Bootstrap primary buttons use the same gradient pill as the CTA */
+.btn-primary {
+  --#{$prefix}btn-color: var(--sfggc-ink-on-accent);
+  --#{$prefix}btn-hover-color: var(--sfggc-ink-on-accent);
+  --#{$prefix}btn-active-color: var(--sfggc-ink-on-accent);
+  --#{$prefix}btn-disabled-color: var(--sfggc-ink-on-accent);
+  --#{$prefix}btn-border-color: transparent;
+  --#{$prefix}btn-hover-border-color: transparent;
+  --#{$prefix}btn-active-border-color: transparent;
+  --#{$prefix}btn-disabled-border-color: transparent;
+  background-image: linear-gradient(90deg, var(--sfggc-pride-orange), var(--sfggc-pride-red));
+  border-radius: 999px;
+  font-weight: 600;
+  transition: transform 0.18s, box-shadow 0.18s;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--sfggc-pride-red) 35%, transparent);
+  }
+}
+
+/* Form inputs: translucent dark fill, blue focus ring */
+.form-control,
+.form-select {
+  width: 100%;
+  color: var(--sfggc-ink);
+  background-color: color-mix(in srgb, var(--sfggc-night) 60%, transparent);
+  border: 1px solid var(--sfggc-input-border);
+  border-radius: 0.625rem;
+  padding: 0.6rem 0.75rem;
+  font-family: var(--sfggc-font-sans-serif);
+  font-size: 0.95rem;
+
+  &::placeholder {
+    color: var(--sfggc-ink-dim);
+  }
+
+  &:focus {
+    outline: 2px solid var(--sfggc-pride-blue);
+    outline-offset: 1px;
+    border-color: transparent;
+  }
+}
+
+label,
+.form-label {
+  color: var(--sfggc-ink-dim);
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 html, body {

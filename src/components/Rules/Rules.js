@@ -109,96 +109,101 @@ If fewer than 6 bowlers sign up in a division, all participants will bowl in the
 `;
 
   return (
-    <div>
-      <section className={styles.Rules}>
+    <div className="d-flex flex-column gap-5">
+      <section className={`${styles.Rules} my-4`}>
         <h3 className={`section-heading`}>
           Tournament Rules
         </h3>
 
-        <p className={`text-md-center`}>
-          (Draft)
-        </p>
+        <div className="section-panel">
+          <div className={`${styles.Toolbar} d-flex justify-content-between align-items-center mb-4 pb-3 flex-wrap gap-2`}>
+            <span className="badge-glow">
+              (Draft)
+            </span>
+            <a href='#scratch_masters_rules' className="btn btn-sm btn-outline-secondary rounded-pill px-3 py-2">
+              (skip to Scratch Masters rules) <i className="bi bi-arrow-down ms-1"></i>
+            </a>
+          </div>
 
-        <p>
-          <a href='#scratch_masters_rules'>
-            (skip to Scratch Masters rules)
-          </a>
-        </p>
+          <p className={`${styles.Lead} mb-4`}>
+            The 2027 San Francisco Golden Gate Classic shall be held from Friday, June 18, through Sunday, June 20, 2027, at Classic Bowling Center, located at 900 King Dr., Daly City, CA 94015.
+          </p>
 
-        <p>
-          The 2027 San Francisco Golden Gate Classic shall be held from Friday, June 18, through Sunday, June
-          20, 2027, at Classic Bowling Center, located at 900 King Dr., Daly City, CA 94015.
-        </p>
-
-        <ol>
-          {sections.map((section, i) => (
-            <li key={i}>
-              <h4>
-                {section.header}
-              </h4>
-
-              <ReactMarkdown>{section.markdown}</ReactMarkdown>
-            </li>
-          ))}
-        </ol>
+          <div className="row g-4">
+            {sections.map((section, i) => (
+              <div key={i} className="col-12 col-md-6">
+                <div className={`${styles.RuleCard} h-100`}>
+                  <h4 className={styles.RuleTitle}>
+                    <span className={styles.RuleNumber}>{i + 1}</span>
+                    {section.header}
+                  </h4>
+                  <div className={styles.RuleBody}>
+                    <ReactMarkdown>{section.markdown}</ReactMarkdown>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
-      <section className={styles.Rules}>
+      <section className={`${styles.Rules} my-4`}>
         <h3 className={`section-heading`} id={'scratch_masters_rules'}>
           Scratch Masters Rules
         </h3>
 
-        <p className={`text-md-center`}>
-          (Draft)
-        </p>
+        <div className="section-panel">
+          <p className={`${styles.Draft} mb-4`}>
+            <span className="badge-glow">
+              (Draft)
+            </span>
+          </p>
 
-{<div className={`${styles.Sponsor} row`}>
-          <div className={'col-8 col-sm-6 text-end'}>
-            <span className={styles.Intro}>
-              Scratch Masters sponsored by
-            </span>
-            <span className={styles.Name}>
-              Does Your Mother Know
-            </span>
-            <address>
-              <span className={styles.Line}>
-                4141 18th St.
-              </span>
-              <span className={styles.Line}>
-                San Francisco, CA 94114
-              </span>
-              <span className={styles.Line}>
-                <a href={'tel:4158643160'}>
-                  <i className={'bi bi-telephone-fill pe-2'} aria-hidden={true}/>
-                  415-864-3160
-                </a>
-              </span>
-              <span className={styles.Line}>
-                <a href={'https://dymkmedia.wixsite.com/does-your-mother-k-1'}
-                   target={'_blank'}>
-                  <i className={'bi bi-globe2'} aria-hidden={true}/>
-                  <span className={'visually-hidden'}>
-                    website
+          <div className={`${styles.SponsorCard} mb-4`}>
+            <div className="row align-items-center g-3">
+              <div className="col-12 col-md-8">
+                <span className={styles.SponsorTag}>Scratch Masters sponsored by</span>
+                <h4 className={styles.SponsorName}>Does Your Mother Know</h4>
+                <address className={`${styles.SponsorAddress} fst-normal mb-0`}>
+                  <span className="d-block">
+                    4141 18th St.
                   </span>
+                  <span className="d-block">
+                    San Francisco, CA 94114
+                  </span>
+                  <span className="d-block">
+                    <a href={'tel:4158643160'} className="text-decoration-none">
+                      <i className={'bi bi-telephone-fill pe-2'} aria-hidden={true}/>
+                      415-864-3160
+                    </a>
+                  </span>
+                  <span className="d-block">
+                    <a href={'https://dymkmedia.wixsite.com/does-your-mother-k-1'}
+                       target={'_blank'} rel="noreferrer" className="text-decoration-none">
+                      <i className={'bi bi-globe2'} aria-hidden={true}/>
+                      <span className={'visually-hidden'}>
+                        website
+                      </span>
+                    </a>
+                  </span>
+                </address>
+              </div>
+              <div className="col-12 col-md-4 text-md-end">
+                <a href={'https://dymkmedia.wixsite.com/does-your-mother-k-1'} target={'_blank'} rel="noreferrer">
+                  <Image src={dymk} className={`img-fluid logo-tile p-1 ${styles.SponsorLogo}`} alt={'Logo for Does Your Mother Know'}/>
                 </a>
-              </span>
-            </address>
+              </div>
             </div>
-            <div className={'col-4 col-sm-3'}>
-            <a href={'https://dymkmedia.wixsite.com/does-your-mother-k-1'}
-               target={'_blank'}>
-              <Image src={dymk}
-                     className={'img-fluid'}
-                     alt={'Logo for Does Your Mother Know'}/>
-            </a>
-            </div>
-        </div>}
+          </div>
 
-        <ReactMarkdown>{scratchMarkdown}</ReactMarkdown>
-
+          <div className={styles.RuleBody}>
+            <ReactMarkdown>{scratchMarkdown}</ReactMarkdown>
+          </div>
+        </div>
       </section>
     </div>
   );
+
 }
 
 export default Rules;

@@ -38,6 +38,7 @@ const ParticipantLoginPage = () => {
   return (
     <div>
       <PortalShell
+        variant="auth"
         title="Participant access"
         subtitle="Enter your email address to receive a secure login link."
       >

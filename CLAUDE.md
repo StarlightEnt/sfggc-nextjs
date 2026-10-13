@@ -39,7 +39,11 @@ npm run lint
 # Bootstrap entire development environment
 bash scripts/dev/bootstrap-dev.sh
 
-# Initialize portal database schema
+# Dev database in Docker (no local MariaDB install needed): starts the container,
+# writes .env.local, applies schema + migrations. Also: up | down | status | shell | reset --yes
+bash scripts/dev/docker-db.sh init
+
+# Initialize portal database schema (when using a locally installed MariaDB instead)
 bash scripts/dev/init-portal-db.sh
 
 # Import tournament registration XML (optional)
@@ -255,23 +259,23 @@ PageComponent.getLayout = function getLayout(page) {
 
 **Mobile-First:** 2/3 of visitors are mobile. Start with mobile viewport styles; use Bootstrap breakpoints (576px, 768px, 992px, 1200px) for larger screens.
 
-**CSS Custom Properties for theming:**
-- `var(--sfggc-title-font-family)` — headings
-- `var(--sfggc-section-heading-color)` — section headings
-- `var(--sfggc-body-text-shadow-color)` — text shadows
+**CSS Custom Properties for theming** (all defined on `:root` in `sfggc.scss`):
+- `var(--sfggc-title-font-family)` — headings (Bungee)
+- `var(--sfggc-night)`, `--sfggc-night-mid`, `--sfggc-night-deep` — page, card and raised-panel surfaces
+- `var(--sfggc-ink)`, `--sfggc-ink-dim` — body and secondary text
+- `var(--sfggc-pride-red|orange|yellow|green|blue|purple)` — accents; `--sfggc-hairline` for borders
 
-**Section Pattern:**
-- Section wrapper with component-specific class
-- `.section-heading` for titles
-- `.section-image-background` background images (z-index: -50)
-- `.section-background-shade` overlays (z-index: -49)
+**Section Pattern** (content pages):
+- `<section className={`${styles.Name} my-5`}>` wrapper with a component-specific class
+- `<h3 className="section-heading">` for the title (a purple-topped panel header)
+- `<div className="section-panel">` directly beneath it for the body (padding, flat top corners and no top border
+  are defined once in `sfggc.scss`; do not re-spell them as utilities)
 
 ### Key Files Reference
 
 **Core Architecture:**
 - `src/pages/_app.js` - App wrapper with Bootstrap and Analytics
-- `src/components/layout/layout.js` - Root layout with theme provider
-- `src/utils/ThemeContext.js` - Bootstrap color mode management (dark/light/auto)
+- `src/components/layout/layout.js` - Root layout (stripe bar, header, navigation, sponsors, footer)
 - `src/scss/sfggc.scss` - Main stylesheet
 
 **Portal Implementation:**
@@ -397,14 +401,23 @@ Auto-handles:
 
 ### Bootstrap and Theme Management
 
-Bootstrap 5 with dark/light/auto color mode. Theme state in `ThemeContext`, persisted to localStorage. Theme switcher in nav component.
+Dark-only theme matching the sister site (sflgbtbowl.com). `<html data-bs-theme="dark">` is set in `_document.js`; there is no theme toggler or theme context. Palette tokens (`$night`, `$night-mid`, `$night-deep`, `$ink`, `$ink-dim`, `$pride-*`) live in `src/scss/_bootstrap-variables.scss` and are exposed as `--sfggc-*` CSS custom properties in `sfggc.scss`. Display type is Bungee (`.display`, h1-h3), body type is Inter. Shared styles: `.stripe-bar`, `.btn-glow-orange` (pill CTA), `.surface-card`, `.form-control`. Guarded by `tests/unit/dark-theme-tokens.test.js` (which also computes WCAG contrast from the compiled tokens).
+
+**Conventions that the tests enforce** (`tests/unit/theme-no-light-leftovers.test.js`, `theme-cleanup.test.js`, `portal-dark-base.test.js`, `portal-dark-pages.test.js`):
+- CSS variables use this project's `--sfggc-` prefix. Never write `--bs-*`; it does not exist here and fails silently.
+- Every `var(--sfggc-*)` must resolve to a defined variable. No `data-bs-theme` branching outside `_document.js` and `_bootstrap-color-modes.scss`.
+- No light-surface utilities (`bg-white`, `bg-light`, bare `text-dark`), retired light-palette hex colors, or inline hex colors in components; use the tokens. Add a `theme-exempt` comment (with a reason) to opt a line out; the email preview pane in `email-config.js` does this. Translucent `rgba()` tints in module styles are allowed.
+- Tests resolve files from `tests/helpers/theme-sources.js` and assert on compiled CSS rather than regexes over SCSS source, so they survive reformatting. When adding a design test, assert an invariant (a rule exists, a token resolves) rather than a literal value or user-facing copy.
+- Bootstrap components are opt-in in `src/scss/sfggc-bootstrap.scss`. `forms`, `alert`, `badge`, `modal` are enabled because the portal uses them; check that file before assuming a Bootstrap class has styles.
+- Components that render as `<section>` inherit the global content-page `section` margins; set `margin: 0` in the module if they are not a content section (see the portal login forms).
+- Portal login screens use `<PortalShell variant="auth">` (centered sign-in card). Other portal pages get the default left-aligned page header.
 
 ### Image Organization
 
 Images in `src/images/` by category:
 - Use responsive images with multiple sizes
 - Store section background images here
-- Apply `.section-background-shade` overlay for text readability
+- Keep text legible over images with a gradient overlay in the component's own module styles
 - Next.js image optimization disabled (`unoptimized: true` in `next.config.js`). Pre-optimize source images locally before committing if wider than ~800px — no resize step in the deploy pipeline.
 
 ### Testing Patterns
@@ -446,9 +459,9 @@ bash scripts/test/test-backend.sh  # Backend/API tests only
 
 **Note:** `test-all.sh` runs integration tests (`tests/integration/*.test.js`) as a separate step between frontend and backend tests.
 
-**Database prerequisite:** Backend and full-suite tests require MariaDB running. Start with `bash scripts/dev/start-mariadb.sh` before `test-backend.sh` or `test-all.sh` — test scripts do not start the database themselves.
+**Database prerequisite:** Backend and full-suite tests require MariaDB running. Start with `bash scripts/dev/docker-db.sh up` (Docker) or `bash scripts/dev/start-mariadb.sh` (local install) before `test-backend.sh` or `test-all.sh` — test scripts do not start the database themselves.
 
-**Database Tests:** Auto create/drop `<database>_test` databases. On failure, the test database is preserved for debugging.
+**Database Tests:** Auto create/drop `<database>_test` databases. On failure, the test database is preserved for debugging. With a database URL configured, `test-all.sh` fails (rather than skips) skipped integration tests. See `CLAUDE-PATTERNS.md#Dev Environment for Database-Dependent Tests` for the `.env.local` rules (never print, commit, or overwrite it) and how integration tests read DB state.
 
 **Rule:** During development, run only localized tests for files being changed. Run `bash scripts/test/test-all.sh` after all sprints complete or before check-in.
 

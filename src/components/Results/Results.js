@@ -20,59 +20,66 @@ const Results = ({ showStandingsLink = false, showOptionalEventsLink = false }) 
   ];
 
   return (
-    <section className={`${styles.Results}`}>
+    <section className={`${styles.Results} my-5`}>
       <h3 className={`section-heading`}>
         2026 Tournament Results
       </h3>
       
-      <div className={`${styles.Intro}`}>
-        <p className={``}>
-          **UPDATE.** Much apologies to our winners for the delay in getting your awards out.  We had a commitment of 30 days, and we did not meet that promise. Due to unforseen circumstances, we encountered a procedural hiccup in the check processing. Rest assured, all checks should be received during the week of March 16th.
-        </p>
-      </div>
-          
-      <div className={'row px-2 px-xl-0'}>
-        {available.map((resultSet, i) => (
-          <div className={`col col-lg-6`} key={i}>
-            <div className={`${styles.ResultsCard} card mb-2`}>
-              <ul className={`list-group list-group-flush ${styles.ResultList}`}>
-                { resultSet.map((result, j) => {
-                  return (
-                    <li key={j} className={`list-group-item ${styles.ResultItem} d-flex justify-content-between`}>
-                      <a href={`/results/2026/${result.id}.pdf`}
-                         className={`link-info mt-2`}>
-                        {`${result.name}`}
-                      </a>
-                      <a className={`btn btn-outline-info`}
-                              href={`/results/2026/${result.id}.pdf`}
-                              title='Download PDF'>
-                        <i className={`bi-download`} aria-hidden={true}></i>
-                      </a>
-                    </li>
-                  );
-                }) }
-              </ul>
-            </div>
-          </div>
-        ))}
-      </div>
-      {(showStandingsLink || showOptionalEventsLink) && (
-        <div className="px-2 px-xl-0 mt-4 mb-4 d-flex flex-wrap gap-3">
-          {showStandingsLink && (
-            <a className="btn btn-primary" href={`/portal/scores?from=${RESULTS_FROM_QUERY}`}>
-              View Overall Standings
-            </a>
-          )}
-          {showOptionalEventsLink && (
-            <a
-              className="btn btn-primary"
-              href={`/portal/admin/optional-events?from=${RESULTS_FROM_QUERY}`}
-            >
-              View Optional Events
-            </a>
-          )}
+      <div className="section-panel">
+        <div className={`${styles.Notice} mb-4`}>
+          <i className={`bi bi-info-circle-fill ${styles.NoticeIcon}`} aria-hidden={true}></i>
+          <p className="mb-0">
+            **UPDATE.** Much apologies to our winners for the delay in getting your awards out.  We had a commitment of 30 days, and we did not meet that promise. Due to unforseen circumstances, we encountered a procedural hiccup in the check processing. Rest assured, all checks should be received during the week of March 16th.
+          </p>
         </div>
-      )}
+
+        <div className="row g-3">
+          {available.map((resultSet, i) => (
+            <div className="col-12 col-lg-6" key={i}>
+              <div className={styles.ResultsCard}>
+                <div className="d-flex flex-column gap-2">
+                  {resultSet.map((result, j) => {
+                    return (
+                      <div key={j} className={styles.ResultItem}>
+                        <a href={`/results/2026/${result.id}.pdf`}
+                           className={`${styles.ResultName} text-decoration-none`}>
+                          <i className="bi bi-file-earmark-pdf-fill me-2"></i>
+                          {`${result.name}`}
+                        </a>
+                        <a href={`/results/2026/${result.id}.pdf`}
+                           className="btn btn-sm btn-glow-orange d-inline-flex align-items-center gap-2"
+                           title='Download PDF'
+                           target="_blank"
+                           rel="noreferrer">
+                          <i className="bi bi-download"></i> PDF
+                        </a>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {(showStandingsLink || showOptionalEventsLink) && (
+          <div className={`${styles.Actions} mt-4 pt-3 d-flex flex-wrap gap-3`}>
+            {showStandingsLink && (
+              <a className="btn btn-glow-orange d-inline-flex align-items-center gap-2" href={`/portal/scores?from=${RESULTS_FROM_QUERY}`}>
+                <i className="bi bi-bar-chart-fill"></i> View Overall Standings
+              </a>
+            )}
+            {showOptionalEventsLink && (
+              <a
+                className="btn btn-glow-orange d-inline-flex align-items-center gap-2"
+                href={`/portal/admin/optional-events?from=${RESULTS_FROM_QUERY}`}
+              >
+                <i className="bi bi-award-fill"></i> View Optional Events
+              </a>
+            )}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

@@ -13,25 +13,24 @@ const SanFrancisco = ({full = true}) => {
   // the summary is intended for the SF section of the main page
 
   return (
-    <section className={styles.SanFrancisco} id={'section-san-francisco'}>
+    <section className={`${styles.SanFrancisco} my-5`} id={'section-san-francisco'}>
       <h3 className={`section-heading`}>
         San Francisco, California
       </h3>
 
-      <div className={styles.JumboImage}>
-        <div className={`${styles.CityDaytimeColor}`}/>
-        <div className={`${styles.CityDaytimeImage}`}/>
-      </div>
-      <div className={`${styles.Credit}`}>
-        Image by{' '}
-        <a href={'https://www.pexels.com/photo/city-skyline-during-golden-hour-3584437/'}
-           target={'_blank'}>
-          Kehn Hermano
-        </a>
-      </div>
+      <div className="section-panel">
+        <div className={styles.Banner}>
+          <div className={`${styles.CityDaytimeImage} h-100 w-100`} />
+          <div className={styles.BannerCredit}>
+            Image by{' '}
+            <a href={'https://www.pexels.com/photo/city-skyline-during-golden-hour-3584437/'}
+               target={'_blank'} rel="noreferrer">
+              Kehn Hermano
+            </a>
+          </div>
+        </div>
 
-      <div className={`${styles.Content}`}>
-        <p className={styles.Intro}>
+        <p className={`${styles.Intro} mb-4 text-center`}>
           The San Francisco Bay Area has a long, rich history, from the native Ohlone inhabitants through claims by
           Spain and Mexico, to the Gold Rush leading California to statehood in 1850. The area has held key strategic
           and commercial value ever since, and its diverse tapestry of people, culture, and food makes it a must-visit
@@ -39,39 +38,36 @@ const SanFrancisco = ({full = true}) => {
         </p>
 
         {!full && (
-          <p className={styles.MoreLink}>
-            <Link href={'/san-francisco'}
-                  className={`icon-link icon-link-hover`}>
-              More
-              <i className={'bi bi-arrow-right align-self-baseline'} aria-hidden={true}/>
+          <div className="text-center">
+            <Link href={'/san-francisco'} className="btn btn-glow-orange d-inline-flex align-items-center gap-2">
+              More <i className="bi bi-arrow-right" aria-hidden={true}></i>
             </Link>
-          </p>
+          </div>
         )}
 
         {full && (
-          <div className={'row justify-content-center'}>
-            <div className={`${styles.Thing} card col-12 col-sm-11 col-md-10 col-lg-4`}>
-              <div className={`${styles.Image}`}>
-                <Image src={sunshine}
-                       alt={'The sun shines over the Golden Gate Bridge and the city of San Francisco'}
-                       className={`${styles.Img}`}
-                       sizes={'(max-width: 767px) 90vw, (max-width: 1199px) 20vw (min-width: 1200px) 15vw'}
-                />
-                <div className={styles.ImageShade}></div>
-              </div>
-              <div className={`${styles.Credit}`}>
-                Image by{' '}
-                <a href={'https://www.stebleton.net/'}
-                   target={'_blank'}>
-                  Scott Stebleton
-                </a>
-              </div>
-              <div className={``}>
-                <div className={'card-title'}>
-                  <h4>
-                    Weather
-                  </h4>
+          <div className="row g-4 justify-content-center mt-2">
+            <div className="col-12 col-md-6 col-lg-4">
+              <div className={`${styles.Card} h-100`}>
+                <div className={styles.CardImage}>
+                  <Image src={sunshine}
+                         alt={'The sun shines over the Golden Gate Bridge and the city of San Francisco'}
+                         fill
+                         sizes="(max-width: 768px) 100vw, 350px"
+                         style={{ objectFit: 'cover' }}
+                  />
                 </div>
+                <div className={styles.Credit}>
+                  Image by{' '}
+                  <a href={'https://www.stebleton.net/'}
+                     target={'_blank'} rel="noreferrer">
+                    Scott Stebleton
+                  </a>
+                </div>
+                <h4 className={styles.CardTitle}>
+                  <i className="bi bi-sun-fill"></i> Weather
+                </h4>
+                <div className={styles.CardBody}>
                 <p>
                   <a href="https://www.wunderground.com/weather/us/ca/san-francisco/KCASANFR2046">
                     Current Conditions
@@ -86,40 +82,40 @@ const SanFrancisco = ({full = true}) => {
                   You&apos;ll be visiting in June, so it&apos;s a safe bet that you&apos;ll want to pack for cool-mild temperatures
                   and breezy conditions "June Gloom". Fog is common, especially in the hills above Daly City where our bowling center is! High
                   temperatures are around{' '}
-                  <span className={`${styles.HighTemp}`}>60/70°F (15.5/21°C)</span>
+                  <span className={styles.HighTemp}>60/70°F (15.5/21°C)</span>
                   {' '}with lows around{' '}
-                  <span className={`${styles.LowTemp}`}>mid-50s°F (12°C)</span>
+                  <span className={styles.LowTemp}>mid-50s°F (12°C)</span>
                   {'.'}
                 </p>
                 {/*<p>
                   February is in the back half of our rainy season, so we recommend bringing an umbrella or
                   rain-resistant jacket. Sure, we&apos;re usually in a drought, but that doesn&apos;t mean it never rains!
                 </p>*/}
+                </div>
               </div>
             </div>
 
-            <div className={`${styles.Thing} card col-12 col-sm-6 col-lg-4`}>
-              <div className={`${styles.Image}`}>
-                <Image src={cableCarPowell}
-                       alt={'The cable car turnaround point at Powell and Market Streets'}
-                       className={`${styles.Img}`}
-                       sizes={'(max-width: 575px) 95vw, (min-width: 768px) 50vw, (min-width: 992px) 33vw'}
-                />
-                <div className={styles.ImageShade}></div>
-              </div>
-              <div className={`${styles.Credit}`}>
-                Image by{' '}
-                <a href={'https://www.pexels.com/photo/road-beside-buildings-1119075/'}
-                   target={'_blank'}>
-                  Brett Sayles
-                </a>
-              </div>
-              <div className={``}>
-                <div className={'card-title'}>
-                  <h4>
-                    Attractions
-                  </h4>
+            <div className="col-12 col-md-6 col-lg-4">
+              <div className={`${styles.Card} h-100`}>
+                <div className={styles.CardImage}>
+                  <Image src={cableCarPowell}
+                         alt={'The cable car turnaround point at Powell and Market Streets'}
+                         fill
+                         sizes="(max-width: 768px) 100vw, 350px"
+                         style={{ objectFit: 'cover' }}
+                  />
                 </div>
+                <div className={styles.Credit}>
+                  Image by{' '}
+                  <a href={'https://www.pexels.com/photo/road-beside-buildings-1119075/'}
+                     target={'_blank'} rel="noreferrer">
+                    Brett Sayles
+                  </a>
+                </div>
+                <h4 className={styles.CardTitle}>
+                  <i className="bi bi-compass-fill"></i> Attractions
+                </h4>
+                <div className={styles.CardBody}>
                 <p>
                   The Bay Area has an abundance of riches when it comes to sights, sounds, and activities. To name just
                   a
@@ -165,34 +161,34 @@ const SanFrancisco = ({full = true}) => {
                 </ul>
                 <p>
                   There&apos;s way more than we can list here, but{' '}
-                  <a href="https://www.sftravel.com/" target="_blank">SF.travel</a>
+                  <a href="https://www.sftravel.com/" target="_blank" rel="noreferrer">SF.travel</a>
                   {' '}is a good place to start.
                 </p>
+                </div>
               </div>
             </div>
 
-            <div className={`${styles.Thing} card col-12 col-sm-6 col-sm-6 col-lg-4`}>
-              <div className={`${styles.Image}`}>
-                <Image src={ramen}
-                       alt={'A bowl of ramen with salad on the side'}
-                       className={`${styles.Img}`}
-                       sizes={'(max-width: 575px) 95vw, (max-width: 767px) 50vw, (max-width: 1399px) 33vw'}
-                />
-                <div className={styles.ImageShade}></div>
-              </div>
-              <div className={`${styles.Credit}`}>
-                Image by{' '}
-                <a href={'https://www.pexels.com/photo/top-view-photo-of-ramen-soup-2591594/'}
-                   target={'_blank'}>
-                  Jan Nguyen
-                </a>
-              </div>
-              <div className={``}>
-                <div className={'card-title'}>
-                  <h4>
-                    Restaurants
-                  </h4>
+            <div className="col-12 col-md-6 col-lg-4">
+              <div className={`${styles.Card} h-100`}>
+                <div className={styles.CardImage}>
+                  <Image src={ramen}
+                         alt={'A bowl of ramen with salad on the side'}
+                         fill
+                         sizes="(max-width: 768px) 100vw, 350px"
+                         style={{ objectFit: 'cover' }}
+                  />
                 </div>
+                <div className={styles.Credit}>
+                  Image by{' '}
+                  <a href={'https://www.pexels.com/photo/top-view-photo-of-ramen-soup-2591594/'}
+                     target={'_blank'} rel="noreferrer">
+                    Jan Nguyen
+                  </a>
+                </div>
+                <h4 className={styles.CardTitle}>
+                  <i className="bi bi-egg-fried"></i> Restaurants
+                </h4>
+                <div className={styles.CardBody}>
                 <p>
                   With a population whose roots span the entire globe, the San Francisco Bay Area is home to an
                   incredibly
@@ -225,14 +221,14 @@ const SanFrancisco = ({full = true}) => {
                   {' '}has the low-down on all the great grub San Francisco has to offer. What&apos;s more, the Bay Area is a
                   haven
                   for vegetarians and vegans.{' '}
-                  <a href="https://www.happycow.net/north_america/usa/california/san_francisco/" target="_blank">So many
+                  <a href="https://www.happycow.net/north_america/usa/california/san_francisco/" target="_blank" rel="noreferrer">So many
                     to choose from!</a>
                 </p>
 
+                </div>
               </div>
             </div>
           </div>
-
         )}
       </div>
     </section>

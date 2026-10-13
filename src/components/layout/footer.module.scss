@@ -1,0 +1,21 @@
+footer.footer {
+  margin-top: 0;
+  padding: 2rem 1rem 2.5rem;
+  text-align: center;
+  color: var(--sfggc-ink-dim);
+  background: var(--sfggc-night);
+
+  .logo {
+    width: 48px;
+    height: 48px;
+    overflow: hidden;
+    border-radius: 50%;
+    border: 1px solid var(--sfggc-hairline);
+  }
+
+  .line {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--sfggc-ink-dim);
+  }
+}

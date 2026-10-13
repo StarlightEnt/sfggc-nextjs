@@ -16,34 +16,33 @@ const winners = [
 
 const ScrMstWinners = () => {
   return (
-    <section className={`${styles.ScrMstWinners}`} id={'contact'}>
+    <section className={`${styles.ScrMstWinners} my-5`} id={'contact'}>
       <h3 className={`section-heading`}>
         Scratch Masters Winners
       </h3>
 
-      <div className={`${styles.Intro}`}>
-        <p>
+      <div className="section-panel">
+        <p className={`${styles.Intro} text-center mb-4`}>
           Gallery of Winners 2026
         </p>
-      </div>
 
-      <div className={`row justify-content-center`}>
-        {winners.map(({ image, name, division }) => (
-          <div className={`col-6 col-sm-4 col-lg-3`} key={division}>
-            <div className={`card ${styles.Card}`}>
-              <Image src={image}
-                     alt={name}
-                     className={`img-fluid card-img-top ${styles.Image}`}
-              />
-              <div className={`card-body`}>
-                <p className={styles.Name}>{name}</p>
-                <p className={styles.Role}>Division {division} Winner</p>
+        <div className={`row g-4 justify-content-center`}>
+          {winners.map(({ image, name, division }) => (
+            <div className={`col-6 col-sm-4 col-lg-3`} key={division}>
+              <div className={`${styles.Card} h-100`}>
+                <Image src={image}
+                       alt={name}
+                       className={`img-fluid ${styles.Image}`}
+                />
+                <div className={styles.Body}>
+                  <p className={styles.Name}>{name}</p>
+                  <p className={styles.Role}>Division {division} Winner</p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-
     </section>
   )
 }

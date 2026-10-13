@@ -193,7 +193,7 @@ const ScratchMastersPage = ({ initialParticipantsCanViewScratchMasters = false }
                         <tr className="scratch-cutoff-row">
                           <td
                             colSpan={SCRATCH_TABLE_COLUMN_COUNT}
-                            className="bg-white p-0"
+                            className="scratch-cutoff-divider p-0"
                             style={{ height: "6px", lineHeight: 0 }}
                           />
                         </tr>

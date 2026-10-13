@@ -1,22 +1,14 @@
 .Sponsors {
-  .Row {
-    background-color: var(--sfggc-sponsor-logo-bg);
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
+  position: relative;
 
-    .ImageContainer {
-      margin-top: 0.5rem;
-      margin-bottom: 0.5rem;
+  .Logo {
+    max-height: 70px;
+    width: auto;
+    object-fit: contain;
+  }
 
-      @media (min-width: 768px) {
-        width: 20%;
-      }
-
-      .AdjustedBrightness {
-        [data-bs-theme='dark'] & {
-          filter: brightness(85%);
-        }
-      }
-    }
+  // As on main, Storm's logo is dimmed slightly so it does not glare.
+  .AdjustedBrightness {
+    filter: brightness(85%);
   }
 }

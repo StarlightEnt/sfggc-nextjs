@@ -5,6 +5,17 @@
 **Date Deferred:** 2026-02-09
 **Impact:** Test suite now 100% passing (519/519 frontend, 36/36 backend)
 
+## Update (2026-10-12): `portal-api` tests were silently skipping (fixed)
+
+With a working database, `tests/integration/portal-api.test.js` reported `# SKIP Database not
+available` for all 33 of its tests. The shared helper (`setupIntegrationDb`) initializes the database
+in an async `before()` hook; the test file copied `db`/`dbReady` out of the helper's state in its own
+root-level `before()`, and that copy ran before the initialization finished, so it always saw
+`dbReady = false`. The copy now happens in `beforeEach()`, which always runs after the root hooks, and
+all 33 tests pass against the Docker dev database. Tests that use the helper's `requireDb(t, state)`
+read live state and were never affected. When writing new integration tests, read `dbState` (or use
+`requireDb`) at test time; do not copy it in a root-level hook.
+
 ## Current State
 
 These 37 tests were moved from `tests/unit/` to `tests/integration/` so they no longer run in the default test scripts (`test-all.sh`, `test-frontend.sh`). The test suite is now fully green.

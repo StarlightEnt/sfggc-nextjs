@@ -1,52 +1,66 @@
 .Location {
   position: relative;
-
   padding-bottom: 1rem;
 
-  .BackgroundImage {
-    background-image: url('../../images/bg/classic-600w.jpg');
-
-    @media (min-width: 768px) {
-      background-image: url('../../images/bg/classic-991w.jpg');
-    }
-
-    @media (min-width: 992px) {
-      background-image: url('../../images/bg/classic-fullsize.jpg');
-    }
+  .LogoContainer {
+    // Logo artwork is dark-on-light, so it sits on the shared .logo-tile.
+    min-width: 160px;
   }
 
-  .BackgroundShade {
-    opacity: var(--sfggc-section-background-shade-opacity);
+  .LogoImage {
+    max-height: 110px;
+    width: auto;
+    object-fit: contain;
   }
 
-  .Logo {
-    [data-bs-theme='dark'] & {
-      filter: brightness(85%);
-    }
-    background-image: radial-gradient(
-        ellipse
-        closest-side at 50% 50%,
-        rgba(var(--sfggc-white-rgb), var(--sfggc-location-logo-bg-gradient-start)),
-        rgba(var(--sfggc-black-rgb), 0)
-    );
+  .VenueLink {
+    color: var(--sfggc-ink);
 
-    margin: 1rem 0 1rem;
-  }
-  .Address {
-    text-align: center;
-    @media (min-width: 768px) {
-      text-align: left;
+    &:hover,
+    &:focus-visible {
+      color: var(--sfggc-pride-orange);
     }
   }
+
   .Map {
-    [data-bs-theme='dark'] & {
-      filter: brightness(75%);
-    }
-
-    margin-bottom: 1rem;
+    background: var(--sfggc-night-deep);
+    border: 1px solid var(--sfggc-hairline);
+    border-radius: 0.875rem;
   }
 
-  .DiningOptions {
+  .DiningChip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 999px;
+    background: var(--sfggc-night-deep);
+    color: var(--sfggc-ink);
+    border: 1px solid var(--sfggc-hairline);
+    text-decoration: none;
+    transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
 
+    &.DiningLink {
+      background: color-mix(in srgb, var(--sfggc-pride-blue) 10%, transparent);
+      color: var(--sfggc-pride-blue);
+      border-color: color-mix(in srgb, var(--sfggc-pride-blue) 40%, transparent);
+
+      i {
+        font-size: 0.75rem;
+        color: var(--sfggc-pride-blue);
+        transition: transform 0.18s ease;
+      }
+
+      &:hover {
+        background: color-mix(in srgb, var(--sfggc-pride-blue) 20%, transparent);
+        border-color: var(--sfggc-pride-blue);
+        transform: translateY(-1px);
+
+        i {
+          transform: translate(2px, -2px);
+        }
+      }
+    }
   }
 }

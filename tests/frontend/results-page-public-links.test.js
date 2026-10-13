@@ -68,8 +68,8 @@ test("Given results component, when checking source, then standings and optional
     "Results component should use flexbox layout with gap for portal action buttons"
   );
   assert.ok(
-    component.includes("btn-primary"),
-    "Results component should style portal action buttons as primary CTAs for clear contrast"
+    component.includes("btn-glow-orange"),
+    "Results component should style portal action buttons with the shared high-contrast CTA (btn-glow-orange)"
   );
   assert.ok(
     !component.includes("btn-outline-primary"),

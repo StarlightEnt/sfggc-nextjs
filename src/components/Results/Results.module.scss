@@ -1,14 +1,57 @@
 .Results {
-    
-  .Intro {
+  .Notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 1rem 1.25rem;
+    background: color-mix(in srgb, var(--sfggc-pride-orange) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--sfggc-pride-orange) 40%, transparent);
+    border-radius: 0.875rem;
+    color: var(--sfggc-ink-dim);
+    font-size: 1rem;
   }
+
+  .NoticeIcon {
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+    color: var(--sfggc-pride-orange);
+  }
+
   .ResultsCard {
-    background-color: transparent;
-    .ResultList {
-      background-color: transparent;
-      .ResultItem {
-        background-color: var(--sfggc-gray-800);
-      }
+    padding: 1rem;
+    background: var(--sfggc-night-deep);
+    border: 1px solid var(--sfggc-hairline);
+    border-radius: 0.875rem;
+  }
+
+  .ResultItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.85rem 1rem;
+    background: var(--sfggc-night-mid);
+    border: 1px solid var(--sfggc-hairline);
+    border-radius: 0.625rem;
+  }
+
+  .ResultName {
+    font-weight: 600;
+    color: var(--sfggc-ink);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--sfggc-pride-orange);
     }
+
+    i {
+      color: var(--sfggc-pride-red);
+      font-size: 1.25rem;
+    }
+  }
+
+  .Actions {
+    border-top: 1px solid var(--sfggc-hairline);
   }
 }

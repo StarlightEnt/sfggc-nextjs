@@ -1,3 +1,18 @@
 .HostVenue {
+  .Copy {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--sfggc-ink-dim);
+  }
 
+  .Address {
+    margin-bottom: 1rem;
+    color: var(--sfggc-ink);
+  }
+
+  .Link {
+    color: var(--sfggc-pride-blue);
+    overflow-wrap: anywhere;
+  }
 }

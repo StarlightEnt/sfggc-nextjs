@@ -11,7 +11,7 @@ import {
 const PortalHome = () => {
   return (
     <div>
-      <PortalShell title="Tournament Portal">
+      <PortalShell variant="auth" title="Tournament Portal">
         <RoleChooser />
       </PortalShell>
     </div>

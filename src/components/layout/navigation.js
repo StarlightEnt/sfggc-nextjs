@@ -1,6 +1,6 @@
 import Link from "next/link";
-import ColorModeToggler from "../ColorModeToggler/ColorModeToggler";
 import {useRouter} from "next/router";
+import styles from './navigation.module.scss';
 
 const Navigation = () => {
   const router = useRouter();
@@ -11,45 +11,57 @@ const Navigation = () => {
     router.push(event.currentTarget.href);
   }
 
-  const navLink = ({path, text, title = '', disabled = false}) => (
-    <li className={`nav-item`}
-        title={title}>
-      <Link className={`nav-link ${disabled ? 'disabled' : ''}`}
-            href={path}
-            onClick={(event) => linkClicked(event, disabled)}
-            aria-disabled={disabled || undefined}
-            tabIndex={disabled ? -1 : undefined}
-            data-bs-toggle={'collapse'}
-            data-bs-target={'.navbar-collapse.show'}
-      >
-        {text}
-      </Link>
-    </li>
-  );
+  const navLink = ({path, text, title = '', disabled = false, isButton = false}) => {
+    const isActive = router.pathname === path || (path !== '/' && router.pathname.startsWith(path));
+    const stateClass = disabled ? styles.disabled : isActive ? styles.active : '';
+    const linkClass = isButton
+      ? `btn btn-glow-orange ${styles.cta}`
+      : `${styles.link} ${stateClass}`;
+
+    return (
+      <li className={`nav-item`}
+          title={title}>
+        <Link className={`nav-link ${linkClass}`}
+              href={path}
+              onClick={(event) => linkClicked(event, disabled)}
+              aria-current={isActive && !isButton ? 'page' : undefined}
+              aria-disabled={disabled || undefined}
+              tabIndex={disabled ? -1 : undefined}
+              data-bs-toggle={'collapse'}
+              data-bs-target={'.navbar-collapse.show'}
+        >
+          {text}
+        </Link>
+      </li>
+    );
+  };
 
   return (
-      <nav className={`navbar navbar-expand-lg`}>
-        <div className={`container-fluid`}>
+      <nav className={`navbar navbar-expand-lg ${styles.nav}`}>
+        <div className={`${styles.inner} d-flex flex-wrap align-items-center`}>
+          <Link href="/" className={styles.brand}>
+            <span className={`${styles.wordmark} display`}>
+              SFGGC <span className={styles.year}>2027</span>
+            </span>
+            <span className={styles.tagline}>Golden Gate Classic &middot; IGBO Pride</span>
+          </Link>
+
           <button
             type={'button'}
             id={'navbarToggler'}
-            className={'navbar-toggler'}
+            className={`navbar-toggler ${styles.toggler}`}
             data-bs-toggle={'collapse'}
             data-bs-target={'#navbarContent'}
             aria-controls={`navbarContent`}
             aria-expanded={false}
             aria-label={'Toggle navigation'}>
-            <i className={`bi bi-list menu-icon`}></i>
+            <i className={`bi bi-list menu-icon fs-3`}></i>
           </button>
 
-          <ul className={`navbar-nav d-none d-lg-inline-block order-last`}>
-            <ColorModeToggler className={'ms-auto d-inline-block'} />
-          </ul>
-
-          <div className={`collapse navbar-collapse`}
+          <div className={`collapse navbar-collapse justify-content-end`}
                id={'navbarContent'}
                tabIndex={'-1'}>
-              <ul className={`navbar-nav mb-2 mb-lg-0`}>
+              <ul className={`navbar-nav ${styles.links}`}>
                 {navLink({
                   path: '/',
                   text: 'Home',
@@ -86,7 +98,6 @@ const Navigation = () => {
                   title: '',
                 })}
 
-
                 {navLink({
                   path: '/san-francisco',
                   text: 'San Francisco',
@@ -115,15 +126,13 @@ const Navigation = () => {
                 {navLink({
                   path: '/portal/',
                   text: 'Login',
+                  isButton: true,
                 })}
-
               </ul>
-            {/*</div>*/}
           </div>
 
         </div>
       </nav>
-    // </div>
   )
 }
 

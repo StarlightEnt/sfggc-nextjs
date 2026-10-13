@@ -1,16 +1,18 @@
 .RoleChooser {
-  .Card {
-    border: 1px solid var(--sfggc-border-color);
-    border-radius: 0.75rem;
+  // Cancel the global section spacing meant for content pages.
+  margin: 0;
+
+  .Question {
+    margin-bottom: 1.25rem;
+    text-align: center;
+    font-family: var(--sfggc-font-sans-serif);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--sfggc-ink);
   }
 
-  @media (max-width: 575.98px) {
-    .Card :global(.card-body) {
-      padding: 1rem;
-    }
-
-    :global(.btn) {
-      width: 100%;
-    }
+  :global(.btn) {
+    width: 100%;
+    padding: 0.7rem 1rem;
   }
 }
